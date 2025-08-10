@@ -6,3 +6,32 @@ distribution = "2201.12.7"
 
 [build-options]
 observabilityIncluded = true
+
+# Module-based architecture
+# Each module is self-contained with its own functionality
+# Modules can be imported and used across the application
+
+[[dependency]]
+org = "ballerina"
+name = "http"
+version = "2.12.0"
+
+[[dependency]]
+org = "ballerina"
+name = "cache"
+version = "3.9.0"
+
+[[dependency]]
+org = "ballerina"
+name = "time"
+version = "2.5.0"
+
+[[dependency]]
+org = "ballerina"
+name = "regex"
+version = "1.6.0"
+
+[[dependency]]
+org = "ballerina"
+name = "test"
+version = "0.11.0"

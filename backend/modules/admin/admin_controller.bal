@@ -1,87 +1,5 @@
 import ballerina/http;
-
-// Local auth types for the controller
-public type AuthResult record {|
-    boolean isValid;
-    AuthContext? context;
-    string? errorMessage;
-|};
-
-public type AuthContext record {|
-    string userId;
-    string username;
-    string email;
-    string[] roles;
-    string[] groups?;
-    string token;
-    int exp;
-|};
-
-// Simple auth validation function
-function validateAdminAuth(http:Request request) returns AuthResult|http:Response {
-    string|error authHeader = request.getHeader("Authorization");
-    
-    if (authHeader is error) {
-        http:Response response = new;
-        response.statusCode = 401;
-        response.setJsonPayload({
-            "error": "Unauthorized",
-            "message": "Missing Authorization header"
-        });
-        return response;
-    }
-
-    if (!authHeader.startsWith("Bearer ")) {
-        http:Response response = new;
-        response.statusCode = 401;
-        response.setJsonPayload({
-            "error": "Unauthorized", 
-            "message": "Invalid Authorization header format"
-        });
-        return response;
-    }
-
-    string token = authHeader.substring(7);
-    
-    // Simple token validation - in production, validate with proper JWT validation
-    if (token.length() < 10) {
-        http:Response response = new;
-        response.statusCode = 401;
-        response.setJsonPayload({
-            "error": "Unauthorized",
-            "message": "Invalid token"
-        });
-        return response;
-    }
-
-    // Create mock auth context - in production, decode JWT and validate roles
-    AuthContext authContext = {
-        userId: "admin-user",
-        username: "admin",
-        email: "admin@example.com",
-        roles: ["admin", "user"],
-        groups: [],
-        token: token,
-        exp: 1723300000 // Mock expiry
-    };
-
-    // Check if user has admin role
-    if (authContext.roles.indexOf("admin") == ()) {
-        http:Response response = new;
-        response.statusCode = 403;
-        response.setJsonPayload({
-            "error": "Forbidden",
-            "message": "Admin access required"
-        });
-        return response;
-    }
-
-    return {
-        isValid: true,
-        context: authContext,
-        errorMessage: ()
-    };
-}
+import hp/Cyclesync.auth;
 
 // Admin Controller - handles admin-only endpoints
 public isolated service class AdminController {
@@ -92,7 +10,7 @@ public isolated service class AdminController {
 
     // Get all users (admin only)
     public function getAllUsers(http:Request request) returns json|http:Response {
-        AuthResult|http:Response authCheck = validateAdminAuth(request);
+        auth:AuthResult|http:Response authCheck = auth:validateAuth(request, "admin");
         if (authCheck is http:Response) {
             return authCheck;
         }
@@ -135,7 +53,7 @@ public isolated service class AdminController {
 
     // Get specific user by ID (admin only)
     public function getUserById(http:Request request, string userId) returns json|http:Response {
-        AuthResult|http:Response authCheck = validateAdminAuth(request);
+        auth:AuthResult|http:Response authCheck = auth:validateAuth(request, "admin");
         if (authCheck is http:Response) {
             return authCheck;
         }
@@ -163,7 +81,7 @@ public isolated service class AdminController {
 
     // Create new user (admin only)
     public function createUser(http:Request request) returns json|http:Response {
-        AuthResult|http:Response authCheck = validateAdminAuth(request);
+        auth:AuthResult|http:Response authCheck = auth:validateAuth(request, "admin");
         if (authCheck is http:Response) {
             return authCheck;
         }
@@ -211,7 +129,7 @@ public isolated service class AdminController {
 
     // Update user (admin only)
     public function updateUser(http:Request request, string userId) returns json|http:Response {
-        AuthResult|http:Response authCheck = validateAdminAuth(request);
+        auth:AuthResult|http:Response authCheck = auth:validateAuth(request, "admin");
         if (authCheck is http:Response) {
             return authCheck;
         }
@@ -240,7 +158,7 @@ public isolated service class AdminController {
 
     // Delete user (admin only)
     public function deleteUser(http:Request request, string userId) returns json|http:Response {
-        AuthResult|http:Response authCheck = validateAdminAuth(request);
+        auth:AuthResult|http:Response authCheck = auth:validateAuth(request, "admin");
         if (authCheck is http:Response) {
             return authCheck;
         }
@@ -258,7 +176,7 @@ public isolated service class AdminController {
 
     // Get system statistics (admin only)
     public function getSystemStats(http:Request request) returns json|http:Response {
-        AuthResult|http:Response authCheck = validateAdminAuth(request);
+        auth:AuthResult|http:Response authCheck = auth:validateAuth(request, "admin");
         if (authCheck is http:Response) {
             return authCheck;
         }
@@ -281,7 +199,7 @@ public isolated service class AdminController {
 
     // Get audit logs (admin only)
     public function getAuditLogs(http:Request request) returns json|http:Response {
-        AuthResult|http:Response authCheck = validateAdminAuth(request);
+        auth:AuthResult|http:Response authCheck = auth:validateAuth(request, "admin");
         if (authCheck is http:Response) {
             return authCheck;
         }
@@ -325,7 +243,7 @@ public isolated service class AdminController {
 
     // Update user roles (admin only)
     public function updateUserRoles(http:Request request, string userId) returns json|http:Response {
-        AuthResult|http:Response authCheck = validateAdminAuth(request);
+        auth:AuthResult|http:Response authCheck = auth:validateAuth(request, "admin");
         if (authCheck is http:Response) {
             return authCheck;
         }

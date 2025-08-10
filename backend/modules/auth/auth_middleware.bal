@@ -1,5 +1,4 @@
 import ballerina/http;
-import ballerina/regex as re;
 
 // Authentication Middleware
 public class AuthMiddleware {
@@ -111,7 +110,7 @@ public function getAuthContextFromRequest(http:Request request) returns AuthCont
     string username = check request.getHeader("X-Username");
     string email = check request.getHeader("X-User-Email");
     string rolesHeader = check request.getHeader("X-User-Roles");
-    string[] roles = rolesHeader != "" ? re:split(rolesHeader, ",") : [];
+    string[] roles = rolesHeader != "" ? [rolesHeader] : [];
 
     return {
         userId: userId,

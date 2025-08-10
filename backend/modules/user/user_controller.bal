@@ -1,76 +1,5 @@
 import ballerina/http;
-
-// Local auth types for the controller
-public type AuthResult record {|
-    boolean isValid;
-    AuthContext? context;
-    string? errorMessage;
-|};
-
-public type AuthContext record {|
-    string userId;
-    string username;
-    string email;
-    string[] roles;
-    string[] groups?;
-    string token;
-    int exp;
-|};
-
-// Simple auth validation function
-function validateUserAuth(http:Request request) returns AuthResult|http:Response {
-    string|error authHeader = request.getHeader("Authorization");
-    
-    if (authHeader is error) {
-        http:Response response = new;
-        response.statusCode = 401;
-        response.setJsonPayload({
-            "error": "Unauthorized",
-            "message": "Missing Authorization header"
-        });
-        return response;
-    }
-
-    if (!authHeader.startsWith("Bearer ")) {
-        http:Response response = new;
-        response.statusCode = 401;
-        response.setJsonPayload({
-            "error": "Unauthorized", 
-            "message": "Invalid Authorization header format"
-        });
-        return response;
-    }
-
-    string token = authHeader.substring(7);
-    
-    // Simple token validation - in production, validate with proper JWT validation
-    if (token.length() < 10) {
-        http:Response response = new;
-        response.statusCode = 401;
-        response.setJsonPayload({
-            "error": "Unauthorized",
-            "message": "Invalid token"
-        });
-        return response;
-    }
-
-    // Create mock auth context - in production, decode JWT
-    AuthContext authContext = {
-        userId: "user-123",
-        username: "demo_user",
-        email: "user@example.com",
-        roles: ["user"],
-        groups: [],
-        token: token,
-        exp: 1723300000 // Mock expiry
-    };
-
-    return {
-        isValid: true,
-        context: authContext,
-        errorMessage: ()
-    };
-}
+import hp/Cyclesync.auth;
 
 // User Controller - handles user-related endpoints
 public isolated service class UserController {
@@ -81,12 +10,12 @@ public isolated service class UserController {
 
     // Get current user profile
     public function getUserProfile(http:Request request) returns json|http:Response {
-        AuthResult|http:Response authCheck = validateUserAuth(request);
+        auth:AuthResult|http:Response authCheck = auth:validateAuth(request);
         if (authCheck is http:Response) {
             return authCheck;
         }
 
-        AuthContext? authContext = authCheck.context;
+        auth:AuthContext? authContext = authCheck.context;
         if (authContext == ()) {
             http:Response response = new;
             response.statusCode = 500;
@@ -111,7 +40,7 @@ public isolated service class UserController {
 
     // Update user profile (basic fields)
     public function updateUserProfile(http:Request request) returns json|http:Response {
-        AuthResult|http:Response authCheck = validateUserAuth(request);
+        auth:AuthResult|http:Response authCheck = auth:validateAuth(request);
         if (authCheck is http:Response) {
             return authCheck;
         }
@@ -138,12 +67,12 @@ public isolated service class UserController {
 
     // Get user's roles and permissions
     public function getUserPermissions(http:Request request) returns json|http:Response {
-        AuthResult|http:Response authCheck = validateUserAuth(request);
+        auth:AuthResult|http:Response authCheck = auth:validateAuth(request);
         if (authCheck is http:Response) {
             return authCheck;
         }
 
-        AuthContext? authContext = authCheck.context;
+        auth:AuthContext? authContext = authCheck.context;
         if (authContext == ()) {
             http:Response response = new;
             response.statusCode = 500;
@@ -172,7 +101,7 @@ public isolated service class UserController {
 
     // User logout (invalidate token)
     public function logoutUser(http:Request request) returns json|http:Response {
-        AuthResult|http:Response authCheck = validateUserAuth(request);
+        auth:AuthResult|http:Response authCheck = auth:validateAuth(request);
         if (authCheck is http:Response) {
             return authCheck;
         }
@@ -187,12 +116,12 @@ public isolated service class UserController {
 
     // Get user dashboard data (user-specific)
     public function getUserDashboard(http:Request request) returns json|http:Response {
-        AuthResult|http:Response authCheck = validateUserAuth(request);
+        auth:AuthResult|http:Response authCheck = auth:validateAuth(request);
         if (authCheck is http:Response) {
             return authCheck;
         }
 
-        AuthContext? authContext = authCheck.context;
+        auth:AuthContext? authContext = authCheck.context;
         if (authContext == ()) {
             http:Response response = new;
             response.statusCode = 500;
@@ -251,7 +180,7 @@ public isolated service class UserController {
 
     // Update user preferences
     public function updateUserPreferences(http:Request request) returns json|http:Response {
-        AuthResult|http:Response authCheck = validateUserAuth(request);
+        auth:AuthResult|http:Response authCheck = auth:validateAuth(request);
         if (authCheck is http:Response) {
             return authCheck;
         }
@@ -279,12 +208,12 @@ public isolated service class UserController {
 
     // Get user notifications
     public function getUserNotifications(http:Request request) returns json|http:Response {
-        AuthResult|http:Response authCheck = validateUserAuth(request);
+        auth:AuthResult|http:Response authCheck = auth:validateAuth(request);
         if (authCheck is http:Response) {
             return authCheck;
         }
 
-        AuthContext? authContext = authCheck.context;
+        auth:AuthContext? authContext = authCheck.context;
         if (authContext == ()) {
             http:Response response = new;
             response.statusCode = 500;

@@ -19,7 +19,7 @@ configurable string ASGARDEO_CLIENT_ID = "";
 configurable string ASGARDEO_CLIENT_SECRET = "";
 
 // Application Configuration
-configurable int SERVER_PORT = 8080;
+configurable int ASGARDEO_SERVER_PORT = 8080;
 configurable string JWT_AUDIENCE = "account";
 configurable int TOKEN_CACHE_EXPIRY = 300; // 5 minutes
 
