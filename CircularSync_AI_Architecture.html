@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CircularSync AI Architecture - WSO2 Ballerina Implementation</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f8f9fa;
+        }
+        
+        .header {
+            text-align: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem;
+            border-radius: 10px;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        .section {
+            background: white;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            margin: 0;
+            font-size: 2.5rem;
+            font-weight: 700;
+        }
+        
+        h2 {
+            color: #2c3e50;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 0.5rem;
+            margin-top: 2rem;
+        }
+        
+        h3 {
+            color: #34495e;
+            margin-top: 1.5rem;
+        }
+        
+        .diagram-container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            overflow: hidden;
+            margin: 2rem 0;
+        }
+        
+        .diagram-header {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+            padding: 1rem 1.5rem;
+            font-weight: 600;
+        }
+        
+        .architecture-diagram {
+            background: #f8f9fa;
+            padding: 2rem;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+            line-height: 1.4;
+            overflow-x: auto;
+            white-space: pre;
+        }
+        
+        .use-case-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1.5rem;
+            padding: 2rem;
+            background: #f8f9fa;
+        }
+        
+        .actor {
+            background: linear-gradient(135deg, #74b9ff, #0984e3);
+            color: white;
+            padding: 1rem;
+            border-radius: 8px;
+            text-align: center;
+            min-width: 140px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .use-case {
+            background: linear-gradient(135deg, #00b894, #00a085);
+            color: white;
+            padding: 0.8rem 1.2rem;
+            border-radius: 25px;
+            text-align: center;
+            min-width: 200px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            font-size: 0.9rem;
+        }
+        
+        .use-case-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+            flex: 1;
+            min-width: 300px;
+        }
+        
+        .connection-line {
+            width: 2px;
+            height: 30px;
+            background: #ddd;
+            margin: 0.5rem 0;
+        }
+        
+        .activity-diagram {
+            background: white;
+            border-radius: 8px;
+            margin: 1.5rem 0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        
+        .activity-header {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            color: white;
+            padding: 0.8rem 1.5rem;
+            font-weight: 600;
+            border-radius: 8px 8px 0 0;
+        }
+        
+        .activity-steps {
+            padding: 1.5rem;
+        }
+        
+        .step {
+            background: linear-gradient(135deg, #f39c12, #e67e22);
+            color: white;
+            padding: 0.8rem 1.5rem;
+            margin: 0.8rem 0;
+            border-radius: 25px;
+            display: inline-block;
+            font-weight: 500;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .step-arrow {
+            color: #3498db;
+            font-size: 1.2rem;
+            margin: 0 0.5rem;
+            font-weight: bold;
+        }
+        
+        .decision {
+            background: linear-gradient(135deg, #9b59b6, #8e44ad);
+            color: white;
+            padding: 0.8rem 1.5rem;
+            margin: 0.8rem 0;
+            border-radius: 15px;
+            display: inline-block;
+            font-weight: 500;
+            position: relative;
+        }
+        
+        .decision::before {
+            content: "◆";
+            margin-right: 0.5rem;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        th, td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        th {
+            background: #3498db;
+            color: white;
+            font-weight: 600;
+        }
+        
+        tr:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .ai-component {
+            background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%);
+            color: white;
+            padding: 1rem;
+            border-radius: 6px;
+            margin: 0.5rem 0;
+        }
+        
+        .ballerina-service {
+            background: linear-gradient(135deg, #00b894 0%, #00a085 100%);
+            color: white;
+            padding: 0.8rem;
+            border-radius: 6px;
+            margin: 0.3rem 0;
+            font-size: 0.9rem;
+        }
+        
+        .feature-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+        
+        .feature-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border-left: 4px solid #9b59b6;
+        }
+        
+        .highlight {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            padding: 1rem;
+            border-radius: 6px;
+            margin: 1rem 0;
+        }
+        
+        code {
+            background: #f1f2f6;
+            padding: 0.2rem 0.4rem;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .workflow-step {
+            background: #e8f5e8;
+            padding: 0.8rem;
+            margin: 0.5rem 0;
+            border-radius: 6px;
+            border-left: 4px solid #27ae60;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>CircularSync AI Architecture</h1>
+        <p>AI-Powered Circular Economy Platform Built with WSO2 Ballerina</p>
+    </div>
+
+    <div class="section">
+        <h2>🤖 Core AI Components Using Ballerina</h2>
+        <div class="feature-list">
+            <div class="ai-component">
+                <h4>Demand Prediction Engine</h4>
+                <p>Analyzes historical data to predict waste stream demand using time-series forecasting for optimal bidding timing and target market segmentation.</p>
+            </div>
+            <div class="ai-component">
+                <h4>Quality Assessment AI</h4>
+                <p>Field agent photo verification with automated quality scoring and inventory categorization using computer vision.</p>
+            </div>
+            <div class="ai-component">
+                <h4>Dynamic Pricing AI</h4>
+                <p>Real-time price optimization with market analysis for fair pricing and transportation cost calculation.</p>
+            </div>
+            <div class="ai-component">
+                <h4>Route Optimization AI</h4>
+                <p>Optimal pickup/delivery routes with distance-based pricing and appointment scheduling optimization.</p>
+            </div>
+            <div class="ai-component">
+                <h4>Agent Matching System</h4>
+                <p>Matches field agents to locations with skill-based assignment and workload balancing.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>🏗️ System Architecture with AI Components</h2>
+        <div class="diagram-container">
+            <div class="diagram-header">CircularSync AI Platform Architecture</div>
+            <div class="architecture-diagram">┌─────────────────────────────────────────────────────────────────┐
+│                    CircularSync AI Platform                     │
+│                   Built on WSO2 Ballerina                       │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  ┌─────────────────┐    ┌──────────────────────────────────────┐│
+│  │   Next.js UI    │    │         WSO2 API Gateway             ││
+│  │   Dashboard     │◄──►│      + AI Endpoints                  ││
+│  └─────────────────┘    └──────────┬───────────────────────────┘│
+│                                    │                            │
+│  ┌─────────────────────────────────┼─────────────────────────┐  │
+│  │           Ballerina AI Services Layer                     │  │
+│  ├───────────────────────────────────────────────────────────┤  │
+│  │                                                           │  │
+│  │  ┌────────────┐ ┌────────────┐ ┌────────────────────────┐│  │
+│  │  │  Demand    │ │  Quality   │ │  Agent Matching        ││  │
+│  │  │  Prediction│ │  Assessment│ │  & Routing AI          ││  │
+│  │  │  AI        │ │  AI        │ │                        ││  │
+│  │  └────────────┘ └────────────┘ └────────────────────────┘│  │
+│  │                                                           │  │
+│  │  ┌────────────┐ ┌────────────┐ ┌────────────────────────┐│  │
+│  │  │  Dynamic   │ │  Chatbot   │ │  Supply Chain          ││  │
+│  │  │  Pricing   │ │  Assistant │ │  Optimization          ││  │
+│  │  │  AI        │ │  (GPT/WSO2)│ │                        ││  │
+│  │  └────────────┘ └────────────┘ └────────────────────────┘│  │
+│  │                                                           │  │
+│  └─────────────────┬─────────────────────────────────────────┘  │
+│                    │                                            │
+│  External AI APIs  │                                            │
+│  ┌────────────┐    │    ┌────────────┐  ┌──────────────────┐   │
+│  │ OpenAI/    │    │    │ Google     │  │ WSO2 Choreo      │   │
+│  │ ChatGPT    │◄───┼───►│ Maps API   │  │ ML Platform      │   │
+│  └────────────┘    │    └────────────┘  └──────────────────┘   │
+│                    │                                            │
+│  Data Layer        │                                            │
+│  ┌────────────┐    │    ┌────────────┐  ┌──────────────────┐   │
+│  │ Vector DB  │◄───┼───►│ Time Series│  │ ML Feature Store │   │
+│  │ (Pinecone) │    │    │ (InfluxDB) │  │                  │   │
+│  └────────────┘    │    └────────────┘  └──────────────────┘   │
+└─────────────────────────────────────────────────────────────────┘</div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>👥 AI Use Case Diagram</h2>
+        <div class="diagram-container">
+            <div class="diagram-header">CircularSync AI Platform - Use Cases</div>
+            <div class="use-case-container">
+                <div class="use-case-group">
+                    <div class="actor">👤<br>Buyer/Supplier</div>
+                    <div class="connection-line"></div>
+                    <div class="use-case">Get AI Demand Predictions & Price Recommendations</div>
+                    <div class="connection-line"></div>
+                    <div class="use-case">Receive Smart Bidding Notifications & Suggestions</div>
+                </div>
+                
+                <div class="use-case-group">
+                    <div class="actor">🕵️<br>Field Agent</div>
+                    <div class="connection-line"></div>
+                    <div class="use-case">Upload Quality Photos for AI Verification</div>
+                    <div class="connection-line"></div>
+                    <div class="use-case">Get AI Route Optimization & Appointment Scheduling</div>
+                </div>
+                
+                <div class="use-case-group">
+                    <div class="actor">🚛<br>Delivery Manager</div>
+                    <div class="connection-line"></div>
+                    <div class="use-case">Get Optimal Routes & Dynamic Pricing</div>
+                    <div class="connection-line"></div>
+                    <div class="use-case">Track Real-time Delivery with AI Predictions</div>
+                </div>
+                
+                <div class="use-case-group">
+                    <div class="actor">⚙️<br>System Admin</div>
+                    <div class="connection-line"></div>
+                    <div class="use-case">Monitor AI Model Performance & Training</div>
+                    <div class="connection-line"></div>
+                    <div class="use-case">Configure Chatbot Responses & Business Rules</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>🔄 Activity Diagrams for Key AI Workflows</h2>
+        
+        <div class="activity-diagram">
+            <div class="activity-header">1. AI-Powered Quality Verification Flow</div>
+            <div class="activity-steps">
+                <span class="step">🚀 Start</span>
+                <span class="step-arrow">→</span>
+                <span class="step">📷 Field Agent Uploads Photo</span>
+                <span class="step-arrow">→</span>
+                <span class="step">🤖 Ballerina CV Service Analyzes</span>
+                <span class="step-arrow">→</span>
+                <span class="step">📊 Quality Score Generated</span>
+                <span class="step-arrow">→</span>
+                <span class="decision">Compare with Standards</span>
+                <br><br>
+                <span style="margin-left: 2rem;">
+                    <span style="color: #27ae60; font-weight: bold;">[✅ Pass]</span>
+                    <span class="step-arrow">→</span>
+                    <span class="step">✅ Auto-Approve & Notify Supplier</span>
+                    <span class="step-arrow">→</span>
+                    <span class="step">📦 Update Inventory</span>
+                </span>
+                <br><br>
+                <span style="margin-left: 2rem;">
+                    <span style="color: #e74c3c; font-weight: bold;">[❌ Fail]</span>
+                    <span class="step-arrow">→</span>
+                    <span class="step">📋 Generate Rejection Report</span>
+                    <span class="step-arrow">→</span>
+                    <span class="step">🔄 Notify Agent for Re-inspection</span>
+                </span>
+                <br><br>
+                <span class="step">🏁 End</span>
+            </div>
+        </div>
+
+        <div class="activity-diagram">
+            <div class="activity-header">2. Dynamic Pricing & Demand Prediction Flow</div>
+            <div class="activity-steps">
+                <span class="step">🚀 Start</span>
+                <span class="step-arrow">→</span>
+                <span class="step">📝 New Supply Request</span>
+                <span class="step-arrow">→</span>
+                <span class="step">🤖 Ballerina ML Service Analyzes Historical Data</span>
+                <span class="step-arrow">→</span>
+                <span class="step">📈 Generate Demand Forecast</span>
+                <span class="step-arrow">→</span>
+                <span class="step">💰 Calculate Optimal Price Range</span>
+                <span class="step-arrow">→</span>
+                <span class="step">📊 Check Market Conditions</span>
+                <span class="step-arrow">→</span>
+                <span class="step">🎯 AI Suggests Starting Bid</span>
+                <span class="step-arrow">→</span>
+                <span class="step">👀 Monitor Bidding Activity</span>
+                <span class="step-arrow">→</span>
+                <span class="step">🔄 Adjust Recommendations</span>
+                <span class="step-arrow">→</span>
+                <span class="decision">Bid Accepted?</span>
+                <span class="step-arrow">→</span>
+                <span class="step">📄 Generate Contract</span>
+                <span class="step-arrow">→</span>
+                <span class="step">🏁 End</span>
+            </div>
+        </div>
+
+        <div class="activity-diagram">
+            <div class="activity-header">3. Smart Route Optimization Flow</div>
+            <div class="activity-steps">
+                <span class="step">🚀 Start</span>
+                <span class="step-arrow">→</span>
+                <span class="step">📍 Pickup Request</span>
+                <span class="step-arrow">→</span>
+                <span class="step">🗺️ Extract Locations</span>
+                <span class="step-arrow">→</span>
+                <span class="step">🔗 Ballerina Maps Integration</span>
+                <span class="step-arrow">→</span>
+                <span class="step">📏 Calculate Distance Matrix</span>
+                <span class="step-arrow">→</span>
+                <span class="step">🤖 AI Analyzes Traffic Patterns</span>
+                <span class="step-arrow">→</span>
+                <span class="step">🛣️ Generate Optimal Route</span>
+                <span class="step-arrow">→</span>
+                <span class="step">⏰ Calculate Time & Cost</span>
+                <span class="step-arrow">→</span>
+                <span class="step">👥 Check Agent Availability</span>
+                <span class="step-arrow">→</span>
+                <span class="step">📅 Schedule Appointment</span>
+                <span class="step-arrow">→</span>
+                <span class="step">📨 Send Notifications</span>
+                <span class="step-arrow">→</span>
+                <span class="step">📡 Track Progress</span>
+                <span class="step-arrow">→</span>
+                <span class="step">🔄 Update ETA</span>
+                <span class="step-arrow">→</span>
+                <span class="step">🏁 End</span>
+            </div>
+        </div>
+
+        <div class="activity-diagram">
+            <div class="activity-header">4. Agent Matching & Assignment Flow</div>
+            <div class="activity-steps">
+                <span class="step">🚀 Start</span>
+                <span class="step-arrow">→</span>
+                <span class="step">📋 New Verification Request</span>
+                <span class="step-arrow">→</span>
+                <span class="step">📍 Extract Location & Requirements</span>
+                <span class="step-arrow">→</span>
+                <span class="step">🤖 Ballerina AI Analyzes Agent Skills</span>
+                <span class="step-arrow">→</span>
+                <span class="step">🔍 Filter Available Agents</span>
+                <span class="step-arrow">→</span>
+                <span class="step">📏 Calculate Travel Distance</span>
+                <span class="step-arrow">→</span>
+                <span class="step">⚖️ Score Agents (Skills + Distance + Workload)</span>
+                <span class="step-arrow">→</span>
+                <span class="step">🎯 Auto-Assign Best Match</span>
+                <span class="step-arrow">→</span>
+                <span class="step">📨 Send Notification</span>
+                <span class="step-arrow">→</span>
+                <span class="decision">Agent Accepts?</span>
+                <span class="step-arrow">→</span>
+                <span class="step">📝 Create Task</span>
+                <span class="step-arrow">→</span>
+                <span class="step">📊 Track Progress</span>
+                <span class="step-arrow">→</span>
+                <span class="step">🏁 End</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>🛠️ WSO2 Ballerina Products Mapping to AI Features</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>AI Feature</th>
+                    <th>WSO2 Ballerina Product</th>
+                    <th>Implementation</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Demand Prediction Engine</strong></td>
+                    <td>Ballerina ML Connector + Choreo</td>
+                    <td>Time-series analysis, demand forecasting models</td>
+                </tr>
+                <tr>
+                    <td><strong>Quality Assessment AI</strong></td>
+                    <td>Ballerina HTTP Service + Computer Vision</td>
+                    <td>Image processing, quality scoring algorithms</td>
+                </tr>
+                <tr>
+                    <td><strong>Dynamic Pricing AI</strong></td>
+                    <td>Ballerina Analytics + Streaming</td>
+                    <td>Real-time price optimization, market analysis</td>
+                </tr>
+                <tr>
+                    <td><strong>Route Optimization</strong></td>
+                    <td>Ballerina Maps Connector</td>
+                    <td>Distance calculation, traffic-aware routing</td>
+                </tr>
+                <tr>
+                    <td><strong>Agent Matching System</strong></td>
+                    <td>Ballerina Recommendation Service</td>
+                    <td>Skill-based matching, workload balancing</td>
+                </tr>
+                <tr>
+                    <td><strong>Chatbot Assistant</strong></td>
+                    <td>Ballerina OpenAI Connector + WebSocket</td>
+                    <td>Conversational AI, real-time chat support</td>
+                </tr>
+                <tr>
+                    <td><strong>Supply Chain Analytics</strong></td>
+                    <td>Ballerina Data Services + ML</td>
+                    <td>Predictive analytics, trend analysis</td>
+                </tr>
+                <tr>
+                    <td><strong>Fraud Detection</strong></td>
+                    <td>Ballerina Security + ML</td>
+                    <td>Anomaly detection, risk assessment</td>
+                </tr>
+                <tr>
+                    <td><strong>Appointment Scheduling</strong></td>
+                    <td>Ballerina Calendar Connector + AI</td>
+                    <td>Smart scheduling, availability optimization</td>
+                </tr>
+                <tr>
+                    <td><strong>Payment Intelligence</strong></td>
+                    <td>Ballerina Payment Services + Analytics</td>
+                    <td>Transaction analysis, pricing recommendations</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2>⚙️ Key Ballerina Services for AI Implementation</h2>
+        <div class="feature-list">
+            <div class="ballerina-service">
+                <strong>Ballerina ML Service</strong> - Core AI/ML processing
+            </div>
+            <div class="ballerina-service">
+                <strong>WSO2 Choreo</strong> - ML model deployment and management
+            </div>
+            <div class="ballerina-service">
+                <strong>Ballerina WebSocket</strong> - Real-time AI notifications
+            </div>
+            <div class="ballerina-service">
+                <strong>Ballerina Streaming</strong> - Event-driven AI processing
+            </div>
+            <div class="ballerina-service">
+                <strong>Ballerina HTTP/GraphQL</strong> - AI API endpoints
+            </div>
+            <div class="ballerina-service">
+                <strong>Ballerina Data Services</strong> - AI training data management
+            </div>
+            <div class="ballerina-service">
+                <strong>WSO2 API Gateway</strong> - AI service orchestration
+            </div>
+            <div class="ballerina-service">
+                <strong>WSO2 Identity Server</strong> - AI service authentication
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>🎯 Key Benefits & Advantages</h2>
+        <div class="highlight">
+            <h3>This comprehensive AI architecture leverages WSO2 Ballerina's ecosystem to create intelligent automation across your circular economy platform. The design maximizes Ballerina's strengths in:</h3>
+            <div class="workflow-step">
+                <strong>Network-first programming</strong> for real-time AI services
+            </div>
+            <div class="workflow-step">
+                <strong>Native cloud integration</strong> for scalable ML workloads
+            </div>
+            <div class="workflow-step">
+                <strong>Multi-protocol support</strong> for diverse AI endpoints
+            </div>
+            <div class="workflow-step">
+                <strong>Built-in observability</strong> for AI model monitoring
+            </div>
+            <div class="workflow-step">
+                <strong>Secure integration</strong> with external AI services
+            </div>
+        </div>
+        
+        <p><strong>Security Focus:</strong> The architecture ensures all AI features are defensive and focused on optimizing legitimate business operations like demand prediction, quality verification, route optimization, and intelligent agent matching.</p>
+    </div>
+
+    <footer style="text-align: center; padding: 2rem; color: #7f8c8d; border-top: 1px solid #ecf0f1;">
+        <p>CircularSync AI Architecture - WSO2 Ballerina Competition 2025</p>
+        <p>Generated on: <script>document.write(new Date().toLocaleDateString());</script></p>
+    </footer>
+</body>
+</html>
