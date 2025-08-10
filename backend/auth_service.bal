@@ -2,12 +2,8 @@ import ballerina/cache;
 import ballerina/time;
 import ballerina/http;
 
-// Global token cache for storing validated tokens
-cache:Cache tokenCache = new({
-    capacity: 1000,
-    evictionFactor: 0.25,
-    defaultMaxAge: 3600 // 1 hour
-});
+// Token cache for storing validated tokens
+cache:Cache tokenCache = new(capacity = 1000, evictionFactor = 0.25, defaultMaxAge = 3600);
 
 public class AsgardeoAuthService {
     
@@ -16,7 +12,7 @@ public class AsgardeoAuthService {
     private string domain;
     private http:Client? asgardeoClient;
 
-    function init(string clientId, string clientSecret, string domain) {
+    public function init(string clientId, string clientSecret, string domain) {
         self.clientId = clientId;
         self.clientSecret = clientSecret;
         self.domain = domain;
@@ -27,7 +23,7 @@ public class AsgardeoAuthService {
         });
     }
 
-    function validateToken(string token) returns AuthResult {
+    public function validateToken(string token) returns AuthResult {
         // Check cache first
         any|cache:Error cachedResult = tokenCache.get(token);
         if (cachedResult is AuthContext) {
@@ -40,7 +36,10 @@ public class AsgardeoAuthService {
                 };
             } else {
                 // Remove expired token from cache
-                cache:Error? _ = tokenCache.invalidate(token);
+                cache:Error? invalidateResult = tokenCache.invalidate(token);
+                if (invalidateResult is cache:Error) {
+                    // Log error if needed
+                }
             }
         }
 
@@ -66,7 +65,10 @@ public class AsgardeoAuthService {
         };
 
         // Cache the validated token
-        cache:Error? _ = tokenCache.put(token, authContext);
+        cache:Error? putResult = tokenCache.put(token, authContext);
+        if (putResult is cache:Error) {
+            // Log error if needed
+        }
 
         return {
             isValid: true,
@@ -75,16 +77,19 @@ public class AsgardeoAuthService {
         };
     }
 
-    function invalidateToken(string token) {
-        cache:Error? _ = tokenCache.invalidate(token);
+    public function invalidateToken(string token) {
+        cache:Error? invalidateResult = tokenCache.invalidate(token);
+        if (invalidateResult is cache:Error) {
+            // Log error if needed
+        }
         // Token removed from cache
     }
 
-    function hasRole(AuthContext context, string role) returns boolean {
+    public function hasRole(AuthContext context, string role) returns boolean {
         return context.roles.indexOf(role) != ();
     }
 
-    function isAdmin(AuthContext context) returns boolean {
+    public function isAdmin(AuthContext context) returns boolean {
         return self.hasRole(context, "admin");
     }
 }
