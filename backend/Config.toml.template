@@ -1,0 +1,25 @@
+# Asgardeo Configuration Template
+# Copy this file to Config.toml and update with your actual Asgardeo settings
+
+[build-options]
+observabilityIncluded = true
+
+# Asgardeo OAuth2 Configuration
+# Replace {organization} with your actual Asgardeo organization name
+ASGARDEO_TOKEN_ENDPOINT = "https://api.asgardeo.io/t/{organization}/oauth2/token"
+ASGARDEO_USERINFO_ENDPOINT = "https://api.asgardeo.io/t/{organization}/oauth2/userinfo" 
+ASGARDEO_INTROSPECTION_ENDPOINT = "https://api.asgardeo.io/t/{organization}/oauth2/introspect"
+ASGARDEO_JWKS_ENDPOINT = "https://api.asgardeo.io/t/{organization}/oauth2/jwks"
+ASGARDEO_ISSUER = "https://api.asgardeo.io/t/{organization}/oauth2/token"
+
+# Application Configuration
+# Replace with your actual Asgardeo application credentials
+ASGARDEO_CLIENT_ID = "your-client-id-here"
+ASGARDEO_CLIENT_SECRET = "your-client-secret-here"
+
+# Server Configuration
+SERVER_PORT = 8080
+
+# JWT Configuration
+JWT_AUDIENCE = "account"
+TOKEN_CACHE_EXPIRY = 300
