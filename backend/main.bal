@@ -1,10 +1,20 @@
 import ballerina/http;
+import ballerina/log;
+// The demand_prediction module will auto-register its services
+import Cyclesync.demand_prediction as _;
 
 configurable int port = 8080;
 listener http:Listener server = new(port);
 
 // Initialize auth middleware
 final AuthMiddleware authMiddleware = new AuthMiddleware();
+
+// Log startup information
+function init() {
+    log:printInfo("Starting Cyclesync Backend Services...");
+    log:printInfo(string `Main API Server starting on port ${port}`);
+    log:printInfo("Demand Prediction Service initialized on /api/ai/demand");
+}
 
 // Health check endpoint
 service / on server {
