@@ -1,7 +1,12 @@
+import LoginButton from '@/components/LoginButton';
+
 export default function Home() {
   return (
-    <h1 className="text-3xl font-bold underline">
-      Hello world!
-    </h1>
-  )
+    <main className="flex min-h-screen flex-col items-center justify-center p-24">
+      <div className="text-center">
+        <h1 className="text-4xl font-bold mb-8">Next.js + Asgardeo</h1>
+        <LoginButton />
+      </div>
+    </main>
+  );
 }
