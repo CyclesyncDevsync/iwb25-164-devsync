@@ -2,6 +2,8 @@ import ballerina/http;
 import ballerina/log;
 // The demand_prediction module will auto-register its services
 import Cyclesync.demand_prediction as _;
+// The quality_assessment module will auto-register its services
+import Cyclesync.quality_assessment as _;
 
 configurable int port = 8080;
 listener http:Listener server = new(port);
@@ -14,6 +16,7 @@ function init() {
     log:printInfo("Starting Cyclesync Backend Services...");
     log:printInfo(string `Main API Server starting on port ${port}`);
     log:printInfo("Demand Prediction Service initialized on /api/ai/demand");
+    log:printInfo("Quality Assessment Service initialized on /api/ai/quality");
 }
 
 // Health check endpoint
