@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import LoginButton from '@/components/LoginButton';
 
 export default function Home() {
   return (
@@ -7,6 +8,12 @@ export default function Home() {
         <h1 className="text-3xl font-bold underline mb-8">
           Hello world!
         </h1>
+         <main className="flex min-h-screen flex-col items-center justify-center p-24">
+      <div className="text-center">
+        <h1 className="text-4xl font-bold mb-8">Next.js + Asgardeo</h1>
+        <LoginButton />
+      </div>
+    </main>
         
         <div className="bg-white rounded-lg shadow-sm border border-green-200 p-6">
           <h2 className="text-xl font-semibold text-gray-900 mb-6">AI-Powered Features</h2>
@@ -40,4 +47,5 @@ export default function Home() {
       </div>
     </div>
   )
+
 }
