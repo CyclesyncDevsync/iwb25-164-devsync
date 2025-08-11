@@ -3,6 +3,8 @@ import { asgardeoAuth } from '@/lib/asgardeo';
 import { signJWT, SessionData } from '@/lib/jwt';
 
 export async function GET(request: NextRequest) {
+  const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
+  
   try {
     const searchParams = request.nextUrl.searchParams;
     const code = searchParams.get('code');
@@ -10,11 +12,11 @@ export async function GET(request: NextRequest) {
     const error = searchParams.get('error');
 
     if (error) {
-      return NextResponse.redirect('/?error=' + error);
+      return NextResponse.redirect(`${baseUrl}/?error=${error}`);
     }
 
     if (!code || !state) {
-      return NextResponse.redirect('/?error=missing_code_or_state');
+      return NextResponse.redirect(`${baseUrl}/?error=missing_code_or_state`);
     }
 
     // Verify state
@@ -22,7 +24,7 @@ export async function GET(request: NextRequest) {
     const codeVerifier = request.cookies.get('code_verifier')?.value;
 
     if (!storedState || !codeVerifier || storedState !== state) {
-      return NextResponse.redirect('/?error=invalid_state');
+      return NextResponse.redirect(`${baseUrl}/?error=invalid_state`);
     }
 
     // Exchange code for tokens
@@ -50,7 +52,7 @@ export async function GET(request: NextRequest) {
     const sessionToken = signJWT(sessionData);
 
     // Set session cookie and redirect
-    const response = NextResponse.redirect('/dashboard');
+    const response = NextResponse.redirect(`${baseUrl}/dashboard`);
     response.cookies.set('session-token', sessionToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
@@ -65,6 +67,6 @@ export async function GET(request: NextRequest) {
     return response;
   } catch (error) {
     console.error('Callback error:', error);
-    return NextResponse.redirect('/?error=authentication_failed');
+    return NextResponse.redirect(`${baseUrl}/?error=authentication_failed`);
   }
 }

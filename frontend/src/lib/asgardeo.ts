@@ -24,7 +24,7 @@ class AsgardeoAuth {
     this.clientId = process.env.NEXT_PUBLIC_ASGARDEO_CLIENT_ID!;
     this.clientSecret = process.env.ASGARDEO_CLIENT_SECRET!;
     this.baseUrl = process.env.NEXT_PUBLIC_ASGARDEO_BASE_URL!;
-    this.redirectUri = `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/auth/callback`;
+    this.redirectUri = `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/auth/callback`;
   }
 
   // Generate PKCE challenge
