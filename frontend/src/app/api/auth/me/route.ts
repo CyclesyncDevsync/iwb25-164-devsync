@@ -20,8 +20,14 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Session expired' }, { status: 401 });
     }
 
+    // Debug: Log user data being returned
+    console.log('Returning user data from /api/auth/me:', sessionData.user);
+    console.log('Detailed profile available:', !!sessionData.detailedProfile);
+
     return NextResponse.json({
-      user: sessionData.user
+      user: sessionData.user,
+      detailedProfile: sessionData.detailedProfile,
+      hasDetailedProfile: !!sessionData.detailedProfile
     });
   } catch (error) {
     console.error('Session verification error:', error);

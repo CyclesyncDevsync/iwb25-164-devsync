@@ -6,12 +6,51 @@ interface TokenResponse {
   token_type: string;
 }
 
+interface UserProfile {
+  id?: string;
+  userName?: string;
+  name?: {
+    givenName?: string;
+    familyName?: string;
+    formatted?: string;
+  };
+  displayName?: string;
+  emails?: Array<{
+    value: string;
+    primary?: boolean;
+  }>;
+  profileUrl?: string;
+  photos?: Array<{
+    value: string;
+  }>;
+  userType?: string;
+  title?: string;
+  preferredLanguage?: string;
+  locale?: string;
+  timezone?: string;
+  active?: boolean;
+  groups?: Array<{
+    value: string;
+    display?: string;
+  }>;
+}
+
 interface UserInfo {
   sub: string;
-  name: string;
-  email: string;
+  name?: string;
+  email?: string;
   given_name?: string;
   family_name?: string;
+  preferred_username?: string;
+  nickname?: string;
+  picture?: string;
+  website?: string;
+  email_verified?: boolean;
+  gender?: string;
+  birthdate?: string;
+  zoneinfo?: string;
+  locale?: string;
+  updated_at?: number;
 }
 
 class AsgardeoAuth {
@@ -55,7 +94,7 @@ class AsgardeoAuth {
       response_type: 'code',
       client_id: this.clientId,
       redirect_uri: this.redirectUri,
-      scope: 'openid profile email',
+      scope: 'email openid profile',
       code_challenge: codeChallenge,
       code_challenge_method: 'S256',
       state: state
@@ -66,6 +105,7 @@ class AsgardeoAuth {
 
   // Exchange code for tokens
   async exchangeCodeForTokens(code: string, codeVerifier: string): Promise<TokenResponse> {
+    console.log('Exchanging code for tokens...');
     const response = await fetch(`${this.baseUrl}/oauth2/token`, {
       method: 'POST',
       headers: {
@@ -81,25 +121,194 @@ class AsgardeoAuth {
     });
 
     if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Token exchange failed:', response.status, errorText);
       throw new Error('Failed to exchange code for tokens');
     }
 
-    return response.json();
+    const tokens = await response.json();
+    console.log('Tokens received:', {
+      ...tokens,
+      access_token: tokens.access_token ? tokens.access_token.substring(0, 50) + '...' : 'none',
+      refresh_token: tokens.refresh_token ? 'received' : 'none',
+      id_token: tokens.id_token ? 'received' : 'none'
+    });
+    
+    return tokens;
   }
 
   // Get user info using access token
   async getUserInfo(accessToken: string): Promise<UserInfo> {
-    const response = await fetch(`${this.baseUrl}/oauth2/userinfo`, {
-      headers: {
-        'Authorization': `Bearer ${accessToken}`
-      }
-    });
+    console.log('Requesting user info from Asgardeo...');
+    
+    // Try with different accept headers to get more comprehensive data
+    const acceptHeaders = [
+      'application/json',
+      'application/scim+json',
+      '*/*'
+    ];
 
-    if (!response.ok) {
-      throw new Error('Failed to get user info');
+    for (const acceptHeader of acceptHeaders) {
+      try {
+        const response = await fetch(`${this.baseUrl}/oauth2/userinfo`, {
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Accept': acceptHeader
+          }
+        });
+
+        if (response.ok) {
+          const userInfo = await response.json();
+          console.log(`User info from Asgardeo (${acceptHeader}):`, userInfo);
+          return userInfo;
+        } else {
+          console.log(`Failed with ${acceptHeader}, status:`, response.status);
+          const errorText = await response.text();
+          console.log('Error response:', errorText);
+        }
+      } catch (error) {
+        console.log(`Error with ${acceptHeader}:`, error);
+      }
     }
 
-    return response.json();
+    throw new Error('Failed to get user info from all attempted methods');
+  }
+
+  // Get detailed user profile from SCIM API using user ID
+  async getUserProfile(userId: string, accessToken: string): Promise<UserProfile | null> {
+    console.log('Requesting detailed user profile from Asgardeo SCIM API...');
+    console.log('User ID:', userId);
+    console.log('Access token (first 20 chars):', accessToken.substring(0, 20) + '...');
+    
+    // Try multiple endpoints to get user data
+    const endpoints = [
+      `/scim2/Users/${userId}`,
+      `/scim2/Users?filter=id eq "${userId}"`,
+      `/api/users/v1/me`,
+      `/api/users/v1/${userId}`,
+      `/scim/Users/${userId}`,
+      `/scim/Users?filter=id eq "${userId}"`
+    ];
+
+    for (const endpoint of endpoints) {
+      try {
+        console.log(`Trying endpoint: ${this.baseUrl}${endpoint}`);
+        
+        const response = await fetch(`${this.baseUrl}${endpoint}`, {
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Accept': 'application/scim+json',
+            'Content-Type': 'application/scim+json'
+          }
+        });
+
+        console.log(`Response status for ${endpoint}:`, response.status);
+        
+        if (response.ok) {
+          const userProfile = await response.json();
+          console.log(`Success! User profile from ${endpoint}:`, userProfile);
+          
+          // Handle different response formats
+          if (userProfile.Resources && userProfile.Resources.length > 0) {
+            return userProfile.Resources[0]; // SCIM search result
+          } else if (userProfile.id || userProfile.userName) {
+            return userProfile; // Direct user object
+          }
+        } else {
+          const errorText = await response.text();
+          console.log(`Error response for ${endpoint}:`, errorText);
+        }
+      } catch (error) {
+        console.log(`Error with endpoint ${endpoint}:`, error);
+      }
+    }
+
+    // If all SCIM endpoints fail, try to decode the ID token for user info
+    try {
+      console.log('SCIM endpoints failed, trying to extract user info from tokens...');
+      return await this.extractUserFromTokens(accessToken);
+    } catch (error) {
+      console.log('Token extraction also failed:', error);
+    }
+
+    console.log('Could not fetch detailed user profile from any source');
+    return null;
+  }
+
+  // Try to get user data using management API (if available)
+  async getUserByManagementAPI(userId: string, accessToken: string): Promise<UserProfile | null> {
+    console.log('Trying management API for user data...');
+    
+    const managementEndpoints = [
+      `/api/server/v1/users/${userId}`,
+      `/api/server/v1/users?filter=id+eq+${userId}`,
+      `/api/identity/user/v1.0/users/${userId}`,
+      `/management/users/${userId}`,
+      `/identity/users/${userId}`,
+      `/users/${userId}`
+    ];
+
+    for (const endpoint of managementEndpoints) {
+      try {
+        console.log(`Trying management endpoint: ${this.baseUrl}${endpoint}`);
+        
+        const response = await fetch(`${this.baseUrl}${endpoint}`, {
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (response.ok) {
+          const userData = await response.json();
+          console.log(`Success! User data from management API ${endpoint}:`, userData);
+          return userData;
+        } else {
+          console.log(`Management API ${endpoint} returned status:`, response.status);
+        }
+      } catch (error) {
+        console.log(`Error with management endpoint ${endpoint}:`, error);
+      }
+    }
+    
+    return null;
+  }
+
+  // Extract user info from tokens as fallback
+  private async extractUserFromTokens(accessToken: string): Promise<UserProfile | null> {
+    try {
+      // Try to get user info from the userinfo endpoint with different accept headers
+      const userInfoResponse = await fetch(`${this.baseUrl}/oauth2/userinfo`, {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Accept': 'application/json'
+        }
+      });
+
+      if (userInfoResponse.ok) {
+        const userInfo = await userInfoResponse.json();
+        console.log('Extended user info from userinfo endpoint:', userInfo);
+        
+        // Convert to UserProfile format
+        return {
+          id: userInfo.sub,
+          userName: userInfo.preferred_username || userInfo.email,
+          name: {
+            givenName: userInfo.given_name,
+            familyName: userInfo.family_name,
+            formatted: userInfo.name
+          },
+          displayName: userInfo.name || `${userInfo.given_name || ''} ${userInfo.family_name || ''}`.trim(),
+          emails: userInfo.email ? [{ value: userInfo.email, primary: true }] : [],
+          active: true
+        };
+      }
+    } catch (error) {
+      console.log('Failed to extract user info from tokens:', error);
+    }
+    
+    return null;
   }
 
   // Refresh tokens

@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../types/store';
-import { USER_ROLES, ROUTES } from '../../constants';
+import { USER_ROLES, ROUTES } from '../../constants/index';
 import { useAuth } from '../../hooks/useAuth';
 import { cn } from '../../utils/cn';
 
@@ -41,12 +41,38 @@ interface DashboardLayoutProps {
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
   const pathname = usePathname();
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   
-  // In a real app, you would get the role from the user object
-  // For now, let's use a mock role that can be any of the valid roles
-  const userRole = USER_ROLES.ADMIN as 'admin' | 'agent' | 'supplier' | 'buyer' | 'guest';
+  // Debug: Log user data to console
+  console.log('DashboardLayout user data:', user);
+  
+  // Get user role from user object, defaulting to ADMIN if not available
+  // In a real app, the role would come from the user object or be fetched separately
+  const userRole = (user && 'role' in user ? user.role : USER_ROLES.ADMIN) as 'admin' | 'agent' | 'supplier' | 'buyer' | 'guest';
+  
+  // Show loading state while authentication is being checked
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-lg">Loading...</div>
+      </div>
+    );
+  }
+  
+  // Show login prompt if not authenticated
+  if (!user) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-center">
+          <div className="text-lg mb-4">Please log in to access the dashboard</div>
+          <a href="/api/auth/login" className="text-blue-500 hover:underline">
+            Login with Asgardeo
+          </a>
+        </div>
+      </div>
+    );
+  }
 
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
@@ -193,6 +219,27 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                 <h2 className="text-lg font-semibold text-primary dark:text-primary-light">
                   CircularSync
                 </h2>
+              </div>
+              
+              {/* User Profile Section */}
+              <div className="mt-4 px-4 py-3 border-b border-gray-200 dark:border-gray-700">
+                <div className="flex items-center">
+                  <div className="flex-shrink-0">
+                    <div className="h-10 w-10 bg-primary/10 rounded-full flex items-center justify-center">
+                      <span className="text-primary font-medium text-sm">
+                        {user.name ? user.name.charAt(0).toUpperCase() : 'U'}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="ml-3">
+                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                      {user.name || 'User'}
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      {user.email || 'No email'}
+                    </p>
+                  </div>
+                </div>
               </div>
               <nav className="mt-5 flex-1 px-2 space-y-1">
                 {sidebarLinks.map((link) => (
