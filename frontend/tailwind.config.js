@@ -9,7 +9,15 @@ module.exports = {
     "./src/**/*.{js,ts,jsx,tsx,mdx}",
   ],
   theme: {
-    extend: {},
+    extend: {
+      animation: {
+        'bounce': 'bounce 1s infinite',
+      },
+      animationDelay: {
+        '100': '100ms',
+        '200': '200ms',
+      },
+    },
   },
   plugins: [],
 }
