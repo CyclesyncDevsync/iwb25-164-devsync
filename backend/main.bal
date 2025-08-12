@@ -4,6 +4,8 @@ import ballerina/log;
 import Cyclesync.demand_prediction as _;
 // The quality_assessment module will auto-register its services
 import Cyclesync.quality_assessment as _;
+// The chatbot module will auto-register its services
+import Cyclesync.chatbot as _;
 
 configurable int port = 8080;
 listener http:Listener server = new(port);
@@ -17,6 +19,8 @@ function init() {
     log:printInfo(string `Main API Server starting on port ${port}`);
     log:printInfo("Demand Prediction Service initialized on /api/ai/demand");
     log:printInfo("Quality Assessment Service initialized on /api/ai/quality");
+    log:printInfo("Chatbot WebSocket Service initialized on ws://localhost:8083/chat");
+    log:printInfo("Chatbot Health Check initialized on http://localhost:8084/health");
 }
 
 // Health check endpoint
