@@ -13,9 +13,9 @@ export function MainLayout({ children }: MainLayoutProps) {
   const pathname = usePathname();
   
   // Check if current route is an auth route
-  const isAuthRoute = pathname?.startsWith('/login') || 
-                      pathname?.startsWith('/register') || 
-                      pathname?.startsWith('/forgot-password');
+  const isAuthRoute = pathname?.startsWith('/auth/login') || 
+                      pathname?.startsWith('/auth/register') || 
+                      pathname?.startsWith('/auth/forgot-password');
 
   if (isAuthRoute) {
     return <>{children}</>;
