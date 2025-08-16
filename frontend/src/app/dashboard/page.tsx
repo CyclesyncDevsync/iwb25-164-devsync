@@ -3,7 +3,8 @@
 import { useAuth } from '../../hooks/useAuth';
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { DashboardLayout } from '../../components/layout/DashboardLayout';
+import { Button } from '../../components/ui/Button';
+import DashboardLayout from '../../components/layout/DashboardLayout';
 import { StatCard } from '../../components/dashboard/StatCard';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Card';
 import { Loading } from '../../components/ui/Loading';
@@ -12,6 +13,7 @@ export default function Dashboard() {
   const { user, loading, isAuthenticated, logout } = useAuth();
   const router = useRouter();
 
+  // Redirect to home if not authenticated
   useEffect(() => {
     if (!loading && !isAuthenticated) {
       router.push('/');
@@ -22,10 +24,12 @@ export default function Dashboard() {
     return <Loading text="Loading dashboard..." />;
   }
 
+  // If not authenticated, show loading until redirect happens
   if (!isAuthenticated) {
-    return null;
+    return <Loading text="Please login to access the dashboard..." />;
   }
 
+  // Original dashboard content for authenticated users
   return (
     <DashboardLayout>
       <div className="space-y-6">
