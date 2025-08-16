@@ -1,4 +1,3 @@
-import LoginButton from '../components/LoginButton';
 import { Button } from '../components/ui/Button';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -21,7 +20,6 @@ export default function Home() {
                 Connect recyclers, field agents, suppliers, and buyers in a transparent ecosystem to drive the circular economy forward.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
-                <LoginButton />
                 <Link href="/about">
                   <Button variant="outline" className="w-full sm:w-auto">
                     Learn More
