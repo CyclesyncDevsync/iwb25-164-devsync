@@ -3,11 +3,10 @@
 import React, { ReactNode, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useSelector } from 'react-redux';
-import { RootState } from '../../types/store';
 import { USER_ROLES, ROUTES } from '../../constants';
 import { useAuth } from '../../hooks/useAuth';
 import { cn } from '../../utils/cn';
+import type { User } from '../../types/user';
 
 interface SidebarLinkProps {
   href: string;
@@ -27,7 +26,6 @@ function SidebarLink({ href, icon, label, isActive, onClick }: SidebarLinkProps)
           ? "bg-primary/10 text-primary dark:bg-primary-light/10 dark:text-primary-light"
           : "text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-dark-surface"
       )}
-      onClick={onClick}
     >
       <span className="mr-3">{icon}</span>
       {label}
@@ -39,14 +37,15 @@ interface DashboardLayoutProps {
   children: ReactNode;
 }
 
-export function DashboardLayout({ children }: DashboardLayoutProps) {
+export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const pathname = usePathname();
-  const { user } = useAuth();
+  const { user } = useAuth() as { user: User | null };
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  
-  // In a real app, you would get the role from the user object
-  // For now, let's use a mock role that can be any of the valid roles
-  const userRole = USER_ROLES.ADMIN as 'admin' | 'agent' | 'supplier' | 'buyer' | 'guest';
+
+  const userRole =
+    user?.role && Object.values(USER_ROLES).includes(user.role)
+      ? user.role
+      : USER_ROLES.GUEST;
 
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
@@ -54,7 +53,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
   // Define sidebar links based on user role
   const sidebarLinks: { href: string; icon: React.ReactNode; label: string }[] = [];
-  
+
   // Common links for all users
   sidebarLinks.push({
     href: ROUTES.DASHBOARD,
