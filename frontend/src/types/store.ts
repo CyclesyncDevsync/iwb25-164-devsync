@@ -4,7 +4,17 @@ import { UserRole } from '@/store/slices/authSlice';
 export interface RootState {
   auth: AuthState;
   theme: ThemeState;
-  // Add other slices as needed
+  user: {
+    users: Array<{
+      id: string;
+      name: string;
+      email: string;
+      role: string;
+      active: boolean;
+    }>;
+    loading: boolean;
+    error: string | null;
+  };
 }
 
 // Auth slice state
