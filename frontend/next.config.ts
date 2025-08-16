@@ -9,7 +9,7 @@ const nextConfig: NextConfig = {
     domains: ['images.unsplash.com', 'cloudinary.com'],
   },
   reactStrictMode: true,
-  swcMinify: true,
+  // No experimental settings for now
 };
 
 const pwaConfig = withPWA({
