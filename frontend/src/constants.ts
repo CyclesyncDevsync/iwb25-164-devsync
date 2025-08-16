@@ -10,15 +10,29 @@ export const USER_ROLES = {
 // Application routes
 export const ROUTES = {
   HOME: '/',
-  LOGIN: '/login',
-  REGISTER: '/register',
+  LOGIN: '/auth/login',
+  REGISTER: '/auth/register',
   DASHBOARD: '/dashboard',
   PROFILE: '/profile',
-  AUCTIONS: '/auctions',
-  MATERIALS: '/materials',
-  TRANSACTIONS: '/transactions',
-  USERS: '/users',
-  SETTINGS: '/settings',
+  CHAT: '/chat',
+  ADMIN: {
+    USERS: '/admin/users',
+    MATERIALS: '/admin/materials',
+    AUCTIONS: '/admin/auctions',
+    TRANSACTIONS: '/admin/transactions',
+  },
+  AGENT: {
+    ASSIGNMENTS: '/agent/assignments',
+    VERIFICATION: '/agent/verification',
+  },
+  SUPPLIER: {
+    MATERIALS: '/supplier/materials',
+    AUCTIONS: '/supplier/auctions',
+  },
+  BUYER: {
+    MARKETPLACE: '/buyer/marketplace',
+    AUCTIONS: '/buyer/auctions',
+  },
 };
 
 // API endpoints
