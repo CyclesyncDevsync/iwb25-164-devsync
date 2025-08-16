@@ -3,12 +3,14 @@ import { setupListeners } from '@reduxjs/toolkit/query';
 import { authSlice } from '../store/slices/authSlice';
 import { themeSlice } from '../store/slices/themeSlice';
 import { baseApi } from '../store/api/baseApi';
-import { RootState } from '@/types/store';
+
+import userReducer from './userSlice';
 
 export const store = configureStore({
   reducer: {
     auth: authSlice.reducer,
     theme: themeSlice.reducer,
+    user: userReducer,
     [baseApi.reducerPath]: baseApi.reducer,
   },
   middleware: (getDefaultMiddleware) =>
@@ -18,6 +20,6 @@ export const store = configureStore({
 
 setupListeners(store.dispatch);
 
-// Re-export the RootState and AppDispatch types from our store
-export type { RootState };
+// Define RootState type
+export type RootState = ReturnType<typeof store.getState>;
 export type AppDispatch = typeof store.dispatch;
