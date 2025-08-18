@@ -20,6 +20,8 @@ export const ROUTES = {
     MATERIALS: '/admin/materials',
     AUCTIONS: '/admin/auctions',
     TRANSACTIONS: '/admin/transactions',
+    DISPUTES: '/admin/disputes',
+    REPORTS: '/admin/reports',
   },
   AGENT: {
     ASSIGNMENTS: '/agent/assignments',
