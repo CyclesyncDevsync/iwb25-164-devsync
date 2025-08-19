@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useSelector, useDispatch, TypedUseSelectorHook } from 'react-redux';
+import type { RootState, AppDispatch } from '../store';
 
 interface User {
   id: string;
@@ -145,3 +147,7 @@ export function useAuth() {
     isAuthenticated: !!authState.user
   };
 }
+
+// Redux hooks
+export const useAppDispatch = () => useDispatch<AppDispatch>();
+export const useAppSelector: TypedUseSelectorHook<RootState> = useSelector;

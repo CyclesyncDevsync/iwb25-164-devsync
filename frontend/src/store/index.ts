@@ -5,12 +5,14 @@ import { themeSlice } from '../store/slices/themeSlice';
 import { baseApi } from '../store/api/baseApi';
 
 import userReducer from './userSlice';
+import supplierReducer from './slices/supplierSlice';
 
 export const store = configureStore({
   reducer: {
     auth: authSlice.reducer,
     theme: themeSlice.reducer,
     user: userReducer,
+    supplier: supplierReducer,
     [baseApi.reducerPath]: baseApi.reducer,
   },
   middleware: (getDefaultMiddleware) =>
