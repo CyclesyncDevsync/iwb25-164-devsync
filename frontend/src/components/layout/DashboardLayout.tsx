@@ -65,9 +65,25 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   // Define sidebar links based on user role
   const sidebarLinks: { href: string; icon: React.ReactNode; label: string }[] = [];
 
-  // Common links for all users
+  // Role-specific dashboard link
+  const getDashboardRoute = () => {
+    switch (userRole) {
+      case USER_ROLES.ADMIN:
+        return '/admin/dashboard'; // Admin specific dashboard
+      case USER_ROLES.AGENT:
+        return '/agent'; // Agent main dashboard
+      case USER_ROLES.SUPPLIER:
+        return '/supplier'; // Supplier main dashboard
+      case USER_ROLES.BUYER:
+        return '/buyer'; // Buyer main dashboard
+      default:
+        return ROUTES.DASHBOARD;
+    }
+  };
+
+  // Dashboard link
   sidebarLinks.push({
-    href: ROUTES.DASHBOARD,
+    href: getDashboardRoute(),
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
@@ -193,11 +209,11 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   });
 
   return (
-    <div className="flex h-screen overflow-hidden">
-      {/* Sidebar for larger screens */}
+    <div className="flex h-screen w-screen overflow-hidden fixed inset-0">
+      {/* Sidebar for larger screens - Made sticky and full height */}
       <div className="hidden md:flex md:flex-shrink-0">
         <div className="flex flex-col w-64">
-          <div className="flex flex-col h-0 flex-1 border-r border-gray-200 dark:border-gray-800 bg-white dark:bg-dark-bg">
+          <div className="flex flex-col h-screen border-r border-gray-200 dark:border-gray-800 bg-white dark:bg-dark-bg">
             <div className="flex-1 flex flex-col pt-5 pb-4 overflow-y-auto">
               <div className="flex items-center flex-shrink-0 px-4">
                 <h2 className="text-lg font-semibold text-primary dark:text-primary-light">
@@ -293,12 +309,13 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         </div>
       </div>
 
-      {/* Main content */}
-      <div className="flex flex-col w-0 flex-1 overflow-hidden">
-        <div className="md:hidden pl-1 pt-1 sm:pl-3 sm:pt-3">
+      {/* Main content - Full height without navbar */}
+      <div className="flex flex-col w-0 flex-1 h-screen overflow-hidden">
+        {/* Mobile menu button - Only show on mobile */}
+        <div className="md:hidden pl-3 pt-3 pb-3 bg-white dark:bg-dark-bg border-b border-gray-200 dark:border-gray-700">
           <button
             type="button"
-            className="-ml-0.5 -mt-0.5 h-12 w-12 inline-flex items-center justify-center rounded-md text-gray-500 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary dark:text-gray-400 dark:hover:text-gray-50"
+            className="h-10 w-10 inline-flex items-center justify-center rounded-md text-gray-500 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary dark:text-gray-400 dark:hover:text-gray-50"
             onClick={toggleSidebar}
           >
             <span className="sr-only">Open sidebar</span>
@@ -307,11 +324,11 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             </svg>
           </button>
         </div>
+        
+        {/* Main content area */}
         <main className="flex-1 relative overflow-y-auto focus:outline-none">
-          <div className="py-6">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
-              {children}
-            </div>
+          <div className="h-full">
+            {children}
           </div>
         </main>
       </div>
