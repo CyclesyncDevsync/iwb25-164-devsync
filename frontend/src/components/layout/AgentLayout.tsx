@@ -112,6 +112,7 @@ const AgentLayout: React.FC<AgentLayoutProps> = ({ children }) => {
                 </button>
               </div>
               
+              {/* Mobile sidebar */}
               <nav className="mt-4 px-2">
                 {navigationItems.map((item) => (
                   <Link
@@ -120,12 +121,12 @@ const AgentLayout: React.FC<AgentLayoutProps> = ({ children }) => {
                     onClick={closeSidebar}
                     className={`group flex items-center px-3 py-2 mb-1 text-sm font-medium rounded-md transition-colors ${
                       item.current
-                        ? 'bg-agent-DEFAULT text-white'
-                        : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                        ? 'bg-agent-DEFAULT text-black dark:text-black'
+                        : 'text-gray-700 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
                     }`}
                   >
-                    <item.icon className="w-5 h-5 mr-3 flex-shrink-0" />
-                    <span className="flex-1">{item.name}</span>
+                        <item.icon className={`w-5 h-5 mr-3 flex-shrink-0 ${item.current ? 'text-black dark:text-black' : 'text-gray-600 dark:text-gray-400 group-hover:text-gray-700 dark:group-hover:text-gray-300'}`} />
+                        <span className={`flex-1 ${item.current ? 'text-black dark:text-black' : ''}`}>{item.name}</span>
                     {item.badge && (
                       <span className="bg-red-500 text-white text-xs rounded-full px-2 py-1 min-w-[20px] text-center">
                         {item.badge}
@@ -148,6 +149,7 @@ const AgentLayout: React.FC<AgentLayoutProps> = ({ children }) => {
             </h2>
           </div>
           
+          {/* Desktop sidebar */}
           <nav className="mt-4 flex-1 px-2 pb-4">
             {navigationItems.map((item) => (
               <Link
@@ -155,12 +157,12 @@ const AgentLayout: React.FC<AgentLayoutProps> = ({ children }) => {
                 href={item.href}
                 className={`group flex items-center px-3 py-2 mb-1 text-sm font-medium rounded-md transition-colors ${
                   item.current
-                    ? 'bg-agent-DEFAULT text-white'
-                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                    ? 'bg-agent-DEFAULT text-black dark:text-black'
+                    : 'text-gray-700 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
                 }`}
               >
-                <item.icon className="w-5 h-5 mr-3 flex-shrink-0" />
-                <span className="flex-1">{item.name}</span>
+                <item.icon className={`w-5 h-5 mr-3 flex-shrink-0 ${item.current ? 'text-black dark:text-black' : 'text-gray-600 dark:text-gray-400 group-hover:text-gray-700 dark:group-hover:text-gray-300'}`} />
+                <span className={`flex-1 ${item.current ? 'text-black dark:text-black' : ''}`}>{item.name}</span>
                 {item.badge && (
                   <span className="bg-red-500 text-white text-xs rounded-full px-2 py-1 min-w-[20px] text-center">
                     {item.badge}
