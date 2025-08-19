@@ -7,8 +7,8 @@ import { AdminNotificationSystem } from '../../../components/admin/AdminNotifica
 export default function AdminDashboardPage() {
   return (
     <DashboardLayout>
-      <div className="space-y-10">
-        <h1 className="text-3xl font-bold mb-6">Admin Dashboard</h1>
+      <div className="h-full p-6 space-y-10">
+        <h1 className="text-3xl font-bold">Admin Dashboard</h1>
         <SuperAdminDashboard />
         <AdminOperationsDashboard />
         <AdminNotificationSystem />
