@@ -1,7 +1,17 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import type { User } from '../types/user';
+
+interface User {
+  id: string;
+  name: string;
+  email: string;
+  given_name?: string;
+  family_name?: string;
+  preferred_username?: string;
+  picture?: string;
+  email_verified?: boolean;
+}
 
 interface AuthState {
   user: User | null;
@@ -22,15 +32,18 @@ export function useAuth() {
 
   const checkAuthStatus = async () => {
     try {
+      console.log('Checking auth status...');
       const response = await fetch('/api/auth/me');
       if (response.ok) {
         const userData = await response.json();
+        console.log('Auth check successful, user data:', userData);
         setAuthState({
           user: userData.user,
           loading: false,
           error: null
         });
       } else {
+        console.log('Auth check failed, response status:', response.status);
         setAuthState({
           user: null,
           loading: false,
@@ -38,6 +51,7 @@ export function useAuth() {
         });
       }
     } catch (error) {
+      console.error('Auth check error:', error);
       setAuthState({
         user: null,
         loading: false,

@@ -193,6 +193,27 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                   CircularSync
                 </h2>
               </div>
+              
+              {/* User Profile Section */}
+              <div className="mt-4 px-4 py-3 border-b border-gray-200 dark:border-gray-700">
+                <div className="flex items-center">
+                  <div className="flex-shrink-0">
+                    <div className="h-10 w-10 bg-primary/10 rounded-full flex items-center justify-center">
+                      <span className="text-primary font-medium text-sm">
+                        {user.name ? user.name.charAt(0).toUpperCase() : 'U'}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="ml-3">
+                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                      {user.name || 'User'}
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      {user.email || 'No email'}
+                    </p>
+                  </div>
+                </div>
+              </div>
               <nav className="mt-5 flex-1 px-2 space-y-1">
                 {sidebarLinks.map((link) => (
                   <SidebarLink

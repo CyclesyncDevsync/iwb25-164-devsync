@@ -43,6 +43,93 @@ export default function Dashboard() {
           </button>
         </div>
 
+        {/* User Information Card */}
+        <Card>
+          <CardHeader>
+            <CardTitle>User Information</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              <p><strong>Name:</strong> {user?.name || 'Not provided'}</p>
+              <p><strong>Email:</strong> {user?.email || 'Not provided'}</p>
+              <p><strong>First Name:</strong> {user?.given_name || 'Not provided'}</p>
+              <p><strong>Last Name:</strong> {user?.family_name || 'Not provided'}</p>
+              <p><strong>User ID:</strong> {user?.id || 'Not provided'}</p>
+            </div>
+            <div className="mt-4 p-4 bg-gray-100 dark:bg-gray-800 rounded">
+              <strong>Raw User Object:</strong>
+              <pre className="mt-2 text-xs overflow-auto max-h-40">
+                {JSON.stringify(user, null, 2)}
+              </pre>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Detailed Profile Card */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Detailed Profile from Asgardeo</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+              This shows the detailed user profile fetched from Asgardeo's SCIM API:
+            </p>
+            <div className="space-x-2 mb-4">
+              <button
+                onClick={async () => {
+                  try {
+                    const response = await fetch('/api/auth/me');
+                    const data = await response.json();
+                    console.log('Full session data:', data);
+                    alert('Check browser console for full session data');
+                  } catch (error) {
+                    console.error('Error fetching session data:', error);
+                  }
+                }}
+                className="bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600"
+              >
+                Log Session Data
+              </button>
+              <button
+                onClick={async () => {
+                  try {
+                    const response = await fetch('/api/auth/profile');
+                    const data = await response.json();
+                    console.log('Fresh profile data:', data);
+                    alert('Check browser console for fresh profile data');
+                  } catch (error) {
+                    console.error('Error fetching fresh profile:', error);
+                  }
+                }}
+                className="bg-green-500 text-white px-3 py-1 rounded text-sm hover:bg-green-600"
+              >
+                Fetch Fresh Profile
+              </button>
+              <button
+                onClick={async () => {
+                  try {
+                    const response = await fetch('/api/auth/test');
+                    const data = await response.json();
+                    console.log('Test results:', data);
+                    alert('Check browser console for test results');
+                  } catch (error) {
+                    console.error('Error running test:', error);
+                  }
+                }}
+                className="bg-purple-500 text-white px-3 py-1 rounded text-sm hover:bg-purple-600"
+              >
+                Run Auth Test
+              </button>
+            </div>
+            <div className="p-4 bg-gray-100 dark:bg-gray-800 rounded">
+              <strong>Current User Data:</strong>
+              <pre className="mt-2 text-xs overflow-auto max-h-60">
+                {JSON.stringify(user, null, 2)}
+              </pre>
+            </div>
+          </CardContent>
+        </Card>
+
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <StatCard
             title="Total Materials"
