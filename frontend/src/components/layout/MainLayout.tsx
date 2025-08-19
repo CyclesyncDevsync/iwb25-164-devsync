@@ -25,8 +25,11 @@ export function MainLayout({ children }: MainLayoutProps) {
                           pathname?.startsWith('/chat') ||
                           pathname?.startsWith('/profile');
 
-  // Don't show navbar/footer for auth routes, admin routes, or dashboard routes
-  if (isAuthRoute || isAdminRoute || isDashboardRoute) {
+  // Check if current route is a supplier route
+  const isSupplierRoute = pathname?.startsWith('/supplier');
+
+  // Don't show navbar/footer for auth routes, admin routes, dashboard routes, or supplier routes
+  if (isAuthRoute || isAdminRoute || isDashboardRoute || isSupplierRoute) {
     return <>{children}</>;
   }
 
