@@ -42,9 +42,20 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const { user } = useAuth() as { user: User | null };
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
+  // Mock user for development when authentication is disabled
+  const mockUser = {
+    id: 'dev-user',
+    name: 'Development User',
+    email: 'dev@cyclesync.com',
+    role: USER_ROLES.ADMIN
+  };
+
+  // Use mock user if no authenticated user (for development)
+  const currentUser = user || mockUser;
+
   const userRole =
-    user?.role && Object.values(USER_ROLES).includes(user.role)
-      ? user.role
+    currentUser?.role && Object.values(USER_ROLES).includes(currentUser.role)
+      ? currentUser.role
       : USER_ROLES.GUEST;
 
   const toggleSidebar = () => {
@@ -200,16 +211,16 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                   <div className="flex-shrink-0">
                     <div className="h-10 w-10 bg-primary/10 rounded-full flex items-center justify-center">
                       <span className="text-primary font-medium text-sm">
-                        {user.name ? user.name.charAt(0).toUpperCase() : 'U'}
+                        {currentUser?.name ? currentUser.name.charAt(0).toUpperCase() : 'U'}
                       </span>
                     </div>
                   </div>
                   <div className="ml-3">
                     <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                      {user.name || 'User'}
+                      {currentUser?.name || 'User'}
                     </p>
                     <p className="text-xs text-gray-500 dark:text-gray-400">
-                      {user.email || 'No email'}
+                      {currentUser?.email || 'No email'}
                     </p>
                   </div>
                 </div>

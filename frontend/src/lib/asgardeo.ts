@@ -7,6 +7,7 @@ interface TokenResponse {
 }
 
 interface UserProfile {
+  [key: string]: unknown;
   id?: string;
   userName?: string;
   name?: {
