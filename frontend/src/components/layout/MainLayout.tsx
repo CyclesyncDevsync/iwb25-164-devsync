@@ -17,7 +17,16 @@ export function MainLayout({ children }: MainLayoutProps) {
                       pathname?.startsWith('/auth/register') || 
                       pathname?.startsWith('/auth/forgot-password');
 
-  if (isAuthRoute) {
+  // Check if current route is an admin route
+  const isAdminRoute = pathname?.startsWith('/admin');
+
+  // Check if current route is a dashboard route (for any user type)
+  const isDashboardRoute = pathname?.startsWith('/dashboard') || 
+                          pathname?.startsWith('/chat') ||
+                          pathname?.startsWith('/profile');
+
+  // Don't show navbar/footer for auth routes, admin routes, or dashboard routes
+  if (isAuthRoute || isAdminRoute || isDashboardRoute) {
     return <>{children}</>;
   }
 
