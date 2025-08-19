@@ -9,8 +9,8 @@ export default function AdminDashboard() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
-        <h1 className="text-2xl font-bold tracking-tight">Admin Dashboard</h1>
+      <div className="h-full p-6">
+        <h1 className="text-2xl font-bold tracking-tight mb-6">Admin Dashboard</h1>
         <AdminOverview />
       </div>
     </DashboardLayout>
