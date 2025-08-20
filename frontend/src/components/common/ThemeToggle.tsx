@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '../../store';
 import { toggleDarkMode } from '../../store/slices/themeSlice';
@@ -10,15 +10,6 @@ import { motion } from 'framer-motion';
 export const ThemeToggle: React.FC = () => {
   const dispatch = useDispatch();
   const { darkMode } = useSelector((state: RootState) => state.theme);
-
-  // Apply theme to document
-  useEffect(() => {
-    if (darkMode) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-  }, [darkMode]);
 
   const handleToggle = () => {
     dispatch(toggleDarkMode());
