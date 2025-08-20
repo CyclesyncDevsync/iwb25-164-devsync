@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -51,15 +51,32 @@ const AuctionCard: React.FC<AuctionCardProps> = ({
   const [isExpiring, setIsExpiring] = useState(false);
   const [priceChange, setPriceChange] = useState<number>(0);
   const [showPriceAnimation, setShowPriceAnimation] = useState(false);
+  
+  // Use refs to track previous values and prevent unnecessary re-renders
+  const prevPriceRef = useRef<number>(auction.currentPrice);
+  const hasJoinedAuctionRef = useRef<boolean>(false);
+  const animationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Get real-time data for this auction
-  const realtimeAuction = realTimeData[auction.id];
-  const currentPrice = realtimeAuction?.currentPrice ?? auction.currentPrice;
-  const activeBidders = realtimeAuction?.activeBidders ?? 0;
-  const lastBidTime = realtimeAuction?.lastBidTime;
+  // Memoize real-time data to prevent re-calculations on every render
+  const realtimeAuction = useMemo(() => realTimeData[auction.id], [realTimeData, auction.id]);
+  const currentPrice = useMemo(() => realtimeAuction?.currentPrice ?? auction.currentPrice, [realtimeAuction?.currentPrice, auction.currentPrice]);
+  const activeBidders = useMemo(() => realtimeAuction?.activeBidders ?? 0, [realtimeAuction?.activeBidders]);
+  const lastBidTime = useMemo(() => realtimeAuction?.lastBidTime, [realtimeAuction?.lastBidTime]);
 
-  // Calculate time remaining
+  // Memoize status checks to prevent recalculations
+  const isEnded = useMemo(() => auction.status === 'ended', [auction.status]);
+  const isActive = useMemo(() => auction.status === 'active', [auction.status]);
+  const isUpcoming = useMemo(() => auction.status === 'upcoming', [auction.status]);
+
+  // Calculate time remaining - optimized to prevent unnecessary re-renders
   useEffect(() => {
+    // Only calculate time remaining for active auctions
+    if (!isActive) {
+      setTimeRemaining(0);
+      setIsExpiring(false);
+      return;
+    }
+
     const updateTimeRemaining = () => {
       const now = new Date().getTime();
       const end = new Date(auction.endTime).getTime();
@@ -72,26 +89,57 @@ const AuctionCard: React.FC<AuctionCardProps> = ({
     updateTimeRemaining();
     const interval = setInterval(updateTimeRemaining, 1000);
     return () => clearInterval(interval);
-  }, [auction.endTime]);
+  }, [auction.endTime, isActive]);
 
-  // Track price changes for animation
+  // Track price changes for animation - optimized to prevent continuous triggers
   useEffect(() => {
-    if (realtimeAuction && auction.currentPrice !== realtimeAuction.currentPrice) {
-      const change = realtimeAuction.currentPrice - auction.currentPrice;
+    const newPrice = realtimeAuction?.currentPrice ?? auction.currentPrice;
+    const prevPrice = prevPriceRef.current;
+    
+    if (newPrice !== prevPrice) {
+      const change = newPrice - prevPrice;
       setPriceChange(change);
       setShowPriceAnimation(true);
       
-      setTimeout(() => setShowPriceAnimation(false), 2000);
+      // Clear previous timeout
+      if (animationTimeoutRef.current) {
+        clearTimeout(animationTimeoutRef.current);
+      }
+      
+      // Set new timeout
+      animationTimeoutRef.current = setTimeout(() => {
+        setShowPriceAnimation(false);
+        animationTimeoutRef.current = null;
+      }, 2000);
+      
+      // Update the previous price reference
+      prevPriceRef.current = newPrice;
     }
   }, [realtimeAuction?.currentPrice, auction.currentPrice]);
 
-  // Join auction room for real-time updates
+  // Cleanup animation timeout on unmount
   useEffect(() => {
-    if (realTime && webSocket.isConnected) {
+    return () => {
+      if (animationTimeoutRef.current) {
+        clearTimeout(animationTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  // Join auction room for real-time updates - optimized to prevent duplicate joins
+  useEffect(() => {
+    if (realTime && webSocket.isConnected && !hasJoinedAuctionRef.current) {
       webSocket.joinAuction(auction.id);
-      return () => webSocket.leaveAuction(auction.id);
+      hasJoinedAuctionRef.current = true;
+      
+      return () => {
+        webSocket.leaveAuction(auction.id);
+        hasJoinedAuctionRef.current = false;
+      };
     }
   }, [realTime, webSocket.isConnected, auction.id]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  // Intentionally excluding webSocket from dependencies to prevent infinite re-renders
 
   const handleWatchToggle = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
@@ -131,10 +179,6 @@ const AuctionCard: React.FC<AuctionCardProps> = ({
     }
   };
 
-  const isEnded = auction.status === 'ended';
-  const isActive = auction.status === 'active';
-  const isUpcoming = auction.status === 'upcoming';
-
   const cardSizeClasses = {
     small: 'p-3',
     medium: 'p-4',
@@ -153,10 +197,19 @@ const AuctionCard: React.FC<AuctionCardProps> = ({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
-      whileHover={{ y: -2 }}
+      whileHover={{ 
+        y: -4,
+        boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
+        borderColor: "#93c5fd"
+      }}
+      transition={{
+        type: "spring",
+        stiffness: 300,
+        damping: 20
+      }}
       className={`
-        bg-white rounded-xl shadow-lg border cursor-pointer transition-all duration-200
-        hover:shadow-xl hover:border-blue-300
+        bg-white rounded-xl shadow-lg border cursor-pointer transition-all duration-300
+        hover:shadow-xl
         ${isEnded ? 'opacity-75' : ''}
         ${isExpiring && isActive ? 'ring-2 ring-red-500 ring-opacity-50' : ''}
         ${className}
@@ -167,18 +220,38 @@ const AuctionCard: React.FC<AuctionCardProps> = ({
         {/* Header */}
         <div className="flex items-start justify-between mb-3">
           <div className="flex items-center space-x-2">
-            <div className={`flex items-center space-x-1 px-2 py-1 rounded-full text-xs font-medium ${getAuctionTypeColor(auction.type)}`}>
-              {getAuctionTypeIcon(auction.type)}
+            <motion.div 
+              whileHover={{ scale: 1.05 }}
+              className={`flex items-center space-x-1 px-2 py-1 rounded-full text-xs font-medium ${getAuctionTypeColor(auction.type)}`}
+            >
+              <motion.div
+                animate={auction.type === 'dutch' ? { rotate: [0, -10, 0, 10, 0] } : {}}
+                transition={{ repeat: Infinity, duration: 3, ease: "easeInOut" }}
+              >
+                {getAuctionTypeIcon(auction.type)}
+              </motion.div>
               <span className="capitalize">{auction.type.replace('_', ' ')}</span>
-            </div>
+            </motion.div>
             
             {auction.status === 'active' && isExpiring && (
               <motion.div
-                animate={{ scale: [1, 1.1, 1] }}
-                transition={{ repeat: Infinity, duration: 1 }}
+                animate={{ 
+                  scale: [1, 1.05, 1],
+                  backgroundColor: ["#fee2e2", "#fecaca", "#fee2e2"]
+                }}
+                transition={{ 
+                  repeat: Infinity, 
+                  duration: 1.5,
+                  ease: "easeInOut"
+                }}
                 className="flex items-center space-x-1 px-2 py-1 bg-red-100 text-red-600 rounded-full text-xs font-medium"
               >
-                <AlertTriangle className="w-3 h-3" />
+                <motion.div
+                  animate={{ rotate: [-5, 5, -5] }}
+                  transition={{ repeat: Infinity, duration: 1.5 }}
+                >
+                  <AlertTriangle className="w-3 h-3" />
+                </motion.div>
                 <span>Ending Soon</span>
               </motion.div>
             )}
@@ -186,19 +259,40 @@ const AuctionCard: React.FC<AuctionCardProps> = ({
 
           {showWatchButton && (
             <motion.button
-              whileHover={{ scale: 1.1 }}
+              whileHover={{ 
+                scale: 1.1,
+                backgroundColor: auction.isUserWatching ? '#fecaca' : '#f3f4f6'
+              }}
               whileTap={{ scale: 0.9 }}
+              initial={{ 
+                boxShadow: "0px 0px 0px rgba(0, 0, 0, 0)" 
+              }}
+              animate={auction.isUserWatching ? {
+                scale: [1, 1.1, 1],
+                transition: { duration: 0.3 }
+              } : {}}
               onClick={handleWatchToggle}
               disabled={loading.watching}
               className={`
-                p-2 rounded-full transition-colors duration-200
+                p-2 rounded-full transition-all duration-300
                 ${auction.isUserWatching 
-                  ? 'text-red-500 bg-red-50 hover:bg-red-100' 
-                  : 'text-gray-400 bg-gray-50 hover:bg-gray-100 hover:text-red-500'
+                  ? 'text-red-500 bg-red-50' 
+                  : 'text-gray-400 bg-gray-50 hover:text-red-500'
                 }
               `}
             >
-              <Heart className={`w-4 h-4 ${auction.isUserWatching ? 'fill-current' : ''}`} />
+              <motion.div
+                animate={auction.isUserWatching ? {
+                  scale: [1, 1.3, 1],
+                } : {}}
+                transition={{ 
+                  repeat: auction.isUserWatching ? 1 : 0,
+                  duration: 0.5,
+                  ease: "easeInOut"
+                }}
+              >
+                <Heart className={`w-4 h-4 ${auction.isUserWatching ? 'fill-current' : ''}`} />
+              </motion.div>
             </motion.button>
           )}
         </div>
@@ -213,10 +307,31 @@ const AuctionCard: React.FC<AuctionCardProps> = ({
           
           {/* Live indicator */}
           {isActive && realTime && (
-            <div className="absolute top-2 left-2 flex items-center space-x-1 bg-red-500 text-white px-2 py-1 rounded-full text-xs font-medium">
-              <div className="w-2 h-2 bg-white rounded-full animate-pulse" />
+            <motion.div 
+              className="absolute top-2 left-2 flex items-center space-x-1 bg-red-500 text-white px-2 py-1 rounded-full text-xs font-medium"
+              animate={{ 
+                boxShadow: ["0 0 0px rgba(239, 68, 68, 0.2)", "0 0 8px rgba(239, 68, 68, 0.6)", "0 0 0px rgba(239, 68, 68, 0.2)"]
+              }}
+              transition={{ 
+                repeat: Infinity, 
+                duration: 2,
+                ease: "easeInOut"
+              }}
+            >
+              <motion.div 
+                className="w-2 h-2 bg-white rounded-full"
+                animate={{ 
+                  opacity: [1, 0.4, 1],
+                  scale: [1, 1.1, 1]
+                }}
+                transition={{ 
+                  repeat: Infinity, 
+                  duration: 1.5,
+                  ease: "easeInOut"
+                }}
+              />
               <span>LIVE</span>
-            </div>
+            </motion.div>
           )}
 
           {/* Buy It Now badge */}
@@ -248,22 +363,32 @@ const AuctionCard: React.FC<AuctionCardProps> = ({
               <div className="flex items-center space-x-2">
                 <motion.span 
                   className="font-bold text-lg text-gray-900"
-                  animate={showPriceAnimation ? { scale: [1, 1.2, 1], color: ['#111827', '#16a34a', '#111827'] } : {}}
-                  transition={{ duration: 0.5 }}
+                  animate={showPriceAnimation ? { 
+                    scale: [1, 1.2, 1], 
+                    color: ['#111827', '#16a34a', '#111827'] 
+                  } : {}}
+                  transition={{ 
+                    duration: 0.8,
+                    ease: "easeInOut"
+                  }}
                 >
                   {formatCurrency(currentPrice)}
                 </motion.span>
                 
-                {showPriceAnimation && priceChange > 0 && (
-                  <motion.span
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0 }}
-                    className="text-green-600 text-sm font-medium"
-                  >
-                    +{formatCurrency(priceChange)}
-                  </motion.span>
-                )}
+                <AnimatePresence>
+                  {showPriceAnimation && priceChange > 0 && (
+                    <motion.span
+                      key={`price-change-${currentPrice}`}
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 10 }}
+                      transition={{ duration: 0.5, ease: "easeOut" }}
+                      className="text-green-600 text-sm font-medium"
+                    >
+                      +{formatCurrency(priceChange)}
+                    </motion.span>
+                  )}
+                </AnimatePresence>
               </div>
             </div>
 
@@ -302,39 +427,84 @@ const AuctionCard: React.FC<AuctionCardProps> = ({
         {/* Time remaining */}
         <div className="mb-4">
           {isActive ? (
-            <div className={`text-center py-2 px-3 rounded-lg ${isExpiring ? 'bg-red-50 text-red-700' : 'bg-blue-50 text-blue-700'}`}>
+            <motion.div 
+              className={`text-center py-2 px-3 rounded-lg ${isExpiring ? 'bg-red-50 text-red-700' : 'bg-blue-50 text-blue-700'}`}
+              animate={isExpiring ? { 
+                backgroundColor: ["#fee2e2", "#fef2f2", "#fee2e2"],
+                transition: { repeat: Infinity, duration: 2 }
+              } : {}}
+            >
               <div className="flex items-center justify-center space-x-1">
-                <Clock className="w-4 h-4" />
-                <span className="font-medium">
+                <motion.div
+                  animate={isExpiring ? { 
+                    rotate: [-5, 0, 5, 0, -5],
+                    scale: [1, 1.1, 1, 1.1, 1],
+                    transition: { repeat: Infinity, duration: 1.5 }
+                  } : {}}
+                >
+                  <Clock className="w-4 h-4" />
+                </motion.div>
+                <motion.span 
+                  className="font-medium"
+                  animate={isExpiring ? {
+                    opacity: [1, 0.8, 1],
+                    scale: [1, 1.02, 1],
+                    transition: { repeat: Infinity, duration: 1.5 }
+                  } : {}}
+                >
                   {timeRemaining > 0 ? formatTimeRemaining(timeRemaining) : 'Auction Ended'}
-                </span>
+                </motion.span>
               </div>
-            </div>
+            </motion.div>
           ) : isUpcoming ? (
-            <div className="text-center py-2 px-3 rounded-lg bg-gray-50 text-gray-700">
+            <motion.div 
+              className="text-center py-2 px-3 rounded-lg bg-gray-50 text-gray-700"
+              whileHover={{ backgroundColor: "#f3f4f6" }}
+            >
               <div className="flex items-center justify-center space-x-1">
                 <Clock className="w-4 h-4" />
                 <span>Starts {formatDate(auction.startTime, 'relative')}</span>
               </div>
-            </div>
+            </motion.div>
           ) : (
-            <div className="text-center py-2 px-3 rounded-lg bg-green-50 text-green-700">
+            <motion.div 
+              className="text-center py-2 px-3 rounded-lg bg-green-50 text-green-700"
+              whileHover={{ backgroundColor: "#dcfce7" }}
+            >
               <div className="flex items-center justify-center space-x-1">
-                <Crown className="w-4 h-4" />
+                <motion.div 
+                  initial={{ y: -5, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 0.2, duration: 0.4 }}
+                >
+                  <Crown className="w-4 h-4" />
+                </motion.div>
                 <span>Auction Ended</span>
               </div>
-            </div>
+            </motion.div>
           )}
         </div>
 
         {/* Action buttons */}
         {(showBidButton && isActive) && (
           <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
+            whileHover={{ 
+              scale: 1.03,
+              backgroundColor: "#2563eb"
+            }}
+            whileTap={{ scale: 0.97 }}
+            initial={{ boxShadow: "0px 0px 0px rgba(37, 99, 235, 0)" }}
+            animate={isActive ? {
+              boxShadow: ["0px 0px 0px rgba(37, 99, 235, 0)", "0px 0px 8px rgba(37, 99, 235, 0.5)", "0px 0px 0px rgba(37, 99, 235, 0)"],
+            } : {}}
+            transition={{
+              boxShadow: { repeat: Infinity, duration: 2 },
+              backgroundColor: { duration: 0.2 },
+              scale: { type: "spring", stiffness: 400, damping: 10 }
+            }}
             onClick={handleBidClick}
             disabled={loading.placingBid}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200 disabled:opacity-50"
+            className="w-full bg-blue-600 text-white font-medium py-2 px-4 rounded-lg transition-all duration-200 disabled:opacity-50"
           >
             {loading.placingBid ? 'Placing Bid...' : 'Place Bid'}
           </motion.button>
@@ -342,13 +512,20 @@ const AuctionCard: React.FC<AuctionCardProps> = ({
 
         {auction.buyItNowPrice && isActive && (
           <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
+            whileHover={{ 
+              scale: 1.03,
+              backgroundColor: "#16a34a"  
+            }}
+            whileTap={{ scale: 0.97 }}
+            transition={{
+              scale: { type: "spring", stiffness: 400, damping: 10 },
+              backgroundColor: { duration: 0.2 }
+            }}
             onClick={(e) => {
               e.stopPropagation();
               // Handle Buy It Now
             }}
-            className="w-full mt-2 bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200"
+            className="w-full mt-2 bg-green-600 text-white font-medium py-2 px-4 rounded-lg transition-all duration-200"
           >
             Buy Now - {formatCurrency(auction.buyItNowPrice)}
           </motion.button>
@@ -358,4 +535,18 @@ const AuctionCard: React.FC<AuctionCardProps> = ({
   );
 };
 
-export default AuctionCard;
+export default React.memo(AuctionCard, (prevProps, nextProps) => {
+  // Custom comparison to prevent unnecessary re-renders
+  return (
+    prevProps.auction.id === nextProps.auction.id &&
+    prevProps.auction.currentPrice === nextProps.auction.currentPrice &&
+    prevProps.auction.totalBids === nextProps.auction.totalBids &&
+    prevProps.auction.status === nextProps.auction.status &&
+    prevProps.auction.isUserWatching === nextProps.auction.isUserWatching &&
+    prevProps.size === nextProps.size &&
+    prevProps.showWatchButton === nextProps.showWatchButton &&
+    prevProps.showBidButton === nextProps.showBidButton &&
+    prevProps.realTime === nextProps.realTime &&
+    prevProps.className === nextProps.className
+  );
+});
