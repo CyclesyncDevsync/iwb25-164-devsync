@@ -5,6 +5,11 @@ import {
   MagnifyingGlassIcon,
   FunnelIcon
 } from '@heroicons/react/24/outline';
+import {
+  Conversation as WSConversation,
+  ChatMessage as WSChatMessage,
+  Participant as WSParticipant,
+} from '../../services/chatWebSocket';
 import { ConversationList } from './ConversationList';
 import { ChatArea } from './ChatArea';
 import { UserDetailsSidebar } from './UserDetailsSidebar';
@@ -333,6 +338,44 @@ export function AdminChatInterface() {
     }
   };
 
+  // Map local mock data to websocket Conversation shape expected by ConversationList
+  const mapParticipant = (p: User): WSParticipant => ({
+    id: p.id,
+    name: p.name,
+    role: p.role,
+    avatar: p.avatar,
+    isOnline: p.online,
+    lastSeen: p.lastSeen ? new Date(p.lastSeen).toISOString() : undefined,
+  });
+
+  const mapMessageToWS = (m?: Message): WSChatMessage | undefined => {
+    if (!m) return undefined;
+    // attempt to infer senderName and senderRole from participants
+    const sender = mockUsers.find(u => u.id === m.senderId) || { name: m.senderId, role: 'buyer' } as any;
+    return {
+      id: m.id,
+      conversationId: m.conversationId,
+      senderId: m.senderId,
+      senderName: sender.name || m.senderId,
+      senderRole: sender.role || 'buyer',
+      content: m.content,
+      type: m.type as any,
+      timestamp: new Date(m.timestamp).toISOString(),
+      status: (m.status === 'delivered' ? 'delivered' : m.status === 'read' ? 'read' : 'sent'),
+    } as WSChatMessage;
+  };
+
+  const mappedConversations: WSConversation[] = mockConversations.map(c => ({
+    id: c.id,
+    type: c.type === 'support' ? 'group' : (c.type as any),
+    name: c.title,
+    description: c.title,
+    participants: c.participants.map(mapParticipant),
+    lastMessage: mapMessageToWS(c.lastMessage),
+    unreadCount: c.unreadCount,
+    lastActivity: new Date(c.updatedAt).toISOString(),
+  }));
+
   return (
     <div className="flex h-full bg-white dark:bg-gray-900">
       {/* Conversations List */}
@@ -372,11 +415,10 @@ export function AdminChatInterface() {
         </div>
 
         <ConversationList
-          conversations={mockConversations}
-          selectedConversation={selectedConversation}
-          onSelectConversation={setSelectedConversation}
-          searchQuery={searchQuery}
-          filterType={filterType}
+          conversations={mappedConversations}
+          currentConversationId={selectedConversation}
+          onConversationSelect={(id: string) => setSelectedConversation(id)}
+          isArchived={false}
         />
       </div>
 
