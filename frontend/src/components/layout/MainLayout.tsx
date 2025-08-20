@@ -28,8 +28,11 @@ export function MainLayout({ children }: MainLayoutProps) {
   // Check if current route is a supplier route
   const isSupplierRoute = pathname?.startsWith('/supplier');
 
-  // Don't show navbar/footer for auth routes, admin routes, dashboard routes, or supplier routes
-  if (isAuthRoute || isAdminRoute || isDashboardRoute || isSupplierRoute) {
+  // Hide navbar/footer for auction bid place page (e.g. /auction/:id/bid)
+  const isAuctionBidRoute = Boolean(pathname && pathname.startsWith('/auction/') && pathname.endsWith('/bid'));
+
+  // Don't show navbar/footer for auth routes, admin routes, dashboard routes, supplier routes, or the auction bid page
+  if (isAuthRoute || isAdminRoute || isDashboardRoute || isSupplierRoute || isAuctionBidRoute) {
     return <>{children}</>;
   }
 
