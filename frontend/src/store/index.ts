@@ -8,6 +8,7 @@ import userReducer from './userSlice';
 import supplierReducer from './slices/supplierSlice';
 import auctionReducer from './slices/auctionSlice';
 import walletReducer from './slices/walletSlice';
+import chatReducer from './slices/chatSlice';
 
 export const store = configureStore({
   reducer: {
@@ -17,6 +18,7 @@ export const store = configureStore({
     supplier: supplierReducer,
     auctions: auctionReducer,
     wallet: walletReducer,
+    chat: chatReducer,
     [baseApi.reducerPath]: baseApi.reducer,
   },
   middleware: (getDefaultMiddleware) =>
