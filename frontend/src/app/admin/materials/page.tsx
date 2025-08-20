@@ -1,39 +1,54 @@
 'use client';
 
-// Authentication disabled for development
-// TODO: Re-enable authentication checks before production
-// import { useEffect } from 'react';
-// import { useRouter } from 'next/navigation';
-// import { useAuth } from '../../../hooks/useAuth';
-// import { USER_ROLES } from '../../../constants';
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '../../../hooks/useAuth';
 import DashboardLayout from '../../../components/layout/DashboardLayout';
-// import { Loading } from '../../../components/ui/Loading';
+import { Loading } from '../../../components/ui/Loading';
 import { MaterialsManagement } from '../../../components/admin/MaterialsManagement';
+import { enhancedToast } from '../../../components/ui/EnhancedToast';
 
 export default function MaterialsPage() {
-  // const { user, loading, isAuthenticated } = useAuth();
-  // const router = useRouter();
+  const { user, loading, isAuthenticated } = useAuth();
+  const router = useRouter();
 
   // Protect the route - redirect if not admin
-  // useEffect(() => {
-  //   if (!loading && (!isAuthenticated || user?.role !== USER_ROLES.ADMIN)) {
-  //     router.push('/');
-  //   }
-  // }, [loading, isAuthenticated, user, router]);
+  useEffect(() => {
+    if (!loading) {
+      if (!isAuthenticated) {
+        enhancedToast.warning('Authentication required.');
+        router.push('/auth/login?redirect=/admin/materials');
+        return;
+      }
+      
+      if (user?.role !== 'admin') {
+        enhancedToast.error('Admin access required.');
+        router.push('/dashboard');
+        return;
+      }
+    }
+  }, [loading, isAuthenticated, user, router]);
 
-  // if (loading) {
-  //   return <Loading text="Loading materials management..." />;
-  // }
+  if (loading) {
+    return <Loading text="Loading materials management..." fullScreen />;
+  }
 
   // If not authenticated or not admin, show loading until redirect happens
-  // if (!isAuthenticated || user?.role !== USER_ROLES.ADMIN) {
-  //   return <Loading text="Verifying admin credentials..." />;
-  // }
+  if (!isAuthenticated || user?.role !== 'admin') {
+    return <Loading text="Verifying admin credentials..." fullScreen />;
+  }
 
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        <h1 className="text-2xl font-bold tracking-tight">Materials Management</h1>
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+            Materials Management
+          </h1>
+          <p className="text-gray-600 dark:text-gray-400 mt-1">
+            Monitor and manage material listings and quality standards
+          </p>
+        </div>
         <MaterialsManagement />
       </div>
     </DashboardLayout>
