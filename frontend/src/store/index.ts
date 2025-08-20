@@ -11,6 +11,7 @@ import auctionReducer from './slices/auctionSlice';
 import walletReducer from './slices/walletSlice';
 import chatReducer from './slices/chatSlice';
 import notificationReducer from './slices/notificationSlice';
+import aiReducer from './slices/aiSlice';
 
 export const store = configureStore({
   reducer: {
@@ -22,11 +23,16 @@ export const store = configureStore({
     wallet: walletReducer,
     chat: chatReducer,
     notifications: notificationReducer,
+    ai: aiReducer,
     [baseApi.reducerPath]: baseApi.reducer,
     [notificationApi.reducerPath]: notificationApi.reducer,
   },
   middleware: (getDefaultMiddleware) =>
-    getDefaultMiddleware().concat(baseApi.middleware, notificationApi.middleware),
+    getDefaultMiddleware({
+      serializableCheck: {
+        ignoredActions: ['theme/toggleDarkMode'],
+      },
+    }).concat(baseApi.middleware, notificationApi.middleware),
   devTools: process.env.NODE_ENV !== 'production',
 });
 
