@@ -2,7 +2,8 @@
 
 import React, { ReactNode } from 'react';
 import { Navbar } from './Navbar';
-import { Footer } from './Footer';
+import Footer from './Footer';
+import { FloatingActionButton } from '../ui/FloatingActionButton';
 import { usePathname } from 'next/navigation';
 
 interface MainLayoutProps {
@@ -12,27 +13,28 @@ interface MainLayoutProps {
 export function MainLayout({ children }: MainLayoutProps) {
   const pathname = usePathname();
   
-  // Check if current route is an auth route
-  const isAuthRoute = pathname?.startsWith('/auth/login') || 
-                      pathname?.startsWith('/auth/register') || 
-                      pathname?.startsWith('/auth/forgot-password');
+  // Routes where navbar should be completely hidden
+  const hideNavbarRoutes = [
+    '/auth/login',
+    '/auth/register', 
+    '/auth/forgot-password',
+    '/auth/verify-email'
+  ];
 
-  // Check if current route is an admin route
-  const isAdminRoute = pathname?.startsWith('/admin');
+  // Routes where navbar should be hidden (exact matches and patterns)
+  const isHiddenRoute = hideNavbarRoutes.some(route => pathname === route) ||
+                       (pathname && pathname.startsWith('/auction/') && pathname.endsWith('/bid')) ||
+                       pathname === '/offline';
 
-  // Check if current route is a dashboard route (for any user type)
-  const isDashboardRoute = pathname?.startsWith('/dashboard') || 
-                          pathname?.startsWith('/chat') ||
-                          pathname?.startsWith('/profile');
+  // Show FAB on public pages and some specific routes
+  const showFAB = !isHiddenRoute && (
+    pathname === '/' || 
+    pathname?.startsWith('/demo') ||
+    pathname?.startsWith('/showcase')
+  );
 
-  // Check if current route is a supplier route
-  const isSupplierRoute = pathname?.startsWith('/supplier');
-
-  // Hide navbar/footer for auction bid place page (e.g. /auction/:id/bid)
-  const isAuctionBidRoute = Boolean(pathname && pathname.startsWith('/auction/') && pathname.endsWith('/bid'));
-
-  // Don't show navbar/footer for auth routes, admin routes, dashboard routes, supplier routes, or the auction bid page
-  if (isAuthRoute || isAdminRoute || isDashboardRoute || isSupplierRoute || isAuctionBidRoute) {
+  // Don't show navbar/footer for hidden routes
+  if (isHiddenRoute) {
     return <>{children}</>;
   }
 
@@ -43,6 +45,7 @@ export function MainLayout({ children }: MainLayoutProps) {
         {children}
       </main>
       <Footer />
+      {showFAB && <FloatingActionButton />}
     </div>
   );
 }
