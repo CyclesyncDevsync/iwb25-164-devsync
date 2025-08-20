@@ -1,4 +1,4 @@
-import { ReactNode, useEffect } from 'react';
+import { ReactNode, useEffect, useRef } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '../../types/store';
 import { setActiveRole, toggleDarkMode } from '../../store/slices/themeSlice';
@@ -11,19 +11,25 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
   const dispatch = useDispatch();
   const { darkMode, activeRole } = useSelector((state: RootState) => state.theme);
   const { user } = useSelector((state: RootState) => state.auth);
+  const isInitialized = useRef(false);
 
-  // Initialize theme from localStorage on mount
+  // Initialize theme from localStorage on mount (run only once)
   useEffect(() => {
-    if (typeof window !== 'undefined') {
+    if (typeof window !== 'undefined' && !isInitialized.current) {
       const savedTheme = localStorage.getItem('circularSync-theme');
       if (savedTheme) {
-        const { darkMode: savedDarkMode } = JSON.parse(savedTheme);
-        if (savedDarkMode !== darkMode) {
-          dispatch(toggleDarkMode());
+        try {
+          const { darkMode: savedDarkMode } = JSON.parse(savedTheme);
+          if (savedDarkMode !== darkMode) {
+            dispatch(toggleDarkMode());
+          }
+        } catch (error) {
+          console.warn('Failed to parse saved theme:', error);
         }
       }
+      isInitialized.current = true;
     }
-  }, [darkMode, dispatch]);
+  }, [dispatch]); // Remove darkMode from dependencies to prevent infinite loop
 
   // Update active role when user changes
   useEffect(() => {
