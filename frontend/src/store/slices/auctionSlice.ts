@@ -66,11 +66,11 @@ export const setAutoBid = createAsyncThunk(
 
 // Interface for auction state
 interface AuctionState {
-  // Lists
-  auctions: Auction[];
-  watchedAuctions: Auction[];
-  featuredAuctions: Auction[];
-  trendingAuctions: Auction[];
+  // Lists (using serializable auctions for Redux state)
+  auctions: SerializableAuction[];
+  watchedAuctions: SerializableAuction[];
+  featuredAuctions: SerializableAuction[];
+  trendingAuctions: SerializableAuction[];
   
   // Current auction details
   currentAuction: AuctionDetailResponse | null;
@@ -113,8 +113,34 @@ interface AuctionState {
   showAutoBidModal: boolean;
 }
 
-// Dummy auction data for demonstration
-const dummyAuctions: Auction[] = [
+// Define a serializable auction interface for Redux state
+interface SerializableAuction extends Omit<Auction, 'startTime' | 'endTime' | 'createdAt' | 'updatedAt'> {
+  startTime: string; // ISO string instead of Date
+  endTime: string;   // ISO string instead of Date
+  createdAt: string; // ISO string instead of Date
+  updatedAt: string; // ISO string instead of Date
+}
+
+// Helper function to convert Auction to SerializableAuction
+const toSerializableAuction = (auction: Auction): SerializableAuction => ({
+  ...auction,
+  startTime: auction.startTime.toISOString(),
+  endTime: auction.endTime.toISOString(),
+  createdAt: auction.createdAt.toISOString(),
+  updatedAt: auction.updatedAt.toISOString(),
+});
+
+// Helper function to convert SerializableAuction to Auction
+export const fromSerializableAuction = (auction: SerializableAuction): Auction => ({
+  ...auction,
+  startTime: new Date(auction.startTime),
+  endTime: new Date(auction.endTime),
+  createdAt: new Date(auction.createdAt),
+  updatedAt: new Date(auction.updatedAt),
+});
+
+// Dummy auction data for demonstration (with serializable dates)
+const dummyAuctions: SerializableAuction[] = [
   {
     id: 'auction-001',
     title: 'Premium Aluminum Cans Collection - Food Grade',
@@ -136,16 +162,16 @@ const dummyAuctions: Auction[] = [
     incrementAmount: 50,
     buyItNowPrice: 2800,
     reservePrice: 1500,
-    startTime: new Date(Date.now() - 4 * 60 * 60 * 1000), // Started 4 hours ago
-    endTime: new Date(Date.now() + 6 * 60 * 60 * 1000), // Ends in 6 hours
+    startTime: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(), // Started 4 hours ago
+    endTime: new Date(Date.now() + 6 * 60 * 60 * 1000).toISOString(),   // Ends in 6 hours
     timeExtension: 10,
     totalBids: 23,
     totalBidders: 12,
     sellerId: 'seller-premium-001',
     sellerName: 'EcoMetal Solutions Inc.',
     sellerRating: 4.9,
-    createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
-    updatedAt: new Date(Date.now() - 30 * 60 * 1000),
+    createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+    updatedAt: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
   },
   {
     id: 'auction-002',
@@ -168,16 +194,16 @@ const dummyAuctions: Auction[] = [
     currentPrice: 6200,
     incrementAmount: 100,
     reservePrice: 5000,
-    startTime: new Date(Date.now() - 2 * 60 * 60 * 1000), // Started 2 hours ago
-    endTime: new Date(Date.now() + 4 * 60 * 60 * 1000), // Ends in 4 hours
+    startTime: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(), // Started 2 hours ago
+    endTime: new Date(Date.now() + 4 * 60 * 60 * 1000).toISOString(),   // Ends in 4 hours
     timeExtension: 15,
     totalBids: 8,
     totalBidders: 6,
     sellerId: 'seller-tech-002',
     sellerName: 'TechRecycle Pro',
     sellerRating: 4.7,
-    createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
-    updatedAt: new Date(Date.now() - 15 * 60 * 1000),
+    createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+    updatedAt: new Date(Date.now() - 15 * 60 * 1000).toISOString(),
   }
 ];
 
@@ -224,7 +250,7 @@ const auctionSlice = createSlice({
       state.realTimeData[auctionId] = action.payload;
       
       // Update auction in lists if present
-      const updateAuctionInList = (auctions: Auction[]) => {
+      const updateAuctionInList = (auctions: SerializableAuction[]) => {
         const index = auctions.findIndex(a => a.id === auctionId);
         if (index !== -1) {
           auctions[index].currentPrice = action.payload.currentPrice;
@@ -258,10 +284,10 @@ const auctionSlice = createSlice({
       }
     },
     
-    updateAuctionTimeExtended: (state, action: PayloadAction<{ auctionId: string; newEndTime: Date }>) => {
+    updateAuctionTimeExtended: (state, action: PayloadAction<{ auctionId: string; newEndTime: string }>) => {
       const { auctionId, newEndTime } = action.payload;
       
-      const updateEndTime = (auctions: Auction[]) => {
+      const updateEndTime = (auctions: SerializableAuction[]) => {
         const index = auctions.findIndex(a => a.id === auctionId);
         if (index !== -1) {
           auctions[index].endTime = newEndTime;
@@ -274,14 +300,14 @@ const auctionSlice = createSlice({
       updateEndTime(state.trendingAuctions);
       
       if (state.currentAuction && state.currentAuction.id === auctionId) {
-        state.currentAuction.endTime = newEndTime;
+        state.currentAuction.endTime = new Date(newEndTime);
       }
     },
     
     markAuctionEnded: (state, action: PayloadAction<{ auctionId: string; winnerId?: string; finalPrice: number }>) => {
       const { auctionId, winnerId, finalPrice } = action.payload;
       
-      const updateAuctionStatus = (auctions: Auction[]) => {
+      const updateAuctionStatus = (auctions: SerializableAuction[]) => {
         const index = auctions.findIndex(a => a.id === auctionId);
         if (index !== -1) {
           auctions[index].status = 'ended';
@@ -364,9 +390,9 @@ const auctionSlice = createSlice({
         const { auctions, total, page, hasMore } = action.payload;
         
         if (page === 1) {
-          state.auctions = auctions;
+          state.auctions = auctions.map(toSerializableAuction);
         } else {
-          state.auctions.push(...auctions);
+          state.auctions.push(...auctions.map(toSerializableAuction));
         }
         
         state.currentPage = page;
@@ -420,7 +446,7 @@ const auctionSlice = createSlice({
         const auctionId = action.payload;
         
         // Mark auction as watched in all lists
-        const markAsWatched = (auctions: Auction[]) => {
+        const markAsWatched = (auctions: SerializableAuction[]) => {
           const index = auctions.findIndex(a => a.id === auctionId);
           if (index !== -1) {
             auctions[index].isUserWatching = true;
@@ -446,7 +472,7 @@ const auctionSlice = createSlice({
         const auctionId = action.payload;
         
         // Mark auction as not watched in all lists
-        const markAsUnwatched = (auctions: Auction[]) => {
+        const markAsUnwatched = (auctions: SerializableAuction[]) => {
           const index = auctions.findIndex(a => a.id === auctionId);
           if (index !== -1) {
             auctions[index].isUserWatching = false;
@@ -468,7 +494,7 @@ const auctionSlice = createSlice({
     // Fetch watched auctions
     builder
       .addCase(fetchWatchedAuctions.fulfilled, (state, action) => {
-        state.watchedAuctions = action.payload.auctions;
+        state.watchedAuctions = action.payload.auctions.map(toSerializableAuction);
       });
     
     // Set auto-bid
@@ -505,5 +531,18 @@ export const {
   clearAuctionDetails,
   clearErrors,
 } = auctionSlice.actions;
+
+// Selectors that convert serializable auctions back to proper format
+export const selectAuctions = (state: any): Auction[] => 
+  state.auctions.auctions.map(fromSerializableAuction);
+
+export const selectWatchedAuctions = (state: any): Auction[] => 
+  state.auctions.watchedAuctions.map(fromSerializableAuction);
+
+export const selectFeaturedAuctions = (state: any): Auction[] => 
+  state.auctions.featuredAuctions.map(fromSerializableAuction);
+
+export const selectTrendingAuctions = (state: any): Auction[] => 
+  state.auctions.trendingAuctions.map(fromSerializableAuction);
 
 export default auctionSlice.reducer;
