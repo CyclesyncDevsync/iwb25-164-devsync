@@ -1,3 +1,4 @@
+
 import { Button } from '../components/ui/Button';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -589,11 +590,14 @@ export default function Home() {
             <div className="pt-8 border-t border-white/20 dark:border-gray-700">
               <p className="text-white/80 dark:text-gray-400">
                 No credit card required • Free forever plan available • 30-day money-back guarantee
+
               </p>
             </div>
           </div>
         </div>
+
       </section>
     </div>
   );
 }
+

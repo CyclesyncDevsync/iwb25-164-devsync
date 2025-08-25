@@ -23,3 +23,31 @@ SERVER_PORT = 8080
 # JWT Configuration
 JWT_AUDIENCE = "account"
 TOKEN_CACHE_EXPIRY = 300
+
+# AI Configuration
+# Google Vision API for Quality Assessment
+GOOGLE_VISION_API_KEY = "your-google-vision-api-key-here"
+
+# Google Gemini API for Chatbot
+GEMINI_API_KEY = "your-gemini-api-key-here"
+GEMINI_MODEL = "gemini-pro"
+
+# Chatbot Configuration
+[chatbot]
+websocketPort = 8083
+sessionTimeout = 1800
+maxConnections = 1000
+rateLimit = 100
+
+# Service URLs
+[chatbot.services]
+qualityApiUrl = "http://localhost:8082"
+demandApiUrl = "http://localhost:8081"
+mainApiUrl = "http://localhost:8080"
+
+# Redis Configuration (for session management)
+[chatbot.redis]
+host = "localhost"
+port = 6379
+password = ""
+database = 1

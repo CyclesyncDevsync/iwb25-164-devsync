@@ -1,8 +1,12 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
+
 import { Providers } from "../components/common/Providers";
 import { MainLayout } from "../components/layout/MainLayout";
+
+import ChatBot from "@/components/ChatBot";
+
 
 // Using Inter as a replacement for Geist since it's more widely supported
 const inter = Inter({
@@ -12,11 +16,13 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
+
   title: "CircularSync - Sustainable Material Management",
   description: "A platform for sustainable material management and circular economy.",
   icons: {
     icon: '/favicon.ico',
   },
+
 };
 
 export default function RootLayout({
@@ -25,6 +31,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
+
     <html lang="en" suppressHydrationWarning>
       <head>
         <link rel="manifest" href="/manifest.json" />
@@ -35,6 +42,12 @@ export default function RootLayout({
         <Providers>
           <MainLayout>{children}</MainLayout>
         </Providers>
+
+    <html lang="en">
+      <body className={`${geistSans.variable} ${geistMono.variable}`}>
+        {children}
+        <ChatBot />
+
       </body>
     </html>
   );

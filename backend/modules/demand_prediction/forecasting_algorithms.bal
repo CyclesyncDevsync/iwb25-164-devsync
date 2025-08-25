@@ -1,7 +1,6 @@
 // Demand Prediction Forecasting Algorithms
 // Implementation of various forecasting techniques for waste demand prediction
 
-import ballerina/time;
 import ballerina/lang.'float as floats;
 import ballerina/lang.'int as ints;
 import ballerina/lang.array;
@@ -195,8 +194,6 @@ public class DemandForecaster {
     // Calculate market condition multiplier
     // Science: External factors affecting waste generation and demand
     private function calculateMarketMultiplier(MarketConditions conditions, string wasteType) returns float {
-        float baseMultiplier = 1.0;
-        
         // Economic health effect (positive correlation with waste generation)
         float economicEffect = 0.7 + (conditions.economicIndex / 100.0) * 0.6; // 0.7 to 1.3
         
@@ -245,7 +242,6 @@ public class DemandForecaster {
     
     // Helper to get current month (simplified implementation)
     private function getCurrentMonth() returns int {
-        time:Utc currentTime = time:utcNow();
         // Simplified - in real implementation, use proper date parsing
         return 6; // July (0-based index)
     }
