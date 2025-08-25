@@ -74,14 +74,10 @@ module.exports = {
       fontFamily: {
         sans: ['var(--font-inter)'],
         mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'monospace'],
-
-      animation: {
-        'bounce': 'bounce 1s infinite',
       },
       animationDelay: {
         '100': '100ms',
         '200': '200ms',
-
       },
     },
   },

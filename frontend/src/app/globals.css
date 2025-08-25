@@ -119,7 +119,11 @@
 
 /* Focus styles */
 .focus-ring {
-  @apply focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 dark:focus:ring-primary-light dark:focus:ring-offset-dark-bg;
+  @apply focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2;
+}
+
+.dark .focus-ring {
+  @apply focus:ring-primary-light focus:ring-offset-gray-800;
 }
 
 /* Utility classes */
@@ -315,13 +319,6 @@
 
 /* Custom animations and utilities */
 @layer utilities {
-  .bg-grid-pattern {
-    background-image: 
-      linear-gradient(90deg, rgba(0,0,0,0.1) 1px, transparent 1px),
-      linear-gradient(rgba(0,0,0,0.1) 1px, transparent 1px);
-    background-size: 20px 20px;
-  }
-  
   .animate-float {
     animation: float 6s ease-in-out infinite;
   }
@@ -332,49 +329,7 @@
   }
 }
 
-@keyframes float {
-  0%, 100% {
-    transform: translateY(0px);
-  }
-  50% {
-    transform: translateY(-20px);
-  }
-}
 
-/* Custom scrollbar */
-::-webkit-scrollbar {
-  width: 6px;
-}
-
-::-webkit-scrollbar-track {
-  background: #f1f1f1;
-}
-
-::-webkit-scrollbar-thumb {
-  background: #00684A;
-  border-radius: 3px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: #47A16B;
-}
-
-/* Dark mode scrollbar */
-.dark ::-webkit-scrollbar-track {
-  background: #374151;
-}
-
-.dark ::-webkit-scrollbar-thumb {
-  background: #47A16B;
-}
-
-.dark ::-webkit-scrollbar-thumb:hover {
-  background: #00684A;
-}
-
-/* Smooth transitions for theme switching */
-* {
-  transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
 
 /* Animation delays for typing indicator */
 .delay-100 {
@@ -383,5 +338,4 @@
 
 .delay-200 {
   animation-delay: 200ms;
-
 }

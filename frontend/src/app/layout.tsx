@@ -41,13 +41,8 @@ export default function RootLayout({
       <body className={`${inter.variable} font-sans antialiased`}>
         <Providers>
           <MainLayout>{children}</MainLayout>
+          <ChatBot />
         </Providers>
-
-    <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable}`}>
-        {children}
-        <ChatBot />
-
       </body>
     </html>
   );
