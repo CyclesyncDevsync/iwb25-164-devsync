@@ -1,0 +1,220 @@
+'use client';
+
+import React from 'react';
+import { usePathname } from 'next/navigation';
+import Link from 'next/link';
+import { motion } from 'framer-motion';
+import {
+  HomeIcon,
+  PlusCircleIcon,
+  ChartBarIcon,
+  CogIcon,
+  BellIcon,
+  UserGroupIcon,
+  MapPinIcon,
+  DocumentDuplicateIcon,
+  ShoppingBagIcon,
+  CurrencyDollarIcon
+} from '@heroicons/react/24/outline';
+import { useAppSelector } from '../../hooks/useAuth';
+import { SupplierType } from '../../types/supplier';
+
+interface SupplierLayoutProps {
+  children: React.ReactNode;
+}
+
+export default function SupplierLayout({ children }: SupplierLayoutProps) {
+  const pathname = usePathname();
+  const { profile } = useAppSelector(state => state.supplier);
+
+  const navigationItems = [
+    {
+      name: 'Dashboard',
+      href: '/supplier',
+      icon: HomeIcon,
+      current: pathname === '/supplier'
+    },
+    {
+      name: 'Add Material',
+      href: '/supplier/materials/new',
+      icon: PlusCircleIcon,
+      current: pathname === '/supplier/materials/new'
+    },
+    {
+      name: 'My Materials',
+      href: '/supplier/materials',
+      icon: DocumentDuplicateIcon,
+      current: pathname.startsWith('/supplier/materials') && pathname !== '/supplier/materials/new'
+    },
+    {
+      name: 'Orders',
+      href: '/supplier/orders',
+      icon: ShoppingBagIcon,
+      current: pathname.startsWith('/supplier/orders')
+    },
+    {
+      name: 'Analytics',
+      href: '/supplier/analytics',
+      icon: ChartBarIcon,
+      current: pathname.startsWith('/supplier/analytics')
+    },
+    {
+      name: 'Earnings',
+      href: '/supplier/earnings',
+      icon: CurrencyDollarIcon,
+      current: pathname.startsWith('/supplier/earnings')
+    }
+  ];
+
+  // Add organization-specific items
+  if (profile?.type === SupplierType.ORGANIZATION) {
+    navigationItems.splice(-2, 0, 
+      {
+        name: 'Team',
+        href: '/supplier/team',
+        icon: UserGroupIcon,
+        current: pathname.startsWith('/supplier/team')
+      },
+      {
+        name: 'Locations',
+        href: '/supplier/locations',
+        icon: MapPinIcon,
+        current: pathname.startsWith('/supplier/locations')
+      }
+    );
+  }
+
+  navigationItems.push(
+    {
+      name: 'Settings',
+      href: '/supplier/settings',
+      icon: CogIcon,
+      current: pathname.startsWith('/supplier/settings')
+    }
+  );
+
+  return (
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      {/* Sidebar */}
+      <div className="fixed inset-y-0 left-0 z-50 w-64 bg-white dark:bg-gray-800 shadow-lg">
+        <div className="flex h-full flex-col">
+          {/* Logo */}
+          <div className="flex h-16 items-center justify-center border-b border-gray-200 dark:border-gray-700">
+            <div className="flex items-center space-x-2">
+              <div className="h-8 w-8 rounded-lg bg-emerald-600 flex items-center justify-center">
+                <span className="text-white text-sm font-bold">CS</span>
+              </div>
+              <span className="text-lg font-semibold text-gray-900 dark:text-white">
+                CircularSync
+              </span>
+            </div>
+          </div>
+
+          {/* Supplier Info */}
+          {profile && (
+            <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+              <div className="flex items-center space-x-3">
+                <div className="h-10 w-10 rounded-full bg-emerald-100 dark:bg-emerald-900 flex items-center justify-center">
+                  <span className="text-emerald-600 dark:text-emerald-400 text-sm font-medium">
+                    {profile.contactPerson.charAt(0).toUpperCase()}
+                  </span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                    {profile.businessName || profile.contactPerson}
+                  </p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 capitalize">
+                    {profile.type} Supplier
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Navigation */}
+          <nav className="flex-1 space-y-1 p-4">
+            {navigationItems.map((item) => (
+              <Link
+                key={item.name}
+                href={item.href}
+                className={`${
+                  item.current
+                    ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400'
+                    : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                } group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors`}
+              >
+                <item.icon
+                  className={`${
+                    item.current
+                      ? 'text-emerald-500 dark:text-emerald-400'
+                      : 'text-gray-400 dark:text-gray-500 group-hover:text-gray-500 dark:group-hover:text-gray-400'
+                  } mr-3 h-5 w-5 flex-shrink-0`}
+                  aria-hidden="true"
+                />
+                {item.name}
+              </Link>
+            ))}
+          </nav>
+
+          {/* Notifications */}
+          <div className="p-4 border-t border-gray-200 dark:border-gray-700">
+            <button className="w-full flex items-center px-3 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+              <BellIcon className="mr-3 h-5 w-5" />
+              Notifications
+              <span className="ml-auto bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-400 text-xs px-2 py-1 rounded-full">
+                3
+              </span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Main content */}
+      <div className="pl-64">
+        {/* Top bar */}
+        <div className="sticky top-0 z-40 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4">
+          <div className="flex items-center justify-between">
+            <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">
+              {getPageTitle(pathname)}
+            </h1>
+            <div className="flex items-center space-x-4">
+              {/* Quick Actions */}
+              <Link
+                href="/supplier/materials/new"
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition-colors"
+              >
+                <PlusCircleIcon className="h-4 w-4 mr-2" />
+                Add Material
+              </Link>
+            </div>
+          </div>
+        </div>
+
+        {/* Page content */}
+        <main className="flex-1">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+            className="p-6"
+          >
+            {children}
+          </motion.div>
+        </main>
+      </div>
+    </div>
+  );
+}
+
+function getPageTitle(pathname: string): string {
+  if (pathname === '/supplier') return 'Dashboard';
+  if (pathname === '/supplier/materials/new') return 'Add New Material';
+  if (pathname.startsWith('/supplier/materials')) return 'My Materials';
+  if (pathname.startsWith('/supplier/orders')) return 'Orders';
+  if (pathname.startsWith('/supplier/analytics')) return 'Analytics';
+  if (pathname.startsWith('/supplier/earnings')) return 'Earnings';
+  if (pathname.startsWith('/supplier/team')) return 'Team Management';
+  if (pathname.startsWith('/supplier/locations')) return 'Locations';
+  if (pathname.startsWith('/supplier/settings')) return 'Settings';
+  return 'Supplier Dashboard';
+}

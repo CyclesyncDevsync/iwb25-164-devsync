@@ -1,0 +1,21 @@
+'use client';
+
+import React from 'react';
+import { useRouter } from 'next/navigation';
+import { ForgotPasswordForm } from '../../../components/forms/ForgotPasswordForm';
+
+export default function ForgotPasswordPage() {
+
+  const handleSuccess = () => {
+    // No redirect, success message is shown in the form
+  };
+
+  return (
+    <div>
+      <p className="mt-2 text-center text-gray-600 dark:text-gray-400 mb-6">
+        Reset your password
+      </p>
+      <ForgotPasswordForm onSuccess={handleSuccess} />
+    </div>
+  );
+}
