@@ -2,6 +2,335 @@
 @tailwind components;
 @tailwind utilities;
 
+
+/* Global Variables */
+:root {
+  --color-primary: #00684A;
+  --color-primary-light: #47A16B;
+  --color-secondary: #001E2B;
+  --color-secondary-light: #F9FAFB;
+  
+  /* Dark theme colors */
+  --color-dark-bg: #1F2937;
+  --color-dark-surface: #374151;
+  --color-dark-border: #4B5563;
+  
+  /* Animation variables */
+  --animate-duration: 0.3s;
+  --animate-ease: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Dark mode variables */
+.dark {
+  --color-text-primary: #F9FAFB;
+  --color-text-secondary: #D1D5DB;
+  --color-text-muted: #9CA3AF;
+  --color-bg-primary: #1F2937;
+  --color-bg-secondary: #374151;
+  --color-bg-tertiary: #4B5563;
+  --color-border: #4B5563;
+}
+
+/* Light mode variables */
+.light, :root {
+  --color-text-primary: #111827;
+  --color-text-secondary: #374151;
+  --color-text-muted: #6B7280;
+  --color-bg-primary: #FFFFFF;
+  --color-bg-secondary: #F9FAFB;
+  --color-bg-tertiary: #F3F4F6;
+  --color-border: #E5E7EB;
+}
+
+/* Custom Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(-10px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes pulse-slow {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+
+@keyframes grid-pattern {
+  0% { opacity: 0.3; }
+  50% { opacity: 0.1; }
+  100% { opacity: 0.3; }
+}
+
+/* Background patterns */
+.bg-grid-pattern {
+  background-image: 
+    linear-gradient(to right, rgba(156, 163, 175, 0.1) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(156, 163, 175, 0.1) 1px, transparent 1px);
+  background-size: 20px 20px;
+  animation: grid-pattern 4s ease-in-out infinite;
+}
+
+.dark .bg-grid-pattern {
+  background-image: 
+    linear-gradient(to right, rgba(75, 85, 99, 0.2) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(75, 85, 99, 0.2) 1px, transparent 1px);
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-bg-secondary);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-primary);
+  border-radius: 3px;
+  opacity: 0.7;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  opacity: 1;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: var(--color-primary-light);
+}
+
+/* Smooth transitions for theme switching */
+* {
+  transition: background-color var(--animate-duration) var(--animate-ease),
+              border-color var(--animate-duration) var(--animate-ease),
+              color var(--animate-duration) var(--animate-ease),
+              box-shadow var(--animate-duration) var(--animate-ease);
+}
+
+/* Focus styles */
+.focus-ring {
+  @apply focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2;
+}
+
+.dark .focus-ring {
+  @apply focus:ring-primary-light focus:ring-offset-gray-800;
+}
+
+/* Utility classes */
+.fade-in {
+  animation: fadeIn 0.5s ease-out;
+}
+
+.slide-in {
+  animation: slideIn 0.3s ease-out;
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+.animate-float-delay {
+  animation: float 6s ease-in-out infinite 2s;
+}
+
+.animate-pulse-slow {
+  animation: pulse-slow 3s ease-in-out infinite;
+}
+
+/* Glass morphism effect */
+.glass-effect {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.dark .glass-effect {
+  background: rgba(31, 41, 55, 0.3);
+  border: 1px solid rgba(75, 85, 99, 0.3);
+}
+
+/* Custom button variants */
+.btn-gradient {
+  background: linear-gradient(135deg, var(--color-primary), var(--color-primary-light));
+  border: none;
+  color: white;
+  transition: all 0.3s ease;
+}
+
+.btn-gradient:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(0, 104, 74, 0.3);
+}
+
+.dark .btn-gradient:hover {
+  box-shadow: 0 10px 25px rgba(71, 161, 107, 0.3);
+}
+
+/* Error and success states */
+.error-shake {
+  animation: shake 0.5s ease-in-out;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
+}
+
+/* Loading states */
+.loading-shimmer {
+  background: linear-gradient(90deg, 
+    rgba(156, 163, 175, 0.1) 25%, 
+    rgba(156, 163, 175, 0.3) 50%, 
+    rgba(156, 163, 175, 0.1) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite;
+}
+
+.dark .loading-shimmer {
+  background: linear-gradient(90deg, 
+    rgba(75, 85, 99, 0.1) 25%, 
+    rgba(75, 85, 99, 0.3) 50%, 
+    rgba(75, 85, 99, 0.1) 75%);
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* Card hover effects */
+.card-hover {
+  transition: all 0.3s ease;
+}
+
+.card-hover:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+}
+
+.dark .card-hover:hover {
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+}
+
+/* Status indicators */
+.status-dot {
+  position: relative;
+}
+
+.status-dot::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: 50%;
+  animation: pulse 2s infinite;
+}
+
+.status-online::before {
+  background: rgba(16, 185, 129, 0.3);
+}
+
+.status-busy::before {
+  background: rgba(245, 158, 11, 0.3);
+}
+
+.status-offline::before {
+  background: rgba(156, 163, 175, 0.3);
+}
+
+/* Role-based color utilities */
+.role-admin {
+  --role-color: #00684A;
+  --role-color-light: #47A16B;
+}
+
+.role-agent {
+  --role-color: #0066CC;
+  --role-color-light: #60A5FA;
+}
+
+.role-supplier {
+  --role-color: #10B981;
+  --role-color-light: #34D399;
+}
+
+.role-buyer {
+  --role-color: #8B5CF6;
+  --role-color-light: #A78BFA;
+}
+
+/* Enhanced form styling */
+.form-input {
+  @apply w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-200;
+}
+
+.form-input:focus {
+  box-shadow: 0 0 0 3px rgba(0, 104, 74, 0.1);
+}
+
+.dark .form-input:focus {
+  box-shadow: 0 0 0 3px rgba(71, 161, 107, 0.1);
+}
+
+/* Enhanced typography */
+.heading-gradient {
+  background: linear-gradient(135deg, var(--color-primary), var(--color-primary-light));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Mobile optimizations */
+@media (max-width: 768px) {
+  .card-hover:hover {
+    transform: none;
+  }
+  
+  .btn-gradient:hover {
+    transform: none;
+  }
+}
+
+/* Print styles */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  
+  * {
+    background: white !important;
+    color: black !important;
+    box-shadow: none !important;
+  }
+}
+
+/* Custom animations and utilities */
+@layer utilities {
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
+  
+  .animate-float-delay {
+    animation: float 6s ease-in-out infinite;
+    animation-delay: 2s;
+  }
+}
+
+
+
 /* Animation delays for typing indicator */
 .delay-100 {
   animation-delay: 100ms;
