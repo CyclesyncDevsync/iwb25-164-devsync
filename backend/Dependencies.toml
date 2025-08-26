@@ -131,6 +131,9 @@ dependencies = [
 	{org = "ballerina", name = "log"},
 	{org = "ballerina", name = "time"}
 ]
+modules = [
+	{org = "ballerina", packageName = "jwt", moduleName = "jwt"}
+]
 
 [[package]]
 org = "ballerina"
@@ -306,6 +309,9 @@ dependencies = [
 	{org = "ballerina", name = "lang.object"},
 	{org = "ballerina", name = "time"}
 ]
+modules = [
+	{org = "ballerina", packageName = "sql", moduleName = "sql"}
+]
 
 [[package]]
 org = "ballerina"
@@ -443,6 +449,7 @@ version = "0.1.0"
 dependencies = [
 	{org = "ballerina", name = "cache"},
 	{org = "ballerina", name = "http"},
+	{org = "ballerina", name = "jwt"},
 	{org = "ballerina", name = "lang.array"},
 	{org = "ballerina", name = "lang.float"},
 	{org = "ballerina", name = "lang.int"},
@@ -450,6 +457,7 @@ dependencies = [
 	{org = "ballerina", name = "lang.value"},
 	{org = "ballerina", name = "log"},
 	{org = "ballerina", name = "random"},
+	{org = "ballerina", name = "sql"},
 	{org = "ballerina", name = "tcp"},
 	{org = "ballerina", name = "time"},
 	{org = "ballerina", name = "uuid"},
@@ -460,6 +468,7 @@ dependencies = [
 ]
 modules = [
 	{org = "hp", packageName = "Cyclesync", moduleName = "Cyclesync"},
+	{org = "hp", packageName = "Cyclesync", moduleName = "Cyclesync.auth"},
 	{org = "hp", packageName = "Cyclesync", moduleName = "Cyclesync.chatbot"},
 	{org = "hp", packageName = "Cyclesync", moduleName = "Cyclesync.database"},
 	{org = "hp", packageName = "Cyclesync", moduleName = "Cyclesync.demand_prediction"},

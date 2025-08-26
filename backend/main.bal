@@ -1,18 +1,22 @@
 // The chatbot module will auto-register its services
+
+// The auth module will auto-register its services
+import Cyclesync.auth as _;
+// Auth module functions
+import Cyclesync.auth;
 import Cyclesync.chatbot as _;
+// Database module for connection management
+import Cyclesync.database;
 // The demand_prediction module will auto-register its services
 import Cyclesync.demand_prediction as _;
 // The quality_assessment module will auto-register its services
 import Cyclesync.quality_assessment as _;
-// Database module for connection management
-import Cyclesync.database;
 
 import ballerina/http;
 import ballerina/log;
 
 configurable int port = 8080;
-listener http:Listener server = new (port);
-
+public listener http:Listener server = check new (8080);
 
 // Log startup information
 function init() {
@@ -24,6 +28,14 @@ function init() {
         log:printError("Failed to initialize database connection", dbResult);
     } else {
         log:printInfo("Database connection initialized successfully");
+
+        // Initialize authentication schema
+        error? authResult = auth:initializeAuthSchema();
+        if (authResult is error) {
+            log:printError("Failed to initialize auth schema", authResult);
+        } else {
+            log:printInfo("Authentication schema initialized successfully");
+        }
     }
 
     log:printInfo(string `Main API Server starting on port ${port}`);
@@ -56,7 +68,7 @@ service / on server {
     // Database test endpoint with sample data operations
     resource function post test/database() returns json|http:Response {
         json|error testResult = database:executeTestOperations();
-        
+
         if (testResult is error) {
             http:Response response = new;
             response.statusCode = 503;
@@ -66,9 +78,8 @@ service / on server {
             });
             return response;
         }
-        
+
         return testResult;
     }
 }
-
 
