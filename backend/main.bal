@@ -4,76 +4,18 @@ import Cyclesync.chatbot as _;
 import Cyclesync.demand_prediction as _;
 // The quality_assessment module will auto-register its services
 import Cyclesync.quality_assessment as _;
+// The dynamic_pricing module will auto-register its services
+import Cyclesync.dynamic_pricing as _;
 
 import ballerina/http;
 import ballerina/log;
 // Database configuration (import from local file)
 import ballerinax/postgresql;
+import Cyclesync.database_config;
 
 configurable int port = 8080;
 listener http:Listener server = new (port);
 
-// Database configuration
-configurable string dbHost = ?;
-configurable int dbPort = 5432;
-configurable string dbUsername = ?;
-configurable string dbPassword = ?;
-configurable string dbName = ?;
-configurable int dbConnectionPool = 10;
-configurable boolean dbSsl = true;
-
-// Database client instance
-postgresql:Client? dbClient = ();
-
-// Initialize database connection
-function initDatabaseConnection() returns error? {
-    // Create PostgreSQL connection configuration
-    postgresql:Options connectionOptions = {
-        ssl: {
-            mode: dbSsl ? "REQUIRE" : "DISABLE"
-        }
-    };
-
-    // Initialize the PostgreSQL client
-    postgresql:Client|error newClient = new (
-        host = dbHost,
-        username = dbUsername, 
-        password = dbPassword,
-        database = dbName,
-        port = dbPort,
-        connectionPool = {maxOpenConnections: dbConnectionPool},
-        options = connectionOptions
-    );
-
-    if (newClient is error) {
-        log:printError("Failed to establish database connection", newClient);
-        return newClient;
-    }
-
-    dbClient = newClient;
-    log:printInfo("Database connection established successfully");
-    
-    // Test connection
-    int|error testResult = newClient->queryRow(`SELECT 1 as test`);
-    if (testResult is error) {
-        log:printError("Database connection test failed", testResult);
-        return testResult;
-    }
-    
-    log:printInfo("Database connection test successful");
-    return;
-}
-
-// Health check function
-function isDatabaseConnected() returns boolean {
-    postgresql:Client? clientInstance = dbClient;
-    if (clientInstance is postgresql:Client) {
-        // Try a simple query to test connection
-        int|error result = clientInstance->queryRow(`SELECT 1 as health_check`);
-        return result is int;
-    }
-    return false;
-}
 
 // Initialize auth middleware
 final AuthMiddleware authMiddleware = new AuthMiddleware();
@@ -83,7 +25,7 @@ function init() {
     log:printInfo("Starting Cyclesync Backend Services...");
 
     // Initialize database connection
-    error? dbResult = initDatabaseConnection();
+    error? dbResult = database_config:initDatabaseConnection();
     if (dbResult is error) {
         log:printError("Failed to initialize database connection", dbResult);
     } else {
@@ -100,7 +42,7 @@ function init() {
 // Health check endpoint
 service / on server {
     resource function get health() returns json {
-        boolean dbConnected = isDatabaseConnected();
+        boolean dbConnected = database_config:isDatabaseConnected();
         return {
             "status": "healthy",
             "message": "Cyclesync API is running",
@@ -110,7 +52,7 @@ service / on server {
 
     // Database health check endpoint
     resource function get health/database() returns json {
-        boolean dbConnected = isDatabaseConnected();
+        boolean dbConnected = database_config:isDatabaseConnected();
         return {
             "database_status": dbConnected ? "connected" : "disconnected",
             "timestamp": ""
@@ -119,8 +61,8 @@ service / on server {
 
     // Database test endpoint with sample data operations
     resource function post test/database() returns json|http:Response {
-        postgresql:Client? clientInstance = dbClient;
-        if (clientInstance is ()) {
+        postgresql:Client|error clientResult = database_config:getDbClient();
+        if (clientResult is error) {
             http:Response response = new;
             response.statusCode = 503;
             response.setJsonPayload({
@@ -130,11 +72,7 @@ service / on server {
             return response;
         }
 
-        json testResults = {
-            "test_suite": "Database Operations Test",
-            "timestamp": "",
-            "results": []
-        };
+        postgresql:Client clientInstance = clientResult;
 
         json[] results = [];
 
