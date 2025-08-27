@@ -48,14 +48,67 @@ service /api/ai/demand on demandListener {
             return badRequest;
         }
         
-        // Generate or fetch historical data
-        DemandHistory demandHistory = generateDemandHistory(request.wasteType, request.location);
+        // Fetch historical data from database
+        WasteDataPoint[]|error historicalDataResult = getHistoricalData(request.wasteType, request.location);
+        if (historicalDataResult is error) {
+            log:printError("Failed to fetch historical data", historicalDataResult);
+            http:InternalServerError serverError = {
+                body: {
+                    "error": "Database error",
+                    "message": "Failed to fetch historical data"
+                }
+            };
+            return serverError;
+        }
         
-        // Get current market conditions
-        MarketConditions marketConditions = generateMarketConditions(request.location);
+        DemandHistory demandHistory = convertToHistoricalData(historicalDataResult, request.wasteType, request.location);
         
-        // Get seasonal patterns
-        SeasonalPattern seasonalPattern = generateSeasonalPattern(request.wasteType, request.location);
+        // Get current market conditions from database
+        MarketConditions|error marketConditionsResult = getMarketConditions(request.location);
+        if (marketConditionsResult is error) {
+            log:printError("Failed to fetch market conditions", marketConditionsResult);
+            http:InternalServerError serverError = {
+                body: {
+                    "error": "Database error",
+                    "message": "Failed to fetch market conditions"
+                }
+            };
+            return serverError;
+        }
+        MarketConditions marketConditions = marketConditionsResult;
+        
+        // Get seasonal patterns from database
+        SeasonalPattern|error seasonalPatternResult = getSeasonalPattern(request.wasteType, request.location);
+        if (seasonalPatternResult is error) {
+            log:printError("Failed to fetch seasonal patterns", seasonalPatternResult);
+            // Use default seasonal pattern as fallback
+            seasonalPatternResult = getSeasonalPattern(request.wasteType);
+            if (seasonalPatternResult is error) {
+                log:printError("Failed to fetch default seasonal patterns", seasonalPatternResult);
+                http:InternalServerError serverError = {
+                    body: {
+                        "error": "Database error",
+                        "message": "Failed to fetch seasonal patterns"
+                    }
+                };
+                return serverError;
+            }
+        }
+        
+        // Handle the result properly
+        SeasonalPattern seasonalPattern;
+        if (seasonalPatternResult is SeasonalPattern) {
+            seasonalPattern = seasonalPatternResult;
+        } else {
+            // This shouldn't happen but add a fallback
+            http:InternalServerError serverError = {
+                body: {
+                    "error": "Database error",
+                    "message": "Failed to process seasonal patterns"
+                }
+            };
+            return serverError;
+        }
         
         // Determine forecast horizon
         int forecastDays = getForecastDays(request.timeHorizon);
@@ -101,6 +154,13 @@ service /api/ai/demand on demandListener {
             marketTrend: marketTrend,
             opportunityScore: opportunityScore
         };
+        
+        // Store forecast in database for future reference
+        error? storeError = storeDemandForecast(forecast);
+        if (storeError is error) {
+            log:printError("Failed to store demand forecast", storeError);
+            // Continue anyway - forecast can still be returned
+        }
         
         log:printInfo(string `Generated demand forecast for ${request.wasteType}: ${nextWeekDemand} tons/week`);
         return forecast;
@@ -168,28 +228,71 @@ service /api/ai/demand on demandListener {
     }
     
     // Get historical demand analysis
-    resource function get history/[string wasteType]/[string location]() returns DemandHistory|http:NotFound {
+    resource function get history/[string wasteType]/[string location]() returns DemandHistory|http:NotFound|http:InternalServerError {
         log:printInfo(string `Fetching demand history for ${wasteType} in ${location}`);
         
-        // In a real implementation, this would query the database
-        DemandHistory history = generateDemandHistory(wasteType, location);
+        // Fetch from database
+        WasteDataPoint[]|error historicalDataResult = getHistoricalData(wasteType, location);
+        if (historicalDataResult is error) {
+            log:printError("Failed to fetch historical data", historicalDataResult);
+            http:InternalServerError serverError = {
+                body: {
+                    "error": "Database error",
+                    "message": "Failed to fetch historical data"
+                }
+            };
+            return serverError;
+        }
         
+        if (historicalDataResult.length() == 0) {
+            http:NotFound notFound = {
+                body: {
+                    "error": "Not found",
+                    "message": string `No historical data found for ${wasteType} in ${location}`
+                }
+            };
+            return notFound;
+        }
+        
+        DemandHistory history = convertToHistoricalData(historicalDataResult, wasteType, location);
         return history;
     }
     
     // Get market conditions for a location
-    resource function get 'market\-conditions/[string location]() returns MarketConditions {
+    resource function get 'market\-conditions/[string location]() returns MarketConditions|http:InternalServerError {
         log:printInfo(string `Fetching market conditions for ${location}`);
         
-        MarketConditions conditions = generateMarketConditions(location);
+        MarketConditions|error conditions = getMarketConditions(location);
+        if (conditions is error) {
+            log:printError("Failed to fetch market conditions", conditions);
+            http:InternalServerError serverError = {
+                body: {
+                    "error": "Database error",
+                    "message": "Failed to fetch market conditions"
+                }
+            };
+            return serverError;
+        }
+        
         return conditions;
     }
     
     // Get seasonal patterns for waste type
-    resource function get 'seasonal\-pattern/[string wasteType]/[string location]() returns SeasonalPattern {
+    resource function get 'seasonal\-pattern/[string wasteType]/[string location]() returns SeasonalPattern|http:InternalServerError {
         log:printInfo(string `Fetching seasonal pattern for ${wasteType} in ${location}`);
         
-        SeasonalPattern pattern = generateSeasonalPattern(wasteType, location);
+        SeasonalPattern|error pattern = getSeasonalPattern(wasteType, location);
+        if (pattern is error) {
+            log:printError("Failed to fetch seasonal pattern", pattern);
+            http:InternalServerError serverError = {
+                body: {
+                    "error": "Database error", 
+                    "message": "Failed to fetch seasonal pattern"
+                }
+            };
+            return serverError;
+        }
+        
         return pattern;
     }
     
@@ -437,3 +540,28 @@ function calculateWinProbability(float bid, float marketPrice, float confidence,
     // Ensure probability is between 0.1 and 0.95
     return floats:max(0.1, floats:min(0.95, baseProbability));
 }
+
+// Helper function to convert database records to DemandHistory
+function convertToHistoricalData(WasteDataPoint[] dataPoints, string wasteType, string location) returns DemandHistory {
+    float[] demandTrend = [];
+    
+    foreach WasteDataPoint point in dataPoints {
+        demandTrend.push(point.quantity);
+    }
+    
+    // Calculate seasonality factor (simplified)
+    float seasonalityFactor = calculateSeasonalityFactor(demandTrend);
+    
+    // Calculate volatility index
+    float volatilityIndex = calculateVolatilityIndex(demandTrend);
+    
+    return {
+        wasteType: wasteType,
+        location: location,
+        historicalData: dataPoints,
+        demandTrend: demandTrend,
+        seasonalityFactor: seasonalityFactor,
+        volatilityIndex: volatilityIndex
+    };
+}
+
