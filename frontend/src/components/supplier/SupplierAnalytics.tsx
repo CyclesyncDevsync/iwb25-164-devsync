@@ -29,7 +29,7 @@ import {
   StarIcon,
   CalendarIcon
 } from '@heroicons/react/24/outline';
-import { useAppDispatch, useAppSelector } from '../../hooks/useAuth';
+import { useAppDispatch, useAppSelector } from '../../hooks/redux';
 import { fetchSupplierAnalytics } from '../../store/slices/supplierSlice';
 import { SupplierType } from '../../types/supplier';
 

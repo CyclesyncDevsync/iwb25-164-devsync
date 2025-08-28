@@ -66,33 +66,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check the response code in the body (backend returns 409 in body even with 201 HTTP status)
-    if (backendData.code === 409 && backendData?.user) {
-      console.log('User already exists (code 409) - treating as successful login');
-      console.log('User data being returned:', JSON.stringify(backendData.user, null, 2));
-      
-      // Simple success response for existing users
-      const response = {
-        success: true,
-        message: 'Welcome back! Redirecting to your dashboard.',
-        user: backendData.user,
-        redirectUrl: '/buyer' // Hardcoded for now since user is a buyer
-      };
-      
-      console.log('Full response being sent:', JSON.stringify(response, null, 2));
-      return NextResponse.json(response);
-    }
-
-    if (backendData.code === 201 && backendData.user) {
-      // Registration successful - user is auto-approved
-      console.log('Registration completed successfully');
+    // Handle both new user creation and existing user role update
+    if ((backendData.code === 201 || backendData.code === 409) && backendData.user) {
+      console.log(`Registration/Role update successful with code ${backendData.code}`);
+      console.log('User data:', JSON.stringify(backendData.user, null, 2));
       
       // Get dashboard route for the user's role
       const dashboardRoute = getDashboardRoute(backendData.user.role);
       
       const response = NextResponse.json({
         success: true,
-        message: 'Registration completed successfully! Redirecting to your dashboard.',
+        message: backendData.code === 201 ? 
+          'Registration completed successfully! Redirecting to your dashboard.' : 
+          'Role updated successfully! Redirecting to your dashboard.',
         user: backendData.user,
         redirectUrl: dashboardRoute
       });
@@ -117,8 +103,9 @@ export async function POST(request: NextRequest) {
 
       return response;
     } else {
+      console.error('Unexpected response format or missing user data');
       return NextResponse.json(
-        { success: false, message: 'Registration failed. Please try again.' },
+        { success: false, message: backendData.message || 'Registration failed. Please try again.' },
         { status: 500 }
       );
     }

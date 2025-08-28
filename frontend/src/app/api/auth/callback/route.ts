@@ -65,27 +65,30 @@ export async function GET(request: NextRequest) {
     console.log('Tokens received successfully');
     console.log('Token response includes id_token:', !!tokens.id_token);
 
-    // Validate with Ballerina backend and get/create user
-    const backendResponse = await fetch(`${BALLERINA_AUTH_URL}/api/auth/validate`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${tokens.id_token}`
+    // Check flow type to determine if this is login or registration
+    const flowType = request.cookies.get('flow_type')?.value;
+    console.log('Flow type detected:', flowType);
+
+    if (flowType === 'login') {
+      // For login flow - validate with backend to check if user exists
+      const backendResponse = await fetch(`${BALLERINA_AUTH_URL}/api/auth/validate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${tokens.id_token}`
+        }
+      });
+
+      const backendData = await backendResponse.json();
+      console.log('Backend validation response for login:', backendData);
+      
+      if (!backendResponse.ok || !backendData.user) {
+        console.error('Login failed - user not found in system');
+        return NextResponse.redirect(`${baseUrl}/auth/login?error=user_not_found&message=${encodeURIComponent('User not registered. Please create an account first.')}`);
       }
-    });
 
-    const backendData = await backendResponse.json();
-    console.log('Backend validation response:', backendData);
-    
-    if (!backendResponse.ok) {
-      console.error('Backend validation failed with status:', backendResponse.status);
-      console.error('Backend error details:', backendData);
-      return NextResponse.redirect(`${baseUrl}/auth/login?error=validation_failed&message=${encodeURIComponent(backendData.message || 'Validation failed')}`);
-    }
-
-    if (backendData.success && backendData.user) {
-      // User exists and is auto-approved - redirect to dashboard
-      console.log('User found, redirecting to dashboard');
+      // User exists - redirect to dashboard
+      console.log('User found during login, redirecting to dashboard');
       
       const dashboardRoute = getDashboardRoute(backendData.user.role);
       const response = NextResponse.redirect(`${baseUrl}${dashboardRoute}`);
@@ -112,8 +115,8 @@ export async function GET(request: NextRequest) {
 
       return response;
     } else {
-      // New user from registration flow - needs role selection
-      console.log('New user detected, redirecting to role selection');
+      // For registration flow - always redirect to role selection
+      console.log('Registration flow - redirecting to role selection');
       
       const response = NextResponse.redirect(`${baseUrl}/auth/role-selection`);
       

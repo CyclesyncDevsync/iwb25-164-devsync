@@ -81,17 +81,7 @@ service /api/auth on new http:Listener(8085) {
             return authResult;
         }
         
-        // Check if user is already registered
-        User|error existingUser = getUserByAsgardeoId(authResult.asgardeoId);
-        if existingUser is User {
-            return <json>{
-                code: 409,
-                message: "User already registered",
-                user: existingUser
-            };
-        }
-        
-        // Get registration details from request body
+        // Get registration details from request body first
         json|error payload = request.getJsonPayload();
         if payload is error {
             return <http:BadRequest>{
@@ -136,6 +126,28 @@ service /api/auth on new http:Listener(8085) {
                     message: "Invalid role for registration",
                     details: "Only buyers and suppliers can self-register"
                 }
+            };
+        }
+        
+        // Check if user is already registered
+        User|error existingUser = getUserByAsgardeoId(authResult.asgardeoId);
+        if existingUser is User {
+            // If user exists, update their role instead of throwing error
+            UpdateUserRequest updateReq = { role: role };
+            User|error updatedUser = updateUser(existingUser.id, updateReq, existingUser.id);
+            
+            if updatedUser is error {
+                return <json>{
+                    code: 500,
+                    message: "Failed to update user role",
+                    details: updatedUser.message()
+                };
+            }
+            
+            return <json>{
+                code: 409,
+                message: "User role updated successfully",
+                user: updatedUser
             };
         }
         

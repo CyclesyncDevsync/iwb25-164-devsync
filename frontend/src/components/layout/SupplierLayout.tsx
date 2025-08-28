@@ -16,7 +16,7 @@ import {
   ShoppingBagIcon,
   CurrencyDollarIcon
 } from '@heroicons/react/24/outline';
-import { useAppSelector } from '../../hooks/useAuth';
+import { useAppSelector } from '../../hooks/redux';
 import { SupplierType } from '../../types/supplier';
 
 interface SupplierLayoutProps {
