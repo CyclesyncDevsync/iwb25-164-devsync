@@ -1,59 +1,68 @@
-import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
-import { USER_ROLES } from '../../../../constants';
+import { NextRequest, NextResponse } from 'next/server';
+import { generateCodeVerifier, generateCodeChallenge, generateState } from '@/lib/pkce';
 
-export async function POST(request: Request) {
+// Asgardeo Configuration
+const ASGARDEO_CLIENT_ID = process.env.NEXT_PUBLIC_ASGARDEO_CLIENT_ID!;
+const ASGARDEO_BASE_URL = process.env.NEXT_PUBLIC_ASGARDEO_BASE_URL!;
+const REDIRECT_URI = process.env.NEXT_PUBLIC_ASGARDEO_REDIRECT_URI!;
+const SCOPES = process.env.NEXT_PUBLIC_ASGARDEO_SCOPES!;
+
+export async function POST(request: NextRequest) {
   try {
-    const { name, email, password, role } = await request.json();
+    console.log('Initiating Asgardeo registration flow...');
 
-    // Validate input
-    if (!name || !email || !password) {
-      return NextResponse.json(
-        { message: 'Name, email, and password are required' }, 
-        { status: 400 }
-      );
-    }
+    // Generate PKCE parameters
+    const codeVerifier = generateCodeVerifier();
+    const codeChallenge = await generateCodeChallenge(codeVerifier);
+    const state = generateState();
 
-    // Validate email format
-    if (!email.includes('@')) {
-      return NextResponse.json(
-        { message: 'Invalid email format' }, 
-        { status: 400 }
-      );
-    }
+    // Build authorization URL for registration
+    const authUrl = new URL(`${ASGARDEO_BASE_URL}/oauth2/authorize`);
+    authUrl.searchParams.append('client_id', ASGARDEO_CLIENT_ID);
+    authUrl.searchParams.append('redirect_uri', REDIRECT_URI);
+    authUrl.searchParams.append('response_type', 'code');
+    authUrl.searchParams.append('scope', SCOPES);
+    authUrl.searchParams.append('code_challenge', codeChallenge);
+    authUrl.searchParams.append('code_challenge_method', 'S256');
+    authUrl.searchParams.append('state', state);
 
-    // Validate password strength (simple check for demo)
-    if (password.length < 8) {
-      return NextResponse.json(
-        { message: 'Password must be at least 8 characters long' }, 
-        { status: 400 }
-      );
-    }
+    console.log('Registration URL generated:', authUrl.toString());
 
-    // In a real app, you would check if user already exists, hash the password, etc.
-
-    // Determine user role
-    const userRole = role || USER_ROLES.BUYER; // Default to BUYER if no role specified
-
-    // Mock user data - in a real app, you would save this to a database
-    const newUser = {
-      id: 'user_' + Date.now(),
-      name,
-      email,
-      role: userRole,
-    };
-
-    // In a real app, you would send a verification email here
-    // For demo purposes, we'll just return success
-
-    return NextResponse.json({ 
-      message: 'Registration successful. Please verify your email.',
-      user: newUser
+    const response = NextResponse.json({
+      success: true,
+      message: 'Redirecting to Asgardeo for registration...',
+      redirectUrl: authUrl.toString()
     });
+
+    // Store PKCE parameters in HTTP-only cookies
+    response.cookies.set('code_verifier', codeVerifier, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 600, // 10 minutes
+      path: '/'
+    });
+
+    response.cookies.set('auth_state', state, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 600, // 10 minutes
+      path: '/'
+    });
+
+    // Mark this as a registration flow
+    response.cookies.set('flow_type', 'register', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 600, // 10 minutes
+      path: '/'
+    });
+
+    return response;
+
   } catch (error) {
-    console.error('Registration error:', error);
+    console.error('Registration initiation error:', error);
     return NextResponse.json(
-      { message: 'Internal server error' }, 
+      { success: false, message: 'Failed to initiate registration. Please try again.' },
       { status: 500 }
     );
   }

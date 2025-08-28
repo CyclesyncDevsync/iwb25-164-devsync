@@ -159,7 +159,7 @@ service /api/auth on new http:Listener(8085) {
         
         return {
             code: 201,
-            message: "User registered successfully. Awaiting admin approval.",
+            message: "User registered successfully. You can now access your dashboard.",
             user: createdUser
         };
     }

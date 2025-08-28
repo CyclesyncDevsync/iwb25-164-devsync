@@ -54,7 +54,7 @@ public function validateIdToken(string idToken) returns AuthResult {
     if user is error {
         log:printInfo(string `User not found, creating new user for ${email}`);
         
-        // Create new user with pending status
+        // Create new user with approved status (auto-approval)
         CreateUserRequest newUserReq = {
             asgardeoId: sub,
             email: email,
@@ -143,11 +143,11 @@ public function createUser(CreateUserRequest userReq) returns User|error {
         return error("User with this email already exists");
     }
     
-    // Insert new user
+    // Insert new user with auto-approval
     sql:ParameterizedQuery insertQuery = `
         INSERT INTO users (asgardeo_id, email, first_name, last_name, role, status, created_at, updated_at)
         VALUES (${userReq.asgardeoId}, ${userReq.email}, ${userReq.firstName}, ${userReq.lastName}, 
-                ${userReq.role}, ${PENDING}, NOW(), NOW())
+                ${userReq.role}, ${APPROVED}, NOW(), NOW())
         RETURNING id, asgardeo_id, email, first_name, last_name, role, status, 
                   created_at, updated_at, approved_by, rejected_by, rejection_reason
     `;
@@ -155,7 +155,7 @@ public function createUser(CreateUserRequest userReq) returns User|error {
     User|error result = dbClient->queryRow(insertQuery);
     
     if result is User {
-        log:printInfo(string `Created new user: ${result.email} with role ${result.role}`);
+        log:printInfo(string `Created new user: ${result.email} with role ${result.role} (auto-approved)`);
     }
     
     return result;

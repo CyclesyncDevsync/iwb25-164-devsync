@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { asgardeoAuth } from '@/lib/asgardeo';
-import { signJWT, SessionData } from '@/lib/jwt';
+
+// Asgardeo Configuration
+const ASGARDEO_CLIENT_ID = process.env.NEXT_PUBLIC_ASGARDEO_CLIENT_ID!;
+const ASGARDEO_CLIENT_SECRET = process.env.ASGARDEO_CLIENT_SECRET!;
+const ASGARDEO_BASE_URL = process.env.NEXT_PUBLIC_ASGARDEO_BASE_URL!;
+const REDIRECT_URI = process.env.NEXT_PUBLIC_ASGARDEO_REDIRECT_URI!;
+const BALLERINA_AUTH_URL = process.env.NEXT_PUBLIC_AUTH_API_URL || 'http://localhost:8085';
 
 export async function GET(request: NextRequest) {
   const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
@@ -11,122 +16,146 @@ export async function GET(request: NextRequest) {
     const state = searchParams.get('state');
     const error = searchParams.get('error');
 
+    console.log('Callback received:', { code: !!code, state, error });
+
     if (error) {
-      return NextResponse.redirect(`${baseUrl}/?error=${error}`);
+      console.error('OAuth error:', error);
+      return NextResponse.redirect(`${baseUrl}/auth/login?error=${error}`);
     }
 
     if (!code || !state) {
-      return NextResponse.redirect(`${baseUrl}/?error=missing_code_or_state`);
+      console.error('Missing code or state');
+      return NextResponse.redirect(`${baseUrl}/auth/login?error=missing_code_or_state`);
     }
 
-    // Verify state
+    // Verify state and get PKCE verifier
     const storedState = request.cookies.get('auth_state')?.value;
     const codeVerifier = request.cookies.get('code_verifier')?.value;
+    const flowType = request.cookies.get('flow_type')?.value || 'login';
 
     if (!storedState || !codeVerifier || storedState !== state) {
-      return NextResponse.redirect(`${baseUrl}/?error=invalid_state`);
+      console.error('Invalid state or missing code verifier');
+      return NextResponse.redirect(`${baseUrl}/auth/login?error=invalid_state`);
     }
 
-    // Exchange code for tokens
-    const tokens = await asgardeoAuth.exchangeCodeForTokens(code, codeVerifier);
-    
-    // Get user info
-    const userInfo = await asgardeoAuth.getUserInfo(tokens.access_token);
-    
-    // Debug: Log user info received from Asgardeo
-    console.log('User info from Asgardeo:', userInfo);
+    console.log('State verified, exchanging code for tokens...');
 
-    // Try to get detailed user profile from SCIM API
-    let detailedProfile = null;
-    if (userInfo.sub) {
-      try {
-        detailedProfile = await asgardeoAuth.getUserProfile(userInfo.sub, tokens.access_token);
-        console.log('Detailed user profile:', detailedProfile);
-      } catch (error) {
-        console.error('Failed to fetch detailed user profile:', error);
-      }
-
-      // If SCIM failed, try management API
-      if (!detailedProfile) {
-        try {
-          console.log('Trying management API as fallback...');
-          detailedProfile = await asgardeoAuth.getUserByManagementAPI(userInfo.sub, tokens.access_token);
-          console.log('User profile from management API:', detailedProfile);
-        } catch (error) {
-          console.error('Management API also failed:', error);
-        }
-      }
-    }
-
-    // Extract user data with preference for detailed profile
-    const extractedUserData = {
-      id: userInfo.sub,
-      name: '',
-      email: '',
-      given_name: '',
-      family_name: ''
-    };
-
-    // Use detailed profile data if available
-    if (detailedProfile) {
-      extractedUserData.name = detailedProfile.displayName || 
-                               detailedProfile.name?.formatted || 
-                               `${detailedProfile.name?.givenName || ''} ${detailedProfile.name?.familyName || ''}`.trim();
-      extractedUserData.given_name = detailedProfile.name?.givenName || '';
-      extractedUserData.family_name = detailedProfile.name?.familyName || '';
-      extractedUserData.email = detailedProfile.emails?.[0]?.value || '';
-    }
-
-    // Fallback to userInfo if detailed profile is not available or incomplete
-    if (!extractedUserData.name) {
-      extractedUserData.name = userInfo.name || 
-                               userInfo.preferred_username || 
-                               `${userInfo.given_name || ''} ${userInfo.family_name || ''}`.trim() || 
-                               userInfo.email?.split('@')[0] || 
-                               'Unknown User';
-    }
-    if (!extractedUserData.email) {
-      extractedUserData.email = userInfo.email || '';
-    }
-    if (!extractedUserData.given_name) {
-      extractedUserData.given_name = userInfo.given_name || '';
-    }
-    if (!extractedUserData.family_name) {
-      extractedUserData.family_name = userInfo.family_name || '';
-    }
-
-    // Create session data
-    const sessionData: SessionData = {
-      user: extractedUserData,
-      accessToken: tokens.access_token,
-      refreshToken: tokens.refresh_token,
-      idToken: tokens.id_token,
-      expiresAt: Date.now() + (tokens.expires_in * 1000),
-      detailedProfile: detailedProfile // Store the full profile for reference
-    };
-    
-    // Debug: Log session data being stored
-    console.log('Session data being stored:', sessionData);
-
-    // Sign JWT session token
-    const sessionToken = signJWT(sessionData);
-
-    // Set session cookie and redirect
-    const response = NextResponse.redirect(`${baseUrl}/dashboard`);
-    response.cookies.set('session-token', sessionToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      maxAge: 3600, // 1 hour
-      path: '/'
+    // Exchange authorization code for tokens
+    const tokenResponse = await fetch(`${ASGARDEO_BASE_URL}/oauth2/token`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Authorization': `Basic ${Buffer.from(`${ASGARDEO_CLIENT_ID}:${ASGARDEO_CLIENT_SECRET}`).toString('base64')}`
+      },
+      body: new URLSearchParams({
+        grant_type: 'authorization_code',
+        code: code,
+        redirect_uri: REDIRECT_URI,
+        code_verifier: codeVerifier
+      })
     });
 
-    // Clear temporary cookies
-    response.cookies.delete('code_verifier');
-    response.cookies.delete('auth_state');
+    if (!tokenResponse.ok) {
+      const errorText = await tokenResponse.text();
+      console.error('Token exchange failed with status:', tokenResponse.status);
+      console.error('Token exchange error details:', errorText);
+      return NextResponse.redirect(`${baseUrl}/auth/login?error=token_exchange_failed`);
+    }
 
-    return response;
+    const tokens = await tokenResponse.json();
+    console.log('Tokens received successfully');
+    console.log('Token response includes id_token:', !!tokens.id_token);
+
+    // Validate with Ballerina backend and get/create user
+    const backendResponse = await fetch(`${BALLERINA_AUTH_URL}/api/auth/validate`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        idToken: tokens.id_token
+      }),
+    });
+
+    const backendData = await backendResponse.json();
+    console.log('Backend validation response:', backendData);
+    
+    if (!backendResponse.ok) {
+      console.error('Backend validation failed with status:', backendResponse.status);
+      console.error('Backend error details:', backendData);
+      return NextResponse.redirect(`${baseUrl}/auth/login?error=validation_failed&message=${encodeURIComponent(backendData.message || 'Validation failed')}`);
+    }
+
+    if (backendData.success && backendData.user) {
+      // User exists and is auto-approved - redirect to dashboard
+      console.log('User found, redirecting to dashboard');
+      
+      const dashboardRoute = getDashboardRoute(backendData.user.role);
+      const response = NextResponse.redirect(`${baseUrl}${dashboardRoute}`);
+      
+      // Set authentication cookies
+      response.cookies.set('asgardeo_id_token', tokens.id_token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        maxAge: tokens.expires_in || 3600,
+        path: '/'
+      });
+      
+      response.cookies.set('user_data', JSON.stringify(backendData.user), {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        maxAge: tokens.expires_in || 3600,
+        path: '/'
+      });
+
+      // Clean up temporary cookies
+      response.cookies.delete('code_verifier');
+      response.cookies.delete('auth_state');
+      response.cookies.delete('flow_type');
+
+      return response;
+    } else {
+      // New user from registration flow - needs role selection
+      console.log('New user detected, redirecting to role selection');
+      
+      const response = NextResponse.redirect(`${baseUrl}/auth/role-selection`);
+      
+      // Store ID token temporarily for role selection
+      response.cookies.set('pending_id_token', tokens.id_token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        maxAge: 600, // 10 minutes
+        path: '/'
+      });
+
+      // Clean up temporary cookies
+      response.cookies.delete('code_verifier');
+      response.cookies.delete('auth_state');
+      response.cookies.delete('flow_type');
+
+      return response;
+    }
+
   } catch (error) {
-    console.error('Callback error:', error);
-    return NextResponse.redirect(`${baseUrl}/?error=authentication_failed`);
+    console.error('Callback processing error:', error);
+    return NextResponse.redirect(`${baseUrl}/auth/login?error=callback_failed`);
+  }
+}
+
+// Helper function for role-based dashboard routing
+function getDashboardRoute(role: string): string {
+  switch (role) {
+    case 'SUPER_ADMIN':
+      return '/admin';
+    case 'ADMIN':
+      return '/admin';
+    case 'AGENT':
+      return '/agent';
+    case 'SUPPLIER':
+      return '/supplier';
+    case 'BUYER':
+      return '/buyer';
+    default:
+      return '/dashboard';
   }
 }

@@ -1,19 +1,16 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useSelector, useDispatch, TypedUseSelectorHook } from 'react-redux';
-import type { RootState, AppDispatch } from '../store';
+import { useEffect, useState, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 
-interface User {
-  id: string;
-  name: string;
+export interface User {
+  id: number;
+  asgardeoId: string;
   email: string;
-  role?: string;
-  given_name?: string;
-  family_name?: string;
-  preferred_username?: string;
-  picture?: string;
-  email_verified?: boolean;
+  firstName: string;
+  lastName: string;
+  role: 'SUPER_ADMIN' | 'ADMIN' | 'AGENT' | 'SUPPLIER' | 'BUYER';
+  status: 'APPROVED';
 }
 
 interface AuthState {
@@ -22,31 +19,73 @@ interface AuthState {
   error: string | null;
 }
 
+interface AuthResponse {
+  success: boolean;
+  message?: string;
+  user?: User;
+  redirectUrl?: string;
+}
+
 export function useAuth() {
   const [authState, setAuthState] = useState<AuthState>({
     user: null,
     loading: true,
     error: null
   });
+  
+  const router = useRouter();
 
   useEffect(() => {
     checkAuthStatus();
-  }, []);
+  }, [checkAuthStatus]);
 
-  const checkAuthStatus = async () => {
+  const checkAuthStatus = useCallback(async () => {
     try {
       console.log('Checking auth status...');
-      const response = await fetch('/api/auth/me');
+      
+      // Check localStorage first for quick load
+      const storedUser = localStorage.getItem('user');
+      if (storedUser) {
+        try {
+          const userData = JSON.parse(storedUser) as User;
+          setAuthState({
+            user: userData,
+            loading: false,
+            error: null
+          });
+        } catch (parseError) {
+          console.error('Error parsing stored user data:', parseError);
+          localStorage.removeItem('user');
+        }
+      }
+      
+      // Validate with backend
+      const response = await fetch('/api/auth/me', {
+        method: 'GET',
+        credentials: 'include' // Include HTTP-only cookies
+      });
+      
       if (response.ok) {
-        const userData = await response.json();
-        console.log('Auth check successful, user data:', userData);
-        setAuthState({
-          user: userData.user,
-          loading: false,
-          error: null
-        });
+        const data = await response.json();
+        console.log('Auth check successful, user data:', data);
+        if (data.user) {
+          localStorage.setItem('user', JSON.stringify(data.user));
+          setAuthState({
+            user: data.user,
+            loading: false,
+            error: null
+          });
+        } else {
+          localStorage.removeItem('user');
+          setAuthState({
+            user: null,
+            loading: false,
+            error: null
+          });
+        }
       } else {
         console.log('Auth check failed, response status:', response.status);
+        localStorage.removeItem('user');
         setAuthState({
           user: null,
           loading: false,
@@ -55,99 +94,157 @@ export function useAuth() {
       }
     } catch (error) {
       console.error('Auth check error:', error);
+      localStorage.removeItem('user');
       setAuthState({
         user: null,
         loading: false,
         error: 'Failed to check authentication status'
       });
     }
-  };
+  }, []);
 
-  // Login with email and password
-  const login = async (email?: string, password?: string) => {
+  // OAuth Login - redirects to Asgardeo
+  const login = useCallback(async (): Promise<AuthResponse> => {
     setAuthState(prev => ({ ...prev, loading: true, error: null }));
+
     try {
       const response = await fetch('/api/auth/login', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
+        headers: { 'Content-Type': 'application/json' }
       });
-      if (response.ok) {
-        await checkAuthStatus();
+
+      const data = await response.json();
+
+      if (data.success && data.redirectUrl) {
+        // Redirect to Asgardeo for authentication
+        console.log('Redirecting to Asgardeo for login...');
+        window.location.href = data.redirectUrl;
+        return { success: true, message: 'Redirecting to authentication...' };
       } else {
-        const data = await response.json();
         setAuthState(prev => ({ ...prev, loading: false, error: data.message || 'Login failed' }));
+        return { success: false, message: data.message || 'Login failed' };
       }
     } catch (error) {
-      setAuthState(prev => ({ ...prev, loading: false, error: 'Login failed' }));
+      const errorMessage = error instanceof Error ? error.message : 'Login failed';
+      setAuthState(prev => ({ ...prev, loading: false, error: errorMessage }));
+      return { success: false, message: errorMessage };
     }
-  };
+  }, []);
 
-  // Register new user
-  const register = async (name: string, email: string, password: string, role?: string) => {
+  // OAuth Registration - redirects to Asgardeo
+  const register = useCallback(async (): Promise<AuthResponse> => {
     setAuthState(prev => ({ ...prev, loading: true, error: null }));
+
     try {
       const response = await fetch('/api/auth/register', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, password, role })
+        headers: { 'Content-Type': 'application/json' }
       });
-      if (response.ok) {
-        await checkAuthStatus();
+
+      const data = await response.json();
+
+      if (data.success && data.redirectUrl) {
+        // Redirect to Asgardeo for registration
+        console.log('Redirecting to Asgardeo for registration...');
+        window.location.href = data.redirectUrl;
+        return { success: true, message: 'Redirecting to registration...' };
       } else {
-        const data = await response.json();
         setAuthState(prev => ({ ...prev, loading: false, error: data.message || 'Registration failed' }));
+        return { success: false, message: data.message || 'Registration failed' };
       }
     } catch (error) {
-      setAuthState(prev => ({ ...prev, loading: false, error: 'Registration failed' }));
+      const errorMessage = error instanceof Error ? error.message : 'Registration failed';
+      setAuthState(prev => ({ ...prev, loading: false, error: errorMessage }));
+      return { success: false, message: errorMessage };
     }
-  };
+  }, []);
 
-  // Update user profile
-  const updateProfile = async (profile: { name?: string; email?: string }) => {
+  // Complete registration with role selection
+  const completeRegistration = useCallback(async (role: 'buyer' | 'supplier'): Promise<AuthResponse> => {
     setAuthState(prev => ({ ...prev, loading: true, error: null }));
+
     try {
-      const response = await fetch('/api/auth/me', {
-        method: 'PATCH',
+      const response = await fetch('/api/auth/role-selection', {
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(profile)
+        credentials: 'include',
+        body: JSON.stringify({ role })
       });
-      if (response.ok) {
-        await checkAuthStatus();
+
+      const data = await response.json();
+
+      if (data.success && data.user) {
+        localStorage.setItem('user', JSON.stringify(data.user));
+        setAuthState({
+          user: data.user,
+          loading: false,
+          error: null
+        });
+        return { success: true, message: data.message, user: data.user, redirectUrl: data.redirectUrl };
       } else {
-        const data = await response.json();
-        setAuthState(prev => ({ ...prev, loading: false, error: data.message || 'Profile update failed' }));
+        setAuthState(prev => ({ ...prev, loading: false, error: data.message || 'Registration completion failed' }));
+        return { success: false, message: data.message || 'Registration completion failed' };
       }
     } catch (error) {
-      setAuthState(prev => ({ ...prev, loading: false, error: 'Profile update failed' }));
+      const errorMessage = error instanceof Error ? error.message : 'Registration completion failed';
+      setAuthState(prev => ({ ...prev, loading: false, error: errorMessage }));
+      return { success: false, message: errorMessage };
     }
-  };
+  }, []);
 
-  // Logout
-  const logout = async () => {
-    setAuthState(prev => ({ ...prev, loading: true, error: null }));
+  // Logout - clears cookies and local storage
+  const logout = useCallback(async (): Promise<void> => {
+    setAuthState(prev => ({ ...prev, loading: true }));
+    
     try {
-      await fetch('/api/auth/logout', { method: 'POST' });
-      setAuthState({ user: null, loading: false, error: null });
+      // Call logout API to clear HTTP-only cookies
+      await fetch('/api/auth/logout', { 
+        method: 'POST',
+        credentials: 'include'
+      });
     } catch (error) {
-      setAuthState(prev => ({ ...prev, loading: false, error: 'Logout failed' }));
+      console.error('Logout API call failed:', error);
+    } finally {
+      // Always clear local state
+      localStorage.removeItem('user');
+      setAuthState({ user: null, loading: false, error: null });
+      router.push('/auth/login');
     }
   };
 
-  const user: User | null = authState.user;
+  const clearAuthError = useCallback(() => {
+    setAuthState(prev => ({ ...prev, error: null }));
+  }, []);
+
+  const getUserDashboardRoute = useCallback((): string => {
+    if (!authState.user || !authState.user.role) return '/dashboard';
+    
+    switch (authState.user.role) {
+      case 'SUPER_ADMIN':
+        return '/admin';
+      case 'ADMIN':
+        return '/admin';
+      case 'AGENT':
+        return '/agent';
+      case 'SUPPLIER':
+        return '/supplier';
+      case 'BUYER':
+        return '/buyer';
+      default:
+        return '/dashboard';
+    }
+  }, [authState.user]);
 
   return {
-    user,
+    user: authState.user,
     loading: authState.loading,
     error: authState.error,
     login,
     register,
-    updateProfile,
+    completeRegistration,
     logout,
+    clearAuthError,
+    getUserDashboardRoute,
     isAuthenticated: !!authState.user
   };
 }
-
-// Redux hooks
-export const useAppDispatch = () => useDispatch<AppDispatch>();
-export const useAppSelector: TypedUseSelectorHook<RootState> = useSelector;
