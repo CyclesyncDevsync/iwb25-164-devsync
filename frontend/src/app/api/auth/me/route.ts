@@ -19,10 +19,8 @@ export async function GET(request: NextRequest) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        idToken: idToken
-      }),
+        'Authorization': `Bearer ${idToken}`
+      }
     });
 
     const backendData = await backendResponse.json();

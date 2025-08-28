@@ -35,10 +35,6 @@ export function useAuth() {
   
   const router = useRouter();
 
-  useEffect(() => {
-    checkAuthStatus();
-  }, [checkAuthStatus]);
-
   const checkAuthStatus = useCallback(async () => {
     try {
       console.log('Checking auth status...');
@@ -102,6 +98,10 @@ export function useAuth() {
       });
     }
   }, []);
+
+  useEffect(() => {
+    checkAuthStatus();
+  }, [checkAuthStatus]);
 
   // OAuth Login - redirects to Asgardeo
   const login = useCallback(async (): Promise<AuthResponse> => {
@@ -210,7 +210,7 @@ export function useAuth() {
       setAuthState({ user: null, loading: false, error: null });
       router.push('/auth/login');
     }
-  };
+  }, [router]);
 
   const clearAuthError = useCallback(() => {
     setAuthState(prev => ({ ...prev, error: null }));

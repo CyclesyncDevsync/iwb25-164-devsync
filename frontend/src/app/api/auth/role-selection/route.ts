@@ -45,6 +45,42 @@ export async function POST(request: NextRequest) {
 
     if (!backendResponse.ok) {
       console.error('Backend registration failed:', backendData);
+      
+      // Handle "User already registered" case (409) as success for login purposes
+      if (backendResponse.status === 409 && backendData.user) {
+        console.log('User already exists, proceeding with login');
+        
+        // Get dashboard route for the user's role
+        const dashboardRoute = getDashboardRoute(backendData.user.role);
+        
+        const response = NextResponse.json({
+          success: true,
+          message: 'Welcome back! Redirecting to your dashboard.',
+          user: backendData.user,
+          redirectUrl: dashboardRoute
+        });
+
+        // Set authentication cookies
+        response.cookies.set('asgardeo_id_token', pendingIdToken, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === 'production',
+          maxAge: 3600, // 1 hour
+          path: '/'
+        });
+        
+        response.cookies.set('user_data', JSON.stringify(backendData.user), {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === 'production',
+          maxAge: 3600, // 1 hour
+          path: '/'
+        });
+
+        // Clean up pending token
+        response.cookies.delete('pending_id_token');
+
+        return response;
+      }
+      
       return NextResponse.json(
         { success: false, message: backendData.message || 'Registration failed' },
         { status: backendResponse.status }

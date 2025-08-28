@@ -1,10 +1,12 @@
 // Copyright (c) 2025 CircularSync
 // Authentication and User Management Types
 
+import ballerina/sql;
+
 // User Roles Enum
 public enum UserRole {
     SUPER_ADMIN = "super_admin",
-    ADMIN = "admin", 
+    ADMIN = "admin",
     AGENT = "agent",
     SUPPLIER = "supplier",
     BUYER = "buyer"
@@ -13,23 +15,31 @@ public enum UserRole {
 // User Registration Status
 public enum RegistrationStatus {
     PENDING = "pending",
-    APPROVED = "approved", 
+    APPROVED = "approved",
     REJECTED = "rejected"
 }
 
 // User record from database
 public type User record {|
     int id;
+    @sql:Column {name: "asgardeo_id"}
     string asgardeoId;
     string email;
+    @sql:Column {name: "first_name"}
     string firstName;
+    @sql:Column {name: "last_name"}
     string lastName;
     UserRole role;
     RegistrationStatus status;
+    @sql:Column {name: "created_at"}
     string createdAt;
+    @sql:Column {name: "updated_at"}
     string updatedAt;
+    @sql:Column {name: "approved_by"}
     string? approvedBy?;
+    @sql:Column {name: "rejected_by"}
     string? rejectedBy?;
+    @sql:Column {name: "rejection_reason"}
     string? rejectionReason?;
 |};
 
@@ -38,7 +48,7 @@ public type CreateUserRequest record {|
     string asgardeoId;
     string email;
     string firstName;
-    string lastName; 
+    string lastName;
     UserRole role;
 |};
 

@@ -31,7 +31,6 @@ export async function GET(request: NextRequest) {
     // Verify state and get PKCE verifier
     const storedState = request.cookies.get('auth_state')?.value;
     const codeVerifier = request.cookies.get('code_verifier')?.value;
-    const flowType = request.cookies.get('flow_type')?.value || 'login';
 
     if (!storedState || !codeVerifier || storedState !== state) {
       console.error('Invalid state or missing code verifier');
@@ -71,10 +70,8 @@ export async function GET(request: NextRequest) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        idToken: tokens.id_token
-      }),
+        'Authorization': `Bearer ${tokens.id_token}`
+      }
     });
 
     const backendData = await backendResponse.json();

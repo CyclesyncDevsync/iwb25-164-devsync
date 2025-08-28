@@ -1,13 +1,13 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { generateCodeVerifier, generateCodeChallenge, generateState } from '@/lib/pkce';
 
 // Asgardeo Configuration
 const ASGARDEO_CLIENT_ID = process.env.NEXT_PUBLIC_ASGARDEO_CLIENT_ID!;
 const ASGARDEO_BASE_URL = process.env.NEXT_PUBLIC_ASGARDEO_BASE_URL!;
 const REDIRECT_URI = process.env.NEXT_PUBLIC_ASGARDEO_REDIRECT_URI!;
-const SCOPES = process.env.NEXT_PUBLIC_ASGARDEO_SCOPES!;
+const SCOPES = 'email openid profile'; // Ensure email scope is included
 
-export async function POST(request: NextRequest) {
+export async function POST() {
   try {
     console.log('Initiating Asgardeo registration flow...');
 
