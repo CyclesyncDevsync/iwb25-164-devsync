@@ -3,10 +3,15 @@ import { NextRequest, NextResponse } from 'next/server';
 const BALLERINA_AUTH_URL = process.env.NEXT_PUBLIC_AUTH_API_URL || 'http://localhost:8085';
 
 export async function POST(request: NextRequest) {
-  const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
+  console.log('=== ROLE SELECTION POST ENDPOINT CALLED ===');
+  console.log('Environment check:');
+  console.log('- NODE_ENV:', process.env.NODE_ENV);
+  console.log('- BALLERINA_AUTH_URL:', BALLERINA_AUTH_URL);
   
   try {
+    console.log('Parsing request body...');
     const { role } = await request.json();
+    console.log('Received role:', role);
     
     // Validate role selection
     if (!role || (role !== 'buyer' && role !== 'supplier')) {
@@ -27,6 +32,10 @@ export async function POST(request: NextRequest) {
     }
 
     console.log('Completing registration with role:', role);
+    console.log('Request details:');
+    console.log('- URL:', `${BALLERINA_AUTH_URL}/api/auth/register`);
+    console.log('- Token length:', pendingIdToken.length);
+    console.log('- Request body:', JSON.stringify({ role }));
 
     // Complete registration with Ballerina backend
     const backendResponse = await fetch(`${BALLERINA_AUTH_URL}/api/auth/register`, {
@@ -40,51 +49,38 @@ export async function POST(request: NextRequest) {
       }),
     });
 
+    console.log('Backend response received:');
+    console.log('- Status:', backendResponse.status);
+    console.log('- Status text:', backendResponse.statusText);
+    console.log('- Headers:', Object.fromEntries(backendResponse.headers.entries()));
+
     const backendData = await backendResponse.json();
-    console.log('Backend registration response:', backendData);
+    console.log('Backend registration response:', JSON.stringify(backendData, null, 2));
 
     if (!backendResponse.ok) {
       console.error('Backend registration failed:', backendData);
-      
-      // Handle "User already registered" case (409) as success for login purposes
-      if (backendResponse.status === 409 && backendData.user) {
-        console.log('User already exists, proceeding with login');
-        
-        // Get dashboard route for the user's role
-        const dashboardRoute = getDashboardRoute(backendData.user.role);
-        
-        const response = NextResponse.json({
-          success: true,
-          message: 'Welcome back! Redirecting to your dashboard.',
-          user: backendData.user,
-          redirectUrl: dashboardRoute
-        });
-
-        // Set authentication cookies
-        response.cookies.set('asgardeo_id_token', pendingIdToken, {
-          httpOnly: true,
-          secure: process.env.NODE_ENV === 'production',
-          maxAge: 3600, // 1 hour
-          path: '/'
-        });
-        
-        response.cookies.set('user_data', JSON.stringify(backendData.user), {
-          httpOnly: true,
-          secure: process.env.NODE_ENV === 'production',
-          maxAge: 3600, // 1 hour
-          path: '/'
-        });
-
-        // Clean up pending token
-        response.cookies.delete('pending_id_token');
-
-        return response;
-      }
       
       return NextResponse.json(
         { success: false, message: backendData.message || 'Registration failed' },
         { status: backendResponse.status }
       );
+    }
+
+    // Check the response code in the body (backend returns 409 in body even with 201 HTTP status)
+    if (backendData.code === 409 && backendData?.user) {
+      console.log('User already exists (code 409) - treating as successful login');
+      console.log('User data being returned:', JSON.stringify(backendData.user, null, 2));
+      
+      // Simple success response for existing users
+      const response = {
+        success: true,
+        message: 'Welcome back! Redirecting to your dashboard.',
+        user: backendData.user,
+        redirectUrl: '/buyer' // Hardcoded for now since user is a buyer
+      };
+      
+      console.log('Full response being sent:', JSON.stringify(response, null, 2));
+      return NextResponse.json(response);
     }
 
     if (backendData.code === 201 && backendData.user) {
@@ -128,7 +124,17 @@ export async function POST(request: NextRequest) {
     }
 
   } catch (error) {
-    console.error('Role selection error:', error);
+    console.error('=== ROLE SELECTION ERROR ===');
+    console.error('Error type:', typeof error);
+    console.error('Error name:', error instanceof Error ? error.name : 'Unknown');
+    console.error('Error message:', error instanceof Error ? error.message : String(error));
+    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
+    
+    if (error instanceof TypeError && error.message.includes('fetch')) {
+      console.error('This appears to be a network/fetch error');
+      console.error('Possible causes: Backend not running, wrong URL, network issues');
+    }
+    
     return NextResponse.json(
       { success: false, message: 'Failed to complete registration. Please try again.' },
       { status: 500 }
@@ -138,7 +144,7 @@ export async function POST(request: NextRequest) {
 
 // Helper function for role-based dashboard routing
 function getDashboardRoute(role: string): string {
-  switch (role) {
+  switch (role.toUpperCase()) {
     case 'SUPER_ADMIN':
       return '/admin';
     case 'ADMIN':

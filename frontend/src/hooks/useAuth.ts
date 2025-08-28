@@ -37,13 +37,16 @@ export function useAuth() {
 
   const checkAuthStatus = useCallback(async () => {
     try {
-      console.log('Checking auth status...');
+      console.log('=== CHECKING AUTH STATUS ===');
       
       // Check localStorage first for quick load
       const storedUser = localStorage.getItem('user');
+      console.log('Stored user in localStorage:', storedUser);
+      
       if (storedUser) {
         try {
           const userData = JSON.parse(storedUser) as User;
+          console.log('Parsed user data from localStorage:', userData);
           setAuthState({
             user: userData,
             loading: false,
@@ -53,6 +56,8 @@ export function useAuth() {
           console.error('Error parsing stored user data:', parseError);
           localStorage.removeItem('user');
         }
+      } else {
+        console.log('No user data found in localStorage');
       }
       
       // Validate with backend
@@ -172,16 +177,23 @@ export function useAuth() {
       });
 
       const data = await response.json();
+      console.log('=== COMPLETE REGISTRATION RESPONSE ===');
+      console.log('Response status:', response.status);
+      console.log('Response data:', JSON.stringify(data, null, 2));
 
       if (data.success && data.user) {
+        console.log('Success! Storing user data in localStorage...');
+        console.log('User data to store:', JSON.stringify(data.user, null, 2));
         localStorage.setItem('user', JSON.stringify(data.user));
         setAuthState({
           user: data.user,
           loading: false,
           error: null
         });
+        console.log('Auth state updated with user:', data.user);
         return { success: true, message: data.message, user: data.user, redirectUrl: data.redirectUrl };
       } else {
+        console.log('Registration failed - data.success:', data.success, 'data.user:', !!data.user);
         setAuthState(prev => ({ ...prev, loading: false, error: data.message || 'Registration completion failed' }));
         return { success: false, message: data.message || 'Registration completion failed' };
       }

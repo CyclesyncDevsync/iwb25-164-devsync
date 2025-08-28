@@ -30,15 +30,24 @@ export default function RoleSelectionPage() {
     clearAuthError();
     setMessage('');
 
-    console.log('Completing registration with role:', selectedRole);
+    console.log('=== ROLE SELECTION PAGE: Starting registration ===');
+    console.log('Selected role:', selectedRole);
+    console.log('Calling completeRegistration...');
+    
     const result = await completeRegistration(selectedRole);
+    
+    console.log('=== ROLE SELECTION PAGE: Registration result ===');
+    console.log('Result:', JSON.stringify(result, null, 2));
 
     if (result && result.success) {
       console.log('Registration completed successfully');
+      console.log('Redirect URL:', result.redirectUrl);
       if (result.redirectUrl) {
+        console.log('Redirecting to:', result.redirectUrl);
         router.push(result.redirectUrl);
       }
     } else {
+      console.log('Registration failed:', result?.message);
       setMessage(result?.message || 'Registration completion failed');
     }
   };

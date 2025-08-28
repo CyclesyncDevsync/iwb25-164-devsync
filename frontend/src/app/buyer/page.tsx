@@ -15,9 +15,54 @@ import {
   TruckIcon,
   CreditCardIcon
 } from '@heroicons/react/24/solid';
+import { useAuth } from '@/hooks/useAuth';
 
 const BuyerDashboard = () => {
   const [activeTab, setActiveTab] = useState('overview');
+  const { user, loading } = useAuth();
+
+  // Debug logging
+  console.log('=== BUYER DASHBOARD RENDER ===');
+  console.log('User from useAuth:', user);
+  console.log('Loading state:', loading);
+  console.log('localStorage user:', localStorage.getItem('user'));
+
+  // Show loading state while fetching user data
+  if (loading) {
+    console.log('Dashboard showing loading state');
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Get user initials for avatar
+  const getUserInitials = () => {
+    if (!user) {
+      console.log('getUserInitials: No user data');
+      return 'U';
+    }
+    const firstInitial = user.firstName?.charAt(0) || '';
+    const lastInitial = user.lastName?.charAt(0) || '';
+    const initials = (firstInitial + lastInitial).toUpperCase() || 'U';
+    console.log('getUserInitials:', { firstName: user.firstName, lastName: user.lastName, initials });
+    return initials;
+  };
+
+  // Get user display name
+  const getUserDisplayName = () => {
+    if (!user) {
+      console.log('getUserDisplayName: No user data');
+      return 'User';
+    }
+    const displayName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email || 'User';
+    console.log('getUserDisplayName:', { firstName: user.firstName, lastName: user.lastName, email: user.email, displayName });
+    return displayName;
+  };
 
   const stats = [
     {
@@ -120,7 +165,7 @@ const BuyerDashboard = () => {
           <div className="flex justify-between items-center py-6">
             <div>
               <h1 className="text-2xl font-bold text-gray-900">Buyer Dashboard</h1>
-              <p className="text-gray-600">Welcome back! Here's your procurement overview.</p>
+              <p className="text-gray-600">Welcome back, {user?.firstName || 'User'}! Here's your procurement overview.</p>
             </div>
             <div className="flex items-center space-x-4">
               <button className="relative p-2 text-gray-400 hover:text-gray-500">
@@ -129,9 +174,9 @@ const BuyerDashboard = () => {
               </button>
               <div className="flex items-center space-x-2">
                 <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
-                  <span className="text-purple-600 font-medium text-sm">JD</span>
+                  <span className="text-purple-600 font-medium text-sm">{getUserInitials()}</span>
                 </div>
-                <span className="text-gray-700 font-medium">John Doe</span>
+                <span className="text-gray-700 font-medium">{getUserDisplayName()}</span>
               </div>
             </div>
           </div>
