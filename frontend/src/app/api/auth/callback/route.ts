@@ -144,7 +144,8 @@ export async function GET(request: NextRequest) {
 
 // Helper function for role-based dashboard routing
 function getDashboardRoute(role: string): string {
-  switch (role) {
+  const normalizedRole = role.toUpperCase();
+  switch (normalizedRole) {
     case 'SUPER_ADMIN':
       return '/admin';
     case 'ADMIN':

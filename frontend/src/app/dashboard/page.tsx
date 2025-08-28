@@ -10,12 +10,25 @@ import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Ca
 import { Loading } from '../../components/ui/Loading';
 
 export default function Dashboard() {
-  const { user, loading, isAuthenticated, logout } = useAuth();
+  const { user, loading, isAuthenticated, logout, getUserDashboardRoute } = useAuth();
   const router = useRouter();
+
+  // Redirect users to their role-specific dashboard
+  useEffect(() => {
+    if (!loading && isAuthenticated && user) {
+      const roleBasedRoute = getUserDashboardRoute();
+      if (roleBasedRoute !== '/dashboard') {
+        console.log('Redirecting user to role-specific dashboard:', roleBasedRoute);
+        router.push(roleBasedRoute);
+        return;
+      }
+    }
+  }, [loading, isAuthenticated, user, router, getUserDashboardRoute]);
 
   // Redirect to home if not authenticated
   useEffect(() => {
     if (!loading && !isAuthenticated) {
+      console.log('User not authenticated, redirecting to home');
       router.push('/');
     }
   }, [loading, isAuthenticated, router]);
