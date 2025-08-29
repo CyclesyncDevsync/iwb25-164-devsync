@@ -26,7 +26,7 @@ import {
   Tooltip,
   ResponsiveContainer
 } from 'recharts';
-import { useAppDispatch, useAppSelector } from '../../hooks/useAuth';
+import { useAppDispatch, useAppSelector } from '../../hooks/redux';
 
 interface Transaction {
   id: string;
