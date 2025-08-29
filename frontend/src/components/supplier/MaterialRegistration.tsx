@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -14,6 +14,7 @@ import {
   CloudArrowUpIcon,
   MapPinIcon
 } from '@heroicons/react/24/outline';
+import InteractiveLocationMap from './InteractiveLocationMap';
 import {
   MaterialCategory,
   QualityGrade,
@@ -205,6 +206,22 @@ export default function MaterialRegistration({ onComplete, initialData }: Materi
     const fieldsToValidate = getStepFields(currentStep);
     const isStepValid = await trigger(fieldsToValidate);
     
+    // Special handling for location step
+    if (currentStep === 2) {
+      // Manually validate location fields
+      const locationData = getValues('location');
+      const hasRequiredFields = 
+        locationData?.address && 
+        locationData?.city && 
+        locationData?.district && 
+        locationData?.province;
+      
+      if (hasRequiredFields) {
+        setCurrentStep(currentStep + 1);
+        return;
+      }
+    }
+    
     if (isStepValid && currentStep < STEPS.length - 1) {
       setCurrentStep(currentStep + 1);
     }
@@ -220,7 +237,7 @@ export default function MaterialRegistration({ onComplete, initialData }: Materi
     switch (step) {
       case 0: return ['title', 'description', 'category', 'subCategory', 'quantity', 'unit', 'condition'];
       case 1: return ['photos'];
-      case 2: return ['location'];
+      case 2: return ['location.address', 'location.city', 'location.district', 'location.province'] as (keyof MaterialFormData)[];
       case 3: return ['expectedPrice', 'minimumPrice', 'negotiable'];
       case 4: return ['specifications'];
       default: return [];
@@ -236,8 +253,17 @@ export default function MaterialRegistration({ onComplete, initialData }: Materi
   // Submit handler
   const onSubmit = async (data: MaterialFormData) => {
     try {
-      await dispatch(createMaterial(data as MaterialRegistrationForm)).unwrap();
-      onComplete?.(data as MaterialRegistrationForm);
+      // Ensure coordinates are included if available
+      const submissionData = {
+        ...data,
+        location: {
+          ...data.location,
+          coordinates: data.location.coordinates || undefined
+        }
+      };
+      
+      await dispatch(createMaterial(submissionData as MaterialRegistrationForm)).unwrap();
+      onComplete?.(submissionData as MaterialRegistrationForm);
     } catch (error) {
       console.error('Failed to create material:', error);
     }
@@ -713,12 +739,41 @@ interface LocationStepProps {
 function LocationStep({ register, control, errors, setValue, watch }: LocationStepProps) {
   const [mapCenter, setMapCenter] = useState({ lat: 7.8731, lng: 80.7718 }); // Sri Lanka center
   const [markerPosition, setMarkerPosition] = useState<{ lat: number; lng: number } | null>(null);
-  const [isSelectingOnMap, setIsSelectingOnMap] = useState(false);
 
   // Handle map click to set location
   const handleMapClick = (lat: number, lng: number) => {
     setMarkerPosition({ lat, lng });
     setValue('location.coordinates', { latitude: lat, longitude: lng });
+    
+    // Reverse geocode to get address (optional)
+    reverseGeocode(lat, lng);
+  };
+
+  // Reverse geocoding to update address based on coordinates
+  const reverseGeocode = async (lat: number, lng: number) => {
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`
+      );
+      if (response.ok) {
+        const data = await response.json();
+        if (data.display_name) {
+          setValue('location.address', data.display_name);
+          // Extract city, state/province from response
+          if (data.address) {
+            if (data.address.city || data.address.town || data.address.village) {
+              setValue('location.city', data.address.city || data.address.town || data.address.village);
+            }
+            if (data.address.state) {
+              // Map to Sri Lankan provinces if needed
+              setValue('location.province', data.address.state);
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Reverse geocoding error:', error);
+    }
   };
 
   // Get location from browser
@@ -730,13 +785,25 @@ function LocationStep({ register, control, errors, setValue, watch }: LocationSt
           setMapCenter({ lat: latitude, lng: longitude });
           setMarkerPosition({ lat: latitude, lng: longitude });
           setValue('location.coordinates', { latitude, longitude });
+          
+          // Reverse geocode to get address
+          reverseGeocode(latitude, longitude);
         },
         (error) => {
           console.error('Error getting location:', error);
+          alert('Unable to get your current location. Please enable location services or enter your address manually.');
         }
       );
     }
   };
+
+  // Initialize marker from existing coordinates if available
+  useEffect(() => {
+    const coords = watch('location.coordinates');
+    if (coords?.latitude && coords?.longitude) {
+      setMarkerPosition({ lat: coords.latitude, lng: coords.longitude });
+    }
+  }, [watch]);
   return (
     <div className="space-y-6">
       <div>
@@ -859,32 +926,27 @@ function LocationStep({ register, control, errors, setValue, watch }: LocationSt
               Use Current Location
             </button>
 
-            {/* OpenStreetMap Container */}
-            <div className="rounded-lg overflow-hidden border border-gray-300 dark:border-gray-600">
-              <iframe
-                width="100%"
-                height="400"
-                frameBorder="0"
-                scrolling="no"
-                marginHeight={0}
-                marginWidth={0}
-                src={
-                  markerPosition
-                    ? `https://www.openstreetmap.org/export/embed.html?bbox=${markerPosition.lng - 0.01},${markerPosition.lat - 0.01},${markerPosition.lng + 0.01},${markerPosition.lat + 0.01}&layer=mapnik&marker=${markerPosition.lat},${markerPosition.lng}`
-                    : `https://www.openstreetmap.org/export/embed.html?bbox=${mapCenter.lng - 0.01},${mapCenter.lat - 0.01},${mapCenter.lng + 0.01},${mapCenter.lat + 0.01}&layer=mapnik`
-                }
-                className="w-full"
-              />
-            </div>
+            {/* Interactive Map */}
+            <InteractiveLocationMap
+              center={mapCenter}
+              markerPosition={markerPosition}
+              onLocationSelect={handleMapClick}
+            />
 
             {markerPosition && (
-              <p className="mt-2 text-sm text-emerald-600 dark:text-emerald-400">
-                Location selected: {markerPosition.lat.toFixed(4)}, {markerPosition.lng.toFixed(4)}
-              </p>
+              <div className="mt-2 space-y-1">
+                <p className="text-sm text-emerald-600 dark:text-emerald-400">
+                  Location selected: {markerPosition.lat.toFixed(6)}, {markerPosition.lng.toFixed(6)}
+                </p>
+                <p className="text-xs text-gray-600 dark:text-gray-400">
+                  These coordinates will be saved with your material listing
+                </p>
+              </div>
             )}
 
             <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
-              Note: Click "Use Current Location" to set your pickup point. For manual selection, please enter the address details above.
+              Note: Click on the map to place a marker or use "Use Current Location" for GPS. 
+              You can drag the marker to adjust the exact pickup location.
             </p>
           </div>
         </div>
