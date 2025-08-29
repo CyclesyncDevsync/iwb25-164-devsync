@@ -14,7 +14,7 @@ type ChatbotConfig record {|
     int sessionTimeout = 1800;
     int maxConnections = 1000;
     string qualityApiUrl = "http://localhost:8082";
-    string demandApiUrl = "http://localhost:8081";
+    string demandApiUrl = "http://localhost:8084";
     string mainApiUrl = "http://localhost:8080";
 |};
 
@@ -23,7 +23,7 @@ type ChatbotConfig record {|
     idleTimeout: 300,
     maxFrameSize: 65536
 }
-service /chat on new websocket:Listener(8083) {
+service /chat on new websocket:Listener(websocketPort) {
     
     private final ChatbotConfig config;
     private final GeminiConnector aiConnector;
@@ -410,7 +410,7 @@ service class ChatbotWebSocketService {
 }
 
 # Health check endpoint
-service /health on new http:Listener(8084) {
+service /health on new http:Listener(8089) {
     resource function get .() returns json|error {
         // Check Redis connection
         RedisConnector healthRedis = check new(redisHost, redisPort, redisPassword, redisDatabase);

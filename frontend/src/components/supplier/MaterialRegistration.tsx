@@ -11,7 +11,8 @@ import {
   CheckCircleIcon,
   ArrowLeftIcon,
   ArrowRightIcon,
-  CloudArrowUpIcon
+  CloudArrowUpIcon,
+  MapPinIcon
 } from '@heroicons/react/24/outline';
 import {
   MaterialCategory,
@@ -39,7 +40,11 @@ const materialSchema = z.object({
     city: z.string().min(1, 'City is required'),
     district: z.string().min(1, 'District is required'),
     province: z.string().min(1, 'Province is required'),
-    postalCode: z.string().optional()
+    postalCode: z.string().optional(),
+    coordinates: z.object({
+      latitude: z.number(),
+      longitude: z.number()
+    }).optional()
   }),
   specifications: z.object({
     dimensions: z.object({
@@ -323,6 +328,8 @@ export default function MaterialRegistration({ onComplete, initialData }: Materi
                 register={register}
                 control={control}
                 errors={errors}
+                setValue={setValue}
+                watch={watch}
               />
             )}
 
@@ -699,9 +706,37 @@ interface LocationStepProps {
   register: any;
   control: any;
   errors: any;
+  setValue: any;
+  watch: any;
 }
 
-function LocationStep({ register, control, errors }: LocationStepProps) {
+function LocationStep({ register, control, errors, setValue, watch }: LocationStepProps) {
+  const [mapCenter, setMapCenter] = useState({ lat: 7.8731, lng: 80.7718 }); // Sri Lanka center
+  const [markerPosition, setMarkerPosition] = useState<{ lat: number; lng: number } | null>(null);
+  const [isSelectingOnMap, setIsSelectingOnMap] = useState(false);
+
+  // Handle map click to set location
+  const handleMapClick = (lat: number, lng: number) => {
+    setMarkerPosition({ lat, lng });
+    setValue('location.coordinates', { latitude: lat, longitude: lng });
+  };
+
+  // Get location from browser
+  const getCurrentLocation = () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          setMapCenter({ lat: latitude, lng: longitude });
+          setMarkerPosition({ lat: latitude, lng: longitude });
+          setValue('location.coordinates', { latitude, longitude });
+        },
+        (error) => {
+          console.error('Error getting location:', error);
+        }
+      );
+    }
+  };
   return (
     <div className="space-y-6">
       <div>
@@ -808,6 +843,49 @@ function LocationStep({ register, control, errors }: LocationStepProps) {
                 className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
               />
             </div>
+          </div>
+
+          {/* Map Section */}
+          <div className="mt-6">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+              Select Pickup Location on Map
+            </label>
+            <button
+              type="button"
+              onClick={getCurrentLocation}
+              className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-600 mb-3"
+            >
+              <MapPinIcon className="w-4 h-4 mr-2" />
+              Use Current Location
+            </button>
+
+            {/* OpenStreetMap Container */}
+            <div className="rounded-lg overflow-hidden border border-gray-300 dark:border-gray-600">
+              <iframe
+                width="100%"
+                height="400"
+                frameBorder="0"
+                scrolling="no"
+                marginHeight={0}
+                marginWidth={0}
+                src={
+                  markerPosition
+                    ? `https://www.openstreetmap.org/export/embed.html?bbox=${markerPosition.lng - 0.01},${markerPosition.lat - 0.01},${markerPosition.lng + 0.01},${markerPosition.lat + 0.01}&layer=mapnik&marker=${markerPosition.lat},${markerPosition.lng}`
+                    : `https://www.openstreetmap.org/export/embed.html?bbox=${mapCenter.lng - 0.01},${mapCenter.lat - 0.01},${mapCenter.lng + 0.01},${mapCenter.lat + 0.01}&layer=mapnik`
+                }
+                className="w-full"
+              />
+            </div>
+
+            {markerPosition && (
+              <p className="mt-2 text-sm text-emerald-600 dark:text-emerald-400">
+                Location selected: {markerPosition.lat.toFixed(4)}, {markerPosition.lng.toFixed(4)}
+              </p>
+            )}
+
+            <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+              Note: Click "Use Current Location" to set your pickup point. For manual selection, please enter the address details above.
+            </p>
           </div>
         </div>
       </div>

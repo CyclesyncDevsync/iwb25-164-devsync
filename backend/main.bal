@@ -6,6 +6,8 @@ import Cyclesync.demand_prediction as _;
 import Cyclesync.quality_assessment as _;
 // The dynamic_pricing module will auto-register its services
 import Cyclesync.dynamic_pricing as _;
+// The material_workflow module will auto-register its services
+import Cyclesync.material_workflow as _;
 
 import ballerina/http;
 import ballerina/log;
@@ -33,10 +35,10 @@ function init() {
     }
 
     log:printInfo(string `Main API Server starting on port ${port}`);
-    log:printInfo("Demand Prediction Service initialized on /api/ai/demand");
+    log:printInfo("Demand Prediction Service initialized on http://localhost:8084/api/ai/demand");
     log:printInfo("Quality Assessment Service initialized on /api/ai/quality");
     log:printInfo("Chatbot WebSocket Service initialized on ws://localhost:8083/chat");
-    log:printInfo("Chatbot Health Check initialized on http://localhost:8084/health");
+    log:printInfo("Chatbot Health Check initialized on http://localhost:8089/health");
 }
 
 // Health check endpoint

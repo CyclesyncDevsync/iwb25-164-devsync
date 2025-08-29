@@ -24,6 +24,219 @@ export interface Material {
   tags: string[];
   estimatedPickupDate?: Date;
   availability: AvailabilityStatus;
+  
+  // Enhanced fields
+  aiAnalysis?: AIAnalysisResult;
+  agentAssignment?: AgentAssignment;
+  agentReview?: AgentReview;
+  workflow: MaterialWorkflowStatus;
+}
+
+// AI Analysis types
+export interface AIAnalysisResult {
+  assessmentId: string;
+  overallScore: number;
+  qualityGrade: string;
+  approved: boolean;
+  recommendations: string[];
+  issues: string[];
+  nextAction: string;
+  rejectionReason?: string;
+  analyzedAt: Date;
+  visionAnalysis: VisionAnalysis;
+}
+
+export interface VisionAnalysis {
+  detectedObjects: ObjectDetection[];
+  detectedText: TextAnnotation[];
+  imageProperties: ImageProperties;
+  safeSearch: SafeSearchAnnotation;
+}
+
+export interface ObjectDetection {
+  name: string;
+  confidence: number;
+  boundingBox: BoundingBox;
+  category?: string;
+}
+
+export interface TextAnnotation {
+  text: string;
+  confidence: number;
+  boundingBox: BoundingBox;
+  language?: string;
+}
+
+export interface BoundingBox {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+export interface ImageProperties {
+  dominantColors: ColorInfo[];
+  aspectRatio: number;
+  imageWidth: number;
+  imageHeight: number;
+  cropHints: any[];
+}
+
+export interface ColorInfo {
+  color: RGB;
+  fraction: number;
+  pixelFraction: number;
+}
+
+export interface RGB {
+  red: number;
+  green: number;
+  blue: number;
+}
+
+export interface SafeSearchAnnotation {
+  adult: string;
+  spoof: string;
+  medical: string;
+  violence: string;
+  racy: string;
+}
+
+// Agent Assignment types
+export interface AgentAssignment {
+  agentId: string;
+  agentName: string;
+  agentPhone: string;
+  agentEmail: string;
+  estimatedArrival: Date;
+  actualArrival?: Date;
+  visitCost: number;
+  distanceFromMaterial: number;
+  assignedAt: Date;
+  status: AgentAssignmentStatus;
+  coordinates?: {
+    latitude: number;
+    longitude: number;
+  };
+}
+
+export enum AgentAssignmentStatus {
+  ASSIGNED = 'assigned',
+  EN_ROUTE = 'en_route',
+  ARRIVED = 'arrived',
+  IN_PROGRESS = 'in_progress',
+  COMPLETED = 'completed',
+  CANCELLED = 'cancelled'
+}
+
+// Agent Review types
+export interface AgentReview {
+  reviewId: string;
+  agentId: string;
+  materialId: string;
+  overallScore: number;
+  qualityGrade: string;
+  approved: boolean;
+  findings: AgentFindings;
+  recommendations: string[];
+  issues: string[];
+  photos: MaterialPhoto[];
+  visitCost: number;
+  reviewDate: Date;
+  nextAction: string;
+  rejectionReason?: string;
+  notes?: string;
+}
+
+export interface AgentFindings {
+  actualCondition: QualityGrade;
+  actualQuantity: number;
+  contamination: ContaminationLevel;
+  packaging: PackagingCondition;
+  accessibility: AccessibilityLevel;
+  marketability: MarketabilityScore;
+  specialNotes?: string;
+}
+
+export enum ContaminationLevel {
+  NONE = 'none',
+  LOW = 'low',
+  MODERATE = 'moderate',
+  HIGH = 'high',
+  SEVERE = 'severe'
+}
+
+export enum PackagingCondition {
+  EXCELLENT = 'excellent',
+  GOOD = 'good',
+  FAIR = 'fair',
+  POOR = 'poor',
+  DAMAGED = 'damaged'
+}
+
+export enum AccessibilityLevel {
+  EASY = 'easy',
+  MODERATE = 'moderate',
+  DIFFICULT = 'difficult',
+  VERY_DIFFICULT = 'very_difficult'
+}
+
+export interface MarketabilityScore {
+  score: number;
+  factors: string[];
+  marketDemand: 'high' | 'medium' | 'low';
+  competitivePrice: boolean;
+}
+
+// Material Workflow Status
+export interface MaterialWorkflowStatus {
+  currentStage: WorkflowStage;
+  completedStages: WorkflowStage[];
+  nextStage?: WorkflowStage;
+  stageHistory: StageHistoryItem[];
+  estimatedCompletion?: Date;
+  blockers?: WorkflowBlocker[];
+}
+
+export enum WorkflowStage {
+  SUBMITTED = 'submitted',
+  AI_ANALYZING = 'ai_analyzing',
+  AI_APPROVED = 'ai_approved',
+  AI_REJECTED = 'ai_rejected',
+  AGENT_ASSIGNED = 'agent_assigned',
+  AGENT_EN_ROUTE = 'agent_en_route',
+  AGENT_REVIEWING = 'agent_reviewing',
+  AGENT_APPROVED = 'agent_approved',
+  AGENT_REJECTED = 'agent_rejected',
+  AUCTION_LISTED = 'auction_listed',
+  AUCTION_ACTIVE = 'auction_active',
+  AUCTION_COMPLETED = 'auction_completed',
+  PAYMENT_PENDING = 'payment_pending',
+  PICKUP_SCHEDULED = 'pickup_scheduled',
+  IN_TRANSIT = 'in_transit',
+  DELIVERED = 'delivered',
+  COMPLETED = 'completed',
+  CANCELLED = 'cancelled'
+}
+
+export interface StageHistoryItem {
+  stage: WorkflowStage;
+  timestamp: Date;
+  actor: string;
+  actorType: 'system' | 'supplier' | 'agent' | 'buyer' | 'admin';
+  notes?: string;
+  metadata?: Record<string, any>;
+}
+
+export interface WorkflowBlocker {
+  blockerId: string;
+  stage: WorkflowStage;
+  blockerType: 'quality_issue' | 'logistics_issue' | 'payment_issue' | 'system_issue';
+  description: string;
+  severity: 'low' | 'medium' | 'high' | 'critical';
+  createdAt: Date;
+  resolvedAt?: Date;
+  resolutionNotes?: string;
 }
 
 export interface MaterialPhoto {
