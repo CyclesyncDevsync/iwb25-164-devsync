@@ -146,12 +146,12 @@ export function Navbar() {
 
   return (
     <nav className={getNavbarClasses(navbarConfig)}>
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="w-full px-0">
         {/* Main Navbar */}
-        <div className="flex justify-between h-16">
+        <div className="flex items-center justify-between h-16 px-4">
           {/* Logo and Brand */}
-          <div className="flex items-center">
-            <Link href="/" className="flex items-center space-x-2 mr-8">
+          <div className="flex items-center flex-shrink-0">
+            <Link href="/" className="flex items-center space-x-2">
               <div className="relative">
                 <Image
                   src="/globe.svg"
@@ -166,9 +166,11 @@ export function Navbar() {
                 CircularSync
               </span>
             </Link>
+          </div>
 
-            {/* Desktop Navigation */}
-            <div className="hidden lg:flex items-center space-x-1">
+          {/* Center Navigation */}
+          <div className="hidden lg:flex items-center justify-center flex-1">
+            <div className="flex items-center space-x-1">
               {filteredNavItems.map((item) => (
                 <div key={item.href} className="relative group">
                   <Link
@@ -208,7 +210,7 @@ export function Navbar() {
           </div>
 
           {/* Right Side - Search, Notifications, User Menu */}
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-4 flex-shrink-0">
             {/* Search */}
             {navbarConfig.showSearch && (
               <div className="hidden md:block">
