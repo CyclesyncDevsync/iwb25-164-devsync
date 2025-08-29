@@ -89,6 +89,19 @@ public function initializeAuthSchema() returns error? {
         log:printInfo("Default admin user ensured");
     }
     
+    // Create default agent user
+    sql:ExecutionResult|error agentResult = dbClient->execute(`
+        INSERT INTO users (asgardeo_id, email, first_name, last_name, role, status, created_at, updated_at)
+        VALUES ('bcee8b75-d97a-4a72-b7a9-686be582dc45', 'agent@cyclesync.com', 'Agent', 'User', 'agent', 'approved', NOW(), NOW())
+        ON CONFLICT (asgardeo_id) DO NOTHING
+    `);
+    
+    if agentResult is error {
+        log:printWarn("Failed to create default agent", agentResult);
+    } else {
+        log:printInfo("Default agent user ensured");
+    }
+    
     log:printInfo("Authentication database schema initialized successfully");
     return;
 }
