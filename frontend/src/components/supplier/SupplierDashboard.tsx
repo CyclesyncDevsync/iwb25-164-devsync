@@ -31,7 +31,8 @@ import {
   Tooltip,
   ResponsiveContainer
 } from 'recharts';
-import { useAppDispatch, useAppSelector } from '../../hooks/useAuth';
+import { useAppDispatch, useAppSelector } from '../../hooks/redux';
+import { useAuth } from '../../hooks/useAuth';
 import {
   fetchSupplierProfile,
   fetchSupplierMaterials,
@@ -45,6 +46,7 @@ import {
 
 export default function SupplierDashboard() {
   const dispatch = useAppDispatch();
+  const { user } = useAuth();
   const { profile, materials, analytics, loading } = useAppSelector(state => state.supplier);
 
   useEffect(() => {
@@ -95,7 +97,7 @@ export default function SupplierDashboard() {
   return (
     <div className="space-y-6">
       {/* Welcome Banner */}
-      <WelcomeBanner profile={profile} />
+      <WelcomeBanner profile={profile} user={user} />
 
       {/* Quick Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -175,10 +177,18 @@ export default function SupplierDashboard() {
 }
 
 interface WelcomeBannerProps {
-  profile: any;
+  profile: any; // TODO: Replace with proper profile type
+  user: {
+    id: number;
+    firstName: string;
+    lastName: string;
+    email: string;
+    role: string;
+    status: string;
+  } | null;
 }
 
-function WelcomeBanner({ profile }: WelcomeBannerProps) {
+function WelcomeBanner({ profile, user }: WelcomeBannerProps) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -189,18 +199,18 @@ function WelcomeBanner({ profile }: WelcomeBannerProps) {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-white">
-              Welcome back, {profile?.businessName || profile?.contactPerson || 'Supplier'}!
+              Welcome back, {user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : 'Supplier'}!
             </h1>
             <p className="mt-2 text-emerald-100">
-              {profile?.type === SupplierType.ORGANIZATION 
-                ? 'Manage your organization\'s materials and team'
-                : 'Manage your materials and track your earnings'
-              }
+              Manage your materials and track your earnings
             </p>
             <div className="mt-4 flex items-center text-emerald-100">
               <MapPinIcon className="h-4 w-4 mr-1" />
               <span className="text-sm">
-                {profile?.address?.city}, {profile?.address?.district}
+                {profile?.address?.city && profile?.address?.district 
+                  ? `${profile.address.city}, ${profile.address.district}`
+                  : 'Location not set'
+                }
               </span>
             </div>
           </div>
@@ -210,10 +220,15 @@ function WelcomeBanner({ profile }: WelcomeBannerProps) {
               <div className="text-right">
                 <p className="text-emerald-100 text-sm">Verification Status</p>
                 <div className="flex items-center mt-1">
-                  {profile?.verificationStatus === 'verified' ? (
+                  {user?.status === 'approved' ? (
                     <>
                       <CheckCircleIcon className="h-5 w-5 text-white mr-1" />
-                      <span className="text-white font-medium">Verified</span>
+                      <span className="text-white font-medium">Approved</span>
+                    </>
+                  ) : user?.status === 'rejected' ? (
+                    <>
+                      <ExclamationTriangleIcon className="h-5 w-5 text-red-200 mr-1" />
+                      <span className="text-red-200 font-medium">Rejected</span>
                     </>
                   ) : (
                     <>

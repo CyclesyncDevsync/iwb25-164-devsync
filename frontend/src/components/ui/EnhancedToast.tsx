@@ -262,7 +262,7 @@ export function EnhancedToaster() {
 // Notification types for different scenarios
 export const notificationTypes = {
   // Authentication
-  loginSuccess: () => enhancedToast.success('Welcome back! Successfully logged in.'),
+  loginSuccess: () => enhancedToast.success('Successfully logged in.'),
   loginError: () => enhancedToast.error('Login failed. Please check your credentials.'),
   logoutSuccess: () => enhancedToast.success('Successfully logged out.'),
   

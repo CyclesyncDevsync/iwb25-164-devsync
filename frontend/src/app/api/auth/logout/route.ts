@@ -1,25 +1,33 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { asgardeoAuth } from '@/lib/asgardeo';
-import { verifyJWT } from '@/lib/jwt';
 
-export async function GET(request: NextRequest) {
+export async function POST(request: NextRequest) {
   try {
-    const sessionToken = request.cookies.get('session-token')?.value;
-    let idToken: string | undefined;
-
-    if (sessionToken) {
-      const sessionData = verifyJWT(sessionToken);
-      idToken = sessionData?.idToken;
-    }
-
-    const response = NextResponse.redirect(asgardeoAuth.getLogoutUrl(idToken));
+    console.log('Processing logout request...');
     
-    // Clear session cookie
-    response.cookies.delete('session-token');
+    // Create response
+    const response = NextResponse.json({
+      success: true,
+      message: 'Logged out successfully'
+    });
 
+    // Clear all authentication cookies
+    response.cookies.delete('asgardeo_id_token');
+    response.cookies.delete('user_data');
+    response.cookies.delete('session-token'); // Legacy cookie cleanup
+    response.cookies.delete('pending_id_token');
+    response.cookies.delete('code_verifier');
+    response.cookies.delete('auth_state');
+    response.cookies.delete('flow_type');
+
+    console.log('Authentication cookies cleared');
+    
     return response;
+
   } catch (error) {
     console.error('Logout error:', error);
-    return NextResponse.redirect('/');
+    return NextResponse.json(
+      { success: false, message: 'Logout failed' },
+      { status: 500 }
+    );
   }
 }

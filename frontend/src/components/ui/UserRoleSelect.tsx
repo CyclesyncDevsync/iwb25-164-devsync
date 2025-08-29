@@ -2,13 +2,14 @@ import React, { forwardRef } from 'react';
 import { USER_ROLES } from '../../constants';
 
 export interface UserRoleSelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
+  showSuperAdmin?: boolean;
   showAdmin?: boolean;
   showAgent?: boolean;
   error?: string;
 }
 
 const UserRoleSelect = forwardRef<HTMLSelectElement, UserRoleSelectProps>(
-  ({ showAdmin = false, showAgent = false, error, className, ...props }, ref) => {
+  ({ showSuperAdmin = false, showAdmin = false, showAgent = false, error, className, ...props }, ref) => {
     return (
       <div className="w-full">
         <select
@@ -20,6 +21,9 @@ const UserRoleSelect = forwardRef<HTMLSelectElement, UserRoleSelectProps>(
             ${className}`}
           {...props}
         >
+          {showSuperAdmin && (
+            <option value={USER_ROLES.SUPER_ADMIN}>Super Administrator</option>
+          )}
           {showAdmin && (
             <option value={USER_ROLES.ADMIN}>Administrator</option>
           )}

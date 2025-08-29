@@ -19,7 +19,7 @@ import {
   MaterialRegistrationForm,
   SupplierType
 } from '../../types/supplier';
-import { useAppDispatch, useAppSelector } from '../../hooks/useAuth';
+import { useAppDispatch, useAppSelector } from '../../hooks/redux';
 import { createMaterial, saveDraft } from '../../store/slices/supplierSlice';
 
 const materialSchema = z.object({

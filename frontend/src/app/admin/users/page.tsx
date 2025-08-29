@@ -21,7 +21,7 @@ export default function UsersPage() {
         return;
       }
       
-      if (user?.role !== 'admin') {
+      if (user?.role !== 'ADMIN' && user?.role !== 'SUPER_ADMIN') {
         enhancedToast.error('Admin access required.');
         router.push('/dashboard');
         return;
@@ -33,8 +33,8 @@ export default function UsersPage() {
     return <Loading text="Loading users management..." fullScreen />;
   }
 
-  // If not authenticated or not admin, show loading until redirect happens
-  if (!isAuthenticated || user?.role !== 'admin') {
+  // If not authenticated or not admin/super admin, show loading until redirect happens
+  if (!isAuthenticated || (user?.role !== 'ADMIN' && user?.role !== 'SUPER_ADMIN')) {
     return <Loading text="Verifying admin credentials..." fullScreen />;
   }
 

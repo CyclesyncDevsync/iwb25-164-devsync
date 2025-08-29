@@ -16,7 +16,7 @@ import {
   ShoppingBagIcon,
   CurrencyDollarIcon
 } from '@heroicons/react/24/outline';
-import { useAppSelector } from '../../hooks/useAuth';
+import { useAppSelector } from '../../hooks/redux';
 import { SupplierType } from '../../types/supplier';
 
 interface SupplierLayoutProps {
@@ -96,7 +96,7 @@ export default function SupplierLayout({ children }: SupplierLayoutProps) {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Sidebar */}
-      <div className="fixed inset-y-0 left-0 z-50 w-64 bg-white dark:bg-gray-800 shadow-lg">
+      <div className="fixed inset-y-0 left-0 z-40 w-64 bg-white dark:bg-gray-800 shadow-lg">
         <div className="flex h-full flex-col">
           {/* Logo */}
           <div className="flex h-16 items-center justify-center border-b border-gray-200 dark:border-gray-700">
@@ -156,42 +156,13 @@ export default function SupplierLayout({ children }: SupplierLayoutProps) {
             ))}
           </nav>
 
-          {/* Notifications */}
-          <div className="p-4 border-t border-gray-200 dark:border-gray-700">
-            <button className="w-full flex items-center px-3 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-              <BellIcon className="mr-3 h-5 w-5" />
-              Notifications
-              <span className="ml-auto bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-400 text-xs px-2 py-1 rounded-full">
-                3
-              </span>
-            </button>
-          </div>
         </div>
       </div>
 
       {/* Main content */}
-      <div className="pl-64">
-        {/* Top bar */}
-        <div className="sticky top-0 z-40 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4">
-          <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">
-              {getPageTitle(pathname)}
-            </h1>
-            <div className="flex items-center space-x-4">
-              {/* Quick Actions */}
-              <Link
-                href="/supplier/materials/new"
-                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition-colors"
-              >
-                <PlusCircleIcon className="h-4 w-4 mr-2" />
-                Add Material
-              </Link>
-            </div>
-          </div>
-        </div>
-
+      <div className="pl-64 min-h-screen flex flex-col">
         {/* Page content */}
-        <main className="flex-1">
+        <main className="flex-1 overflow-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}

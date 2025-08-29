@@ -10,12 +10,25 @@ import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Ca
 import { Loading } from '../../components/ui/Loading';
 
 export default function Dashboard() {
-  const { user, loading, isAuthenticated, logout } = useAuth();
+  const { user, loading, isAuthenticated, logout, getUserDashboardRoute } = useAuth();
   const router = useRouter();
+
+  // Redirect users to their role-specific dashboard
+  useEffect(() => {
+    if (!loading && isAuthenticated && user) {
+      const roleBasedRoute = getUserDashboardRoute();
+      if (roleBasedRoute !== '/dashboard') {
+        console.log('Redirecting user to role-specific dashboard:', roleBasedRoute);
+        router.push(roleBasedRoute);
+        return;
+      }
+    }
+  }, [loading, isAuthenticated, user, router, getUserDashboardRoute]);
 
   // Redirect to home if not authenticated
   useEffect(() => {
     if (!loading && !isAuthenticated) {
+      console.log('User not authenticated, redirecting to home');
       router.push('/');
     }
   }, [loading, isAuthenticated, router]);
@@ -50,10 +63,10 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              <p><strong>Name:</strong> {user?.name || 'Not provided'}</p>
+              <p><strong>Name:</strong> {user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : 'Not provided'}</p>
               <p><strong>Email:</strong> {user?.email || 'Not provided'}</p>
-              <p><strong>First Name:</strong> {user?.given_name || 'Not provided'}</p>
-              <p><strong>Last Name:</strong> {user?.family_name || 'Not provided'}</p>
+              <p><strong>First Name:</strong> {user?.firstName || 'Not provided'}</p>
+              <p><strong>Last Name:</strong> {user?.lastName || 'Not provided'}</p>
               <p><strong>User ID:</strong> {user?.id || 'Not provided'}</p>
             </div>
             <div className="mt-4 p-4 bg-gray-100 dark:bg-gray-800 rounded">
