@@ -9,7 +9,8 @@
       "Bash(mv:*)",
       "Bash(curl:*)",
       "Bash(sudo lsof:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(powershell:*)"
     ],
     "deny": []
   }
