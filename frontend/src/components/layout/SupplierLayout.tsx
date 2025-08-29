@@ -96,7 +96,7 @@ export default function SupplierLayout({ children }: SupplierLayoutProps) {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Sidebar */}
-      <div className="fixed inset-y-0 left-0 z-50 w-64 bg-white dark:bg-gray-800 shadow-lg">
+      <div className="fixed inset-y-0 left-0 z-40 w-64 bg-white dark:bg-gray-800 shadow-lg">
         <div className="flex h-full flex-col">
           {/* Logo */}
           <div className="flex h-16 items-center justify-center border-b border-gray-200 dark:border-gray-700">
@@ -170,9 +170,9 @@ export default function SupplierLayout({ children }: SupplierLayoutProps) {
       </div>
 
       {/* Main content */}
-      <div className="pl-64">
+      <div className="pl-64 min-h-screen flex flex-col">
         {/* Top bar */}
-        <div className="sticky top-0 z-40 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4">
+        <div className="sticky top-0 z-30 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4">
           <div className="flex items-center justify-between">
             <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">
               {getPageTitle(pathname)}
@@ -191,7 +191,7 @@ export default function SupplierLayout({ children }: SupplierLayoutProps) {
         </div>
 
         {/* Page content */}
-        <main className="flex-1">
+        <main className="flex-1 overflow-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
