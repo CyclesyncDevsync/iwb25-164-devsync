@@ -410,7 +410,7 @@ service class ChatbotWebSocketService {
 }
 
 # Health check endpoint
-service /health on new http:Listener(8089) {
+service /health on new http:Listener(8095) {
     resource function get .() returns json|error {
         // Check Redis connection
         RedisConnector healthRedis = check new(redisHost, redisPort, redisPassword, redisDatabase);

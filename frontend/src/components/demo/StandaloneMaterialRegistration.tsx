@@ -134,9 +134,10 @@ const DISTRICTS = [
 
 interface StandaloneMaterialRegistrationProps {
   onComplete?: (material: any, submissionResult: SubmissionResult) => void;
+  supplierId?: string;
 }
 
-export default function StandaloneMaterialRegistration({ onComplete }: StandaloneMaterialRegistrationProps) {
+export default function StandaloneMaterialRegistration({ onComplete, supplierId }: StandaloneMaterialRegistrationProps) {
   const [currentStep, setCurrentStep] = useState(0);
   const [uploadedPhotos, setUploadedPhotos] = useState<File[]>([]);
   const [photoPreviews, setPhotoPreviews] = useState<string[]>([]);
@@ -145,6 +146,8 @@ export default function StandaloneMaterialRegistration({ onComplete }: Standalon
   const [tagInput, setTagInput] = useState('');
   const [submissionResult, setSubmissionResult] = useState<SubmissionResult | null>(null);
   
+  // Log the supplier ID to debug
+  console.log('📌 StandaloneMaterialRegistration received supplierId:', supplierId);
 
   // No Redux, no auth checks
   const loading = { creating: false };
@@ -219,7 +222,9 @@ export default function StandaloneMaterialRegistration({ onComplete }: Standalon
       const base64Photos = await Promise.all(photoPromises);
       
       // Prepare submission data for backend
+      console.log('🔍 Preparing submission with supplierId:', supplierId);
       const submissionData = {
+        supplierId: supplierId || 'SUPPLIER_MOCK', // Use provided supplier ID or default
         materialData: {
           title: formData.title,
           description: formData.description,
@@ -246,6 +251,9 @@ export default function StandaloneMaterialRegistration({ onComplete }: Standalon
         }))
       };
 
+      // Log the full submission data
+      console.log('📤 Sending to backend:', JSON.stringify(submissionData, null, 2));
+      
       // Call the actual backend API
       const response = await fetch('http://localhost:8086/api/material/workflow/submit', {
         method: 'POST',
@@ -335,8 +343,6 @@ export default function StandaloneMaterialRegistration({ onComplete }: Standalon
       const supplierId = result.supplierId || 'SUPPLIER_MOCK';
       const workflowId = result.workflowId || 'WORKFLOW_PENDING';
       
-      alert(`🎉 Material submission successful!\n\nTransaction ID: ${transactionId}\nWorkflow ID: ${workflowId}\nSupplier ID: ${supplierId}`);
-
       // Call completion callback only on success
       console.log('📋 Material submitted successfully:', data);
       console.log('📊 Submission result:', result);
@@ -345,7 +351,7 @@ export default function StandaloneMaterialRegistration({ onComplete }: Standalon
       
     } catch (error) {
       console.error('❌ Failed to submit material:', error);
-      alert('Failed to submit material. Please try again.');
+      console.error('Failed to submit material. Please try again.');
     }
   };
 

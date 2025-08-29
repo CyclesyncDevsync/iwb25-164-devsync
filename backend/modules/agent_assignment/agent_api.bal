@@ -8,7 +8,7 @@ import ballerinax/postgresql;
         allowCredentials: true
     }
 }
-service /api/agent on new http:Listener(8087) {
+service /api/agent on new http:Listener(8091) {
     private final AgentAssignmentService agentService;
     
     function init() returns error? {
