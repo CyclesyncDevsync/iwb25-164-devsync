@@ -36,9 +36,9 @@ export default function SupplierLayout({ children }: SupplierLayoutProps) {
     },
     {
       name: 'Add Material',
-      href: '/supplier/materials/new',
+      href: '/supplier/materials/new-enhanced',
       icon: PlusCircleIcon,
-      current: pathname === '/supplier/materials/new'
+      current: pathname === '/supplier/materials/new' || pathname === '/supplier/materials/new-enhanced'
     },
     {
       name: 'My Materials',

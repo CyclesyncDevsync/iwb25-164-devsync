@@ -64,7 +64,11 @@ service /api/material/workflow on workflowListener {
             // Generate IDs
             string workflowId = uuid:createType1AsString();
             string transactionId = "TXN_" + uuid:createType1AsString();
-            string mockSupplierId = "SUPPLIER_" + uuid:createType1AsString(); // Mock supplier ID
+            
+            // Get supplier ID from submission
+            log:printInfo("Received submission: " + submission.toString());
+            string supplierId = check submission.supplierId.ensureType(string);
+            log:printInfo("Extracted supplierId: " + supplierId);
             
             // Extract material data
             json materialData = check submission.materialData;
@@ -163,7 +167,7 @@ service /api/material/workflow on workflowListener {
                     tags, photos,
                     submission_status
                 ) VALUES (
-                    ${transactionId}, ${workflowId}, ${mockSupplierId},
+                    ${transactionId}, ${workflowId}, ${supplierId},
                     ${check materialData.title.ensureType(string)}, 
                     ${check materialData.description.ensureType(string)}, 
                     ${check materialData.category.ensureType(string)}, 
@@ -204,7 +208,7 @@ service /api/material/workflow on workflowListener {
             return {
                 "workflowId": workflowId,
                 "transactionId": transactionId,
-                "supplierId": mockSupplierId,
+                "supplierId": supplierId,
                 "status": "submitted",
                 "message": "Material submitted successfully and saved to database",
                 "deliveryMethod": deliveryMethod

@@ -1,7 +1,7 @@
 // Copyright (c) 2025 CircularSync
 // Authentication Service - Asgardeo Integration
 
-import Cyclesync.database;
+import Cyclesync.database_config;
 
 import ballerina/jwt;
 import ballerina/log;
@@ -140,7 +140,7 @@ public function validateIdToken(string idToken) returns AuthResult {
 # + asgardeoId - Asgardeo user ID
 # + return - User record or error if not found
 public function getUserByAsgardeoId(string asgardeoId) returns User|error {
-    postgresql:Client dbClient = check database:getDatabaseClient();
+    postgresql:Client dbClient = check database_config:getDbClient();
 
     sql:ParameterizedQuery query = `
         SELECT id, asgardeo_id, email, first_name, last_name, role, status, 
@@ -158,7 +158,7 @@ public function getUserByAsgardeoId(string asgardeoId) returns User|error {
 # + email - User email
 # + return - User record or error if not found
 public function getUserByEmail(string email) returns User|error {
-    postgresql:Client dbClient = check database:getDatabaseClient();
+    postgresql:Client dbClient = check database_config:getDbClient();
 
     log:printInfo(string `Looking up user by email: ${email}`);
 
@@ -186,7 +186,7 @@ public function getUserByEmail(string email) returns User|error {
 # + newAsgardeoId - New Asgardeo ID
 # + return - Updated user or error
 public function updateUserAsgardeoId(int userId, string newAsgardeoId) returns User|error {
-    postgresql:Client dbClient = check database:getDatabaseClient();
+    postgresql:Client dbClient = check database_config:getDbClient();
 
     sql:ParameterizedQuery updateQuery = `
         UPDATE users SET 
@@ -211,7 +211,7 @@ public function updateUserAsgardeoId(int userId, string newAsgardeoId) returns U
 # + userReq - User creation request
 # + return - Created user or error
 public function createUser(CreateUserRequest userReq) returns User|error {
-    postgresql:Client dbClient = check database:getDatabaseClient();
+    postgresql:Client dbClient = check database_config:getDbClient();
 
     // Check if email already exists
     sql:ParameterizedQuery emailCheckQuery = `
@@ -273,7 +273,7 @@ public function createUser(CreateUserRequest userReq) returns User|error {
 # + adminId - ID of admin making the update
 # + return - Updated user or error
 public function updateUser(int userId, UpdateUserRequest updateReq, int? adminId = ()) returns User|error {
-    postgresql:Client dbClient = check database:getDatabaseClient();
+    postgresql:Client dbClient = check database_config:getDbClient();
 
     sql:ParameterizedQuery updateQuery;
 
@@ -328,7 +328,7 @@ public function updateUser(int userId, UpdateUserRequest updateReq, int? adminId
 # + status - Filter by status (optional)
 # + return - List of users or error
 public function getAllUsers(int limitVal = 50, int offsetVal = 0, UserRole? role = (), RegistrationStatus? status = ()) returns User[]|error {
-    postgresql:Client dbClient = check database:getDatabaseClient();
+    postgresql:Client dbClient = check database_config:getDbClient();
 
     sql:ParameterizedQuery query;
 
@@ -384,7 +384,7 @@ public function getAllUsers(int limitVal = 50, int offsetVal = 0, UserRole? role
 # + userId - User ID to delete
 # + return - Success or error
 public function deleteUser(int userId) returns error? {
-    postgresql:Client dbClient = check database:getDatabaseClient();
+    postgresql:Client dbClient = check database_config:getDbClient();
 
     sql:ParameterizedQuery deleteQuery = `
         DELETE FROM users WHERE id = ${userId}

@@ -4,13 +4,13 @@
 import ballerina/log;
 import ballerina/sql;
 import ballerinax/postgresql;
-import Cyclesync.database;
+import Cyclesync.database_config;
 
 # Initialize auth database schema
 #
 # + return - Error if initialization fails
 public function initializeAuthSchema() returns error? {
-    postgresql:Client dbClient = check database:getDatabaseClient();
+    postgresql:Client dbClient = check database_config:getDbClient();
     
     log:printInfo("Initializing authentication database schema");
     

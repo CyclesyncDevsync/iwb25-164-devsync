@@ -4,8 +4,6 @@ import Cyclesync.auth as _;
 import Cyclesync.auth;
 // The chatbot module will auto-register its services
 import Cyclesync.chatbot as _;
-// Database module for connection management
-import Cyclesync.database;
 // The demand_prediction module will auto-register its services
 import Cyclesync.demand_prediction as _;
 // The quality_assessment module will auto-register its services
@@ -24,8 +22,60 @@ import Cyclesync.database_config;
 configurable int port = 8080;
 public listener http:Listener server = check new (8080);
 
-// Initialize auth middleware
-final AuthMiddleware authMiddleware = new AuthMiddleware();
+// Auth validation helper function
+function validateAuth(http:Request request, string? requiredRole = ()) returns auth:AuthResult|http:Response {
+    string|http:HeaderNotFoundError authHeader = request.getHeader("Authorization");
+    
+    if authHeader is http:HeaderNotFoundError {
+        http:Response response = new;
+        response.statusCode = 401;
+        response.setJsonPayload({
+            "error": "Unauthorized",
+            "message": "Authorization header required"
+        });
+        return response;
+    }
+    
+    // Extract token from Bearer format
+    if !authHeader.startsWith("Bearer ") {
+        http:Response response = new;
+        response.statusCode = 401;
+        response.setJsonPayload({
+            "error": "Unauthorized",
+            "message": "Invalid authorization format"
+        });
+        return response;
+    }
+    
+    string token = authHeader.substring(7);
+    auth:AuthResult authResult = auth:validateIdToken(token);
+    
+    if !authResult.isValid {
+        http:Response response = new;
+        response.statusCode = 401;
+        response.setJsonPayload({
+            "error": "Unauthorized",
+            "message": authResult.errorMessage ?: "Invalid token"
+        });
+        return response;
+    }
+    
+    // Check role if required
+    if requiredRole != () && authResult.context != () {
+        auth:AuthContext context = <auth:AuthContext>authResult.context;
+        if context.role != requiredRole {
+            http:Response response = new;
+            response.statusCode = 403;
+            response.setJsonPayload({
+                "error": "Forbidden",
+                "message": "Insufficient permissions"
+            });
+            return response;
+        }
+    }
+    
+    return authResult;
+}
 
 // Log startup information
 function init() {
@@ -50,8 +100,8 @@ function init() {
     log:printInfo(string `Main API Server starting on port ${port}`);
     log:printInfo("Demand Prediction Service initialized on http://localhost:8084/api/ai/demand");
     log:printInfo("Quality Assessment Service initialized on /api/ai/quality");
-    log:printInfo("Chatbot WebSocket Service initialized on ws://localhost:8083/chat");
-    log:printInfo("Chatbot Health Check initialized on http://localhost:8089/health");
+    log:printInfo("Chatbot WebSocket Service initialized on ws://localhost:8094/chat");
+    log:printInfo("Chatbot Health Check initialized on http://localhost:8095/health");
 }
 
 // Health check endpoint
@@ -226,12 +276,12 @@ service /api/user on server {
 
     // Get current user profile
     resource function get profile(http:Request request) returns json|http:Response {
-        AuthResult|http:Response authCheck = validateAuth(request);
+        auth:AuthResult|http:Response authCheck = validateAuth(request);
         if (authCheck is http:Response) {
             return authCheck;
         }
 
-        AuthContext? authContext = authCheck.context;
+        auth:AuthContext? authContext = authCheck.context;
         if (authContext == ()) {
             http:Response response = new;
             response.statusCode = 500;
@@ -246,16 +296,17 @@ service /api/user on server {
             "status": "success",
             "data": {
                 "userId": authContext.userId,
-                "username": authContext.username,
+                "firstName": authContext.firstName,
+                "lastName": authContext.lastName,
                 "email": authContext.email,
-                "roles": authContext.roles
+                "role": authContext.role.toString()
             }
         };
     }
 
     // Update user profile
     resource function put profile(http:Request request) returns json|http:Response {
-        AuthResult|http:Response authCheck = validateAuth(request);
+        auth:AuthResult|http:Response authCheck = validateAuth(request);
         if (authCheck is http:Response) {
             return authCheck;
         }
@@ -280,12 +331,12 @@ service /api/user on server {
 
     // Get user permissions
     resource function get permissions(http:Request request) returns json|http:Response {
-        AuthResult|http:Response authCheck = validateAuth(request);
+        auth:AuthResult|http:Response authCheck = validateAuth(request);
         if (authCheck is http:Response) {
             return authCheck;
         }
 
-        AuthContext? authContext = authCheck.context;
+        auth:AuthContext? authContext = authCheck.context;
         if (authContext == ()) {
             http:Response response = new;
             response.statusCode = 500;
@@ -300,16 +351,17 @@ service /api/user on server {
             "status": "success",
             "data": {
                 "userId": authContext.userId,
-                "username": authContext.username,
-                "roles": authContext.roles,
-                "groups": authContext.groups
+                "firstName": authContext.firstName,
+                "lastName": authContext.lastName,
+                "email": authContext.email,
+                "role": authContext.role.toString()
             }
         };
     }
 
     // User logout
     resource function post logout(http:Request request) returns json|http:Response {
-        AuthResult|http:Response authCheck = validateAuth(request);
+        auth:AuthResult|http:Response authCheck = validateAuth(request);
         if (authCheck is http:Response) {
             return authCheck;
         }
@@ -322,12 +374,12 @@ service /api/user on server {
 
     // User dashboard
     resource function get dashboard(http:Request request) returns json|http:Response {
-        AuthResult|http:Response authCheck = validateAuth(request);
+        auth:AuthResult|http:Response authCheck = validateAuth(request);
         if (authCheck is http:Response) {
             return authCheck;
         }
 
-        AuthContext? authContext = authCheck.context;
+        auth:AuthContext? authContext = authCheck.context;
         if (authContext == ()) {
             http:Response response = new;
             response.statusCode = 500;
@@ -341,7 +393,7 @@ service /api/user on server {
         return {
             "status": "success",
             "data": {
-                "welcome": "Welcome " + authContext.username,
+                "welcome": "Welcome " + authContext.firstName + " " + authContext.lastName,
                 "userId": authContext.userId,
                 "lastLogin": "2025-08-10T10:00:00Z",
                 "notifications": [
@@ -362,7 +414,7 @@ service /api/admin on server {
 
     // Get all users (admin only)
     resource function get users(http:Request request) returns json|http:Response {
-        AuthResult|http:Response authCheck = validateAuth(request, "admin");
+        auth:AuthResult|http:Response authCheck = validateAuth(request, "admin");
         if (authCheck is http:Response) {
             return authCheck;
         }
@@ -399,7 +451,7 @@ service /api/admin on server {
 
     // Get specific user by ID (admin only)
     resource function get users/[string userId](http:Request request) returns json|http:Response {
-        AuthResult|http:Response authCheck = validateAuth(request, "admin");
+        auth:AuthResult|http:Response authCheck = validateAuth(request, "admin");
         if (authCheck is http:Response) {
             return authCheck;
         }
@@ -422,7 +474,7 @@ service /api/admin on server {
 
     // Create new user (admin only)
     resource function post users(http:Request request) returns json|http:Response {
-        AuthResult|http:Response authCheck = validateAuth(request, "admin");
+        auth:AuthResult|http:Response authCheck = validateAuth(request, "admin");
         if (authCheck is http:Response) {
             return authCheck;
         }
@@ -450,7 +502,7 @@ service /api/admin on server {
 
     // Get system stats (admin only)
     resource function get stats(http:Request request) returns json|http:Response {
-        AuthResult|http:Response authCheck = validateAuth(request, "admin");
+        auth:AuthResult|http:Response authCheck = validateAuth(request, "admin");
         if (authCheck is http:Response) {
             return authCheck;
         }
