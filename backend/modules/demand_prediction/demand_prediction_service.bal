@@ -9,7 +9,7 @@ import ballerina/lang.'float as floats;
 import ballerina/lang.array;
 
 // Use a different port to avoid conflict, or better yet, share the main listener
-listener http:Listener demandListener = new(8081);
+listener http:Listener demandListener = new(8084);
 
 // Main demand prediction service
 @http:ServiceConfig {

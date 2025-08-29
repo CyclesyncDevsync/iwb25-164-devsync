@@ -13,7 +13,7 @@ configurable int rateLimit = 100;
 
 # Service URLs
 configurable string qualityApiUrl = "http://localhost:8082";
-configurable string demandApiUrl = "http://localhost:8081";
+configurable string demandApiUrl = "http://localhost:8084";
 configurable string mainApiUrl = "http://localhost:8080";
 
 # Redis Configuration (for future use)
