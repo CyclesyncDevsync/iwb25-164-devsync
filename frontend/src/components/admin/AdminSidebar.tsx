@@ -55,6 +55,16 @@ export function AdminSidebar() {
       ),
     },
     {
+      href: ROUTES.ADMIN.VERIFICATION,
+      label: 'Material Verification',
+      icon: (
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" />
+          <path d="M10 17l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8z" />
+        </svg>
+      ),
+    },
+    {
       href: ROUTES.ADMIN.AUCTIONS,
       label: 'Auctions',
       icon: (

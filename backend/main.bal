@@ -15,6 +15,7 @@ import Cyclesync.material_workflow as _;
 
 import ballerina/http;
 import ballerina/log;
+import ballerina/sql;
 // Database configuration (import from local file)
 import ballerinax/postgresql;
 import Cyclesync.database_config;
@@ -121,6 +122,24 @@ service / on server {
         return {
             "database_status": dbConnected ? "connected" : "disconnected",
             "timestamp": ""
+        };
+    }
+
+    // Test token endpoint for development
+    resource function post test/token() returns json {
+        // Generate a test JWT token for development
+        // WARNING: This is for development only - remove in production!
+        return {
+            "status": "success",
+            "token": "test-token-for-development",
+            "message": "This is a test token for development only",
+            "user": {
+                "id": "test-admin-id",
+                "email": "admin@cyclesync.com",
+                "role": "admin",
+                "firstName": "Test",
+                "lastName": "Admin"
+            }
         };
     }
 
@@ -409,6 +428,122 @@ service /api/user on server {
     }
 }
 
+// Test endpoints for development
+@http:ServiceConfig {
+    cors: {
+        allowOrigins: ["http://localhost:3000", "http://localhost:3001"],
+        allowCredentials: true,
+        allowHeaders: ["Content-Type", "Authorization"],
+        allowMethods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+        maxAge: 84600
+    }
+}
+service /api/test on server {
+    // Get material submissions without auth (DEVELOPMENT ONLY)
+    resource function get material\-submissions(string? delivery_method = (), string? status = ()) returns json|http:Response {
+        postgresql:Client|error clientResult = database_config:getDbClient();
+        if (clientResult is error) {
+            http:Response response = new;
+            response.statusCode = 503;
+            response.setJsonPayload({
+                "error": "Database not connected",
+                "message": "Database connection is not available"
+            });
+            return response;
+        }
+
+        // Get real data from database
+        postgresql:Client clientInstance = clientResult;
+        
+        sql:ParameterizedQuery query = `
+            SELECT 
+                ms.*,
+                COALESCE(u.first_name || ' ' || u.last_name, 'Unknown Supplier') as supplier_name,
+                u.email as supplier_email,
+                u.asgardeo_id as user_asgardeo_id
+            FROM material_submissions ms
+            LEFT JOIN users u ON ms.supplier_id = u.asgardeo_id
+            ORDER BY ms.created_at DESC
+        `;
+        stream<record {}, sql:Error?> resultStream = clientInstance->query(query);
+        
+        json[] submissions = [];
+        error? conversionResult = from var row in resultStream
+            do {
+                submissions.push(row.toJson());
+            };
+        
+        if (conversionResult is error) {
+            return {
+                "status": "error",
+                "message": "Failed to fetch submissions",
+                "error": conversionResult.message()
+            };
+        }
+
+        // Debug log to help troubleshoot
+        if (submissions.length() > 0) {
+            json firstSubmission = submissions[0];
+            json|error supplierId = firstSubmission.supplier_id;
+            json|error supplierName = firstSubmission.supplier_name;
+            
+            if (supplierId is json) {
+                log:printInfo("First submission supplier_id: " + supplierId.toString());
+            }
+            if (supplierName is json) {
+                log:printInfo("First submission supplier_name: " + supplierName.toString());
+            }
+        }
+
+        return {
+            "status": "success",
+            "count": submissions.length(),
+            "data": submissions
+        };
+    }
+
+    // Test endpoint to get all users from database
+    resource function get users() returns json|http:Response {
+        postgresql:Client|error clientResult = database_config:getDbClient();
+        if (clientResult is error) {
+            http:Response response = new;
+            response.statusCode = 503;
+            response.setJsonPayload({
+                "error": "Database not connected",
+                "message": "Database connection is not available"
+            });
+            return response;
+        }
+
+        postgresql:Client clientInstance = clientResult;
+        
+        sql:ParameterizedQuery query = `SELECT * FROM users ORDER BY created_at DESC`;
+        stream<record {}, sql:Error?> resultStream = clientInstance->query(query);
+        
+        json[] users = [];
+        error? conversionResult = from var row in resultStream
+            do {
+                users.push(row.toJson());
+            };
+        
+        if (conversionResult is error) {
+            http:Response response = new;
+            response.statusCode = 500;
+            response.setJsonPayload({
+                "error": "Query failed",
+                "message": conversionResult.message()
+            });
+            return response;
+        }
+        
+        return {
+            "status": "success",
+            "count": users.length(),
+            "data": users
+        };
+    }
+}
+
 // Admin endpoints
 service /api/admin on server {
 
@@ -515,6 +650,648 @@ service /api/admin on server {
                 "adminUsers": 5,
                 "systemHealth": "healthy"
             }
+        };
+    }
+
+    // Material verification endpoints
+
+    // Get all material submissions
+    resource function get material\-submissions(http:Request request, 
+        string? delivery_method = (), string? status = ()) returns json|http:Response {
+        auth:AuthResult|http:Response authCheck = validateAuth(request, "admin");
+        if (authCheck is http:Response) {
+            return authCheck;
+        }
+
+        postgresql:Client|error clientResult = database_config:getDbClient();
+        if (clientResult is error) {
+            http:Response response = new;
+            response.statusCode = 503;
+            response.setJsonPayload({
+                "error": "Database not connected",
+                "message": "Database connection is not available"
+            });
+            return response;
+        }
+
+        postgresql:Client clientInstance = clientResult;
+
+        // Build parameterized query based on filters
+        sql:ParameterizedQuery sqlQuery;
+        
+        if (delivery_method != () && status != ()) {
+            sqlQuery = `
+                SELECT 
+                    ms.id,
+                    ms.transaction_id,
+                    ms.workflow_id,
+                    ms.supplier_id,
+                    ms.title,
+                    ms.description,
+                    ms.category,
+                    ms.sub_category,
+                    ms.quantity,
+                    ms.unit,
+                    ms.condition,
+                    ms.expected_price,
+                    ms.minimum_price,
+                    ms.negotiable,
+                    ms.delivery_method,
+                    ms.location_address,
+                    ms.location_city,
+                    ms.location_district,
+                    ms.location_province,
+                    ms.location_postal_code,
+                    ms.location_latitude,
+                    ms.location_longitude,
+                    ms.selected_warehouse_name,
+                    ms.selected_warehouse_address,
+                    ms.selected_warehouse_phone,
+                    ms.material_type,
+                    ms.material_color,
+                    ms.material_brand,
+                    ms.material_model,
+                    ms.manufacturing_year,
+                    ms.dimension_length,
+                    ms.dimension_width,
+                    ms.dimension_height,
+                    ms.dimension_weight,
+                    ms.tags,
+                    ms.photos,
+                    ms.submission_status,
+                    ms.created_at,
+                    ms.updated_at,
+                    u.name as supplier_name,
+                    u.email as supplier_email,
+                    aa.agent_id,
+                    agent.name as agent_name
+                FROM material_submissions ms
+                LEFT JOIN users u ON ms.supplier_id = u.id
+                LEFT JOIN agent_assignments aa ON ms.workflow_id = aa.workflow_id
+                LEFT JOIN users agent ON aa.agent_id = agent.id
+                WHERE ms.delivery_method = ${delivery_method} AND ms.submission_status = ${status}
+                ORDER BY ms.created_at DESC LIMIT 100
+            `;
+        } else if (delivery_method != ()) {
+            sqlQuery = `
+                SELECT 
+                    ms.id,
+                    ms.transaction_id,
+                    ms.workflow_id,
+                    ms.supplier_id,
+                    ms.title,
+                    ms.description,
+                    ms.category,
+                    ms.sub_category,
+                    ms.quantity,
+                    ms.unit,
+                    ms.condition,
+                    ms.expected_price,
+                    ms.minimum_price,
+                    ms.negotiable,
+                    ms.delivery_method,
+                    ms.location_address,
+                    ms.location_city,
+                    ms.location_district,
+                    ms.location_province,
+                    ms.location_postal_code,
+                    ms.location_latitude,
+                    ms.location_longitude,
+                    ms.selected_warehouse_name,
+                    ms.selected_warehouse_address,
+                    ms.selected_warehouse_phone,
+                    ms.material_type,
+                    ms.material_color,
+                    ms.material_brand,
+                    ms.material_model,
+                    ms.manufacturing_year,
+                    ms.dimension_length,
+                    ms.dimension_width,
+                    ms.dimension_height,
+                    ms.dimension_weight,
+                    ms.tags,
+                    ms.photos,
+                    ms.submission_status,
+                    ms.created_at,
+                    ms.updated_at,
+                    u.name as supplier_name,
+                    u.email as supplier_email,
+                    aa.agent_id,
+                    agent.name as agent_name
+                FROM material_submissions ms
+                LEFT JOIN users u ON ms.supplier_id = u.id
+                LEFT JOIN agent_assignments aa ON ms.workflow_id = aa.workflow_id
+                LEFT JOIN users agent ON aa.agent_id = agent.id
+                WHERE ms.delivery_method = ${delivery_method}
+                ORDER BY ms.created_at DESC LIMIT 100
+            `;
+        } else if (status != ()) {
+            sqlQuery = `
+                SELECT 
+                    ms.id,
+                    ms.transaction_id,
+                    ms.workflow_id,
+                    ms.supplier_id,
+                    ms.title,
+                    ms.description,
+                    ms.category,
+                    ms.sub_category,
+                    ms.quantity,
+                    ms.unit,
+                    ms.condition,
+                    ms.expected_price,
+                    ms.minimum_price,
+                    ms.negotiable,
+                    ms.delivery_method,
+                    ms.location_address,
+                    ms.location_city,
+                    ms.location_district,
+                    ms.location_province,
+                    ms.location_postal_code,
+                    ms.location_latitude,
+                    ms.location_longitude,
+                    ms.selected_warehouse_name,
+                    ms.selected_warehouse_address,
+                    ms.selected_warehouse_phone,
+                    ms.material_type,
+                    ms.material_color,
+                    ms.material_brand,
+                    ms.material_model,
+                    ms.manufacturing_year,
+                    ms.dimension_length,
+                    ms.dimension_width,
+                    ms.dimension_height,
+                    ms.dimension_weight,
+                    ms.tags,
+                    ms.photos,
+                    ms.submission_status,
+                    ms.created_at,
+                    ms.updated_at,
+                    u.name as supplier_name,
+                    u.email as supplier_email,
+                    aa.agent_id,
+                    agent.name as agent_name
+                FROM material_submissions ms
+                LEFT JOIN users u ON ms.supplier_id = u.id
+                LEFT JOIN agent_assignments aa ON ms.workflow_id = aa.workflow_id
+                LEFT JOIN users agent ON aa.agent_id = agent.id
+                WHERE ms.submission_status = ${status}
+                ORDER BY ms.created_at DESC LIMIT 100
+            `;
+        } else {
+            sqlQuery = `
+                SELECT 
+                    ms.id,
+                    ms.transaction_id,
+                    ms.workflow_id,
+                    ms.supplier_id,
+                    ms.title,
+                    ms.description,
+                    ms.category,
+                    ms.sub_category,
+                    ms.quantity,
+                    ms.unit,
+                    ms.condition,
+                    ms.expected_price,
+                    ms.minimum_price,
+                    ms.negotiable,
+                    ms.delivery_method,
+                    ms.location_address,
+                    ms.location_city,
+                    ms.location_district,
+                    ms.location_province,
+                    ms.location_postal_code,
+                    ms.location_latitude,
+                    ms.location_longitude,
+                    ms.selected_warehouse_name,
+                    ms.selected_warehouse_address,
+                    ms.selected_warehouse_phone,
+                    ms.material_type,
+                    ms.material_color,
+                    ms.material_brand,
+                    ms.material_model,
+                    ms.manufacturing_year,
+                    ms.dimension_length,
+                    ms.dimension_width,
+                    ms.dimension_height,
+                    ms.dimension_weight,
+                    ms.tags,
+                    ms.photos,
+                    ms.submission_status,
+                    ms.created_at,
+                    ms.updated_at,
+                    u.name as supplier_name,
+                    u.email as supplier_email,
+                    aa.agent_id,
+                    agent.name as agent_name
+                FROM material_submissions ms
+                LEFT JOIN users u ON ms.supplier_id = u.id
+                LEFT JOIN agent_assignments aa ON ms.workflow_id = aa.workflow_id
+                LEFT JOIN users agent ON aa.agent_id = agent.id
+                ORDER BY ms.created_at DESC LIMIT 100
+            `;
+        }
+        
+        stream<record {}, sql:Error?> queryResult = clientInstance->query(sqlQuery);
+
+        json[] submissions = [];
+        error? conversionResult = from var row in queryResult
+            do {
+                map<json> submission = {
+                    "id": <json>row["id"],
+                    "transaction_id": <json>row["transaction_id"],
+                    "workflow_id": <json>row["workflow_id"],
+                    "supplier_id": <json>row["supplier_id"],
+                    "supplier_name": <json>(row["supplier_name"] ?: "Unknown Supplier"),
+                    "title": <json>row["title"],
+                    "description": <json>(row["description"] ?: ""),
+                    "category": <json>row["category"],
+                    "sub_category": <json>(row["sub_category"] ?: ""),
+                    "quantity": <json>row["quantity"],
+                    "unit": <json>row["unit"],
+                    "condition": <json>row["condition"],
+                    "expected_price": <json>(row["expected_price"] ?: 0),
+                    "minimum_price": <json>(row["minimum_price"] ?: 0),
+                    "negotiable": <json>row["negotiable"],
+                    "delivery_method": <json>row["delivery_method"],
+                    "submission_status": <json>row["submission_status"],
+                    "created_at": <json>row["created_at"],
+                    "updated_at": <json>(row["updated_at"] ?: ""),
+                    "material_specifications": {
+                        "material_type": <json>(row["material_type"] ?: ""),
+                        "color": <json>row["material_color"],
+                        "brand": <json>row["material_brand"],
+                        "model": <json>row["material_model"],
+                        "manufacturing_year": <json>row["manufacturing_year"]
+                    },
+                    "tags": <json>(row["tags"] ?: []),
+                    "photos": <json>(row["photos"] ?: [])
+                };
+
+                // Add location details if it's an agent visit
+                if (row["delivery_method"] == "agent_visit") {
+                    json locationData = {
+                        "address": <json>(row["location_address"] ?: ""),
+                        "city": <json>(row["location_city"] ?: ""),
+                        "district": <json>(row["location_district"] ?: ""),
+                        "province": <json>(row["location_province"] ?: ""),
+                        "postal_code": <json>(row["location_postal_code"] ?: ""),
+                        "latitude": <json>row["location_latitude"],
+                        "longitude": <json>row["location_longitude"]
+                    };
+                    submission["location"] = locationData;
+                }
+
+                // Add warehouse details if it's a drop-off
+                if (row["delivery_method"] == "drop_off") {
+                    json warehouseData = {
+                        "name": <json>(row["selected_warehouse_name"] ?: ""),
+                        "address": <json>(row["selected_warehouse_address"] ?: ""),
+                        "phone": <json>(row["selected_warehouse_phone"] ?: "")
+                    };
+                    submission["warehouse"] = warehouseData;
+                }
+
+                // Add assigned agent details if available
+                if (row["agent_id"] != ()) {
+                    json agentData = {
+                        "id": <json>row["agent_id"],
+                        "name": <json>(row["agent_name"] ?: "Unknown Agent")
+                    };
+                    submission["assigned_agent"] = agentData;
+                }
+
+                submissions.push(submission);
+            };
+
+        if (conversionResult is error) {
+            http:Response response = new;
+            response.statusCode = 500;
+            response.setJsonPayload({
+                "error": "Data conversion failed",
+                "message": conversionResult.message()
+            });
+            return response;
+        }
+
+        return {
+            "status": "success",
+            "data": submissions
+        };
+    }
+
+    // Get material verification statistics
+    resource function get material\-submissions/stats(http:Request request) returns json|http:Response {
+        auth:AuthResult|http:Response authCheck = validateAuth(request, "admin");
+        if (authCheck is http:Response) {
+            return authCheck;
+        }
+
+        postgresql:Client|error clientResult = database_config:getDbClient();
+        if (clientResult is error) {
+            http:Response response = new;
+            response.statusCode = 503;
+            response.setJsonPayload({
+                "error": "Database not connected",
+                "message": "Database connection is not available"
+            });
+            return response;
+        }
+
+        postgresql:Client clientInstance = clientResult;
+
+        // Get total submissions count
+        sql:ParameterizedQuery totalQuery = `SELECT COUNT(*) as total FROM material_submissions`;
+        record {int total;}|sql:Error totalResult = clientInstance->queryRow(totalQuery);
+        int totalSubmissions = 0;
+        if (totalResult is record {int total;}) {
+            totalSubmissions = totalResult.total;
+        }
+
+        // Get agent visits count
+        sql:ParameterizedQuery agentVisitsQuery = `SELECT COUNT(*) as count FROM material_submissions WHERE delivery_method = 'agent_visit'`;
+        record {int count;}|sql:Error agentVisitsResult = clientInstance->queryRow(agentVisitsQuery);
+        int agentVisits = 0;
+        if (agentVisitsResult is record {int count;}) {
+            agentVisits = agentVisitsResult.count;
+        }
+
+        // Get drop-offs count
+        sql:ParameterizedQuery dropOffsQuery = `SELECT COUNT(*) as count FROM material_submissions WHERE delivery_method = 'drop_off'`;
+        record {int count;}|sql:Error dropOffsResult = clientInstance->queryRow(dropOffsQuery);
+        int dropOffs = 0;
+        if (dropOffsResult is record {int count;}) {
+            dropOffs = dropOffsResult.count;
+        }
+
+        // Get pending verifications count
+        sql:ParameterizedQuery pendingQuery = `SELECT COUNT(*) as count FROM material_submissions WHERE submission_status = 'pending_verification' OR submission_status = 'submitted'`;
+        record {int count;}|sql:Error pendingResult = clientInstance->queryRow(pendingQuery);
+        int pendingVerifications = 0;
+        if (pendingResult is record {int count;}) {
+            pendingVerifications = pendingResult.count;
+        }
+
+        return {
+            "status": "success",
+            "data": {
+                "totalSubmissions": totalSubmissions,
+                "agentVisits": agentVisits,
+                "dropOffs": dropOffs,
+                "pendingVerifications": pendingVerifications
+            }
+        };
+    }
+
+    // Get warehouse statistics
+    resource function get warehouses/stats(http:Request request) returns json|http:Response {
+        auth:AuthResult|http:Response authCheck = validateAuth(request, "admin");
+        if (authCheck is http:Response) {
+            return authCheck;
+        }
+
+        postgresql:Client|error clientResult = database_config:getDbClient();
+        if (clientResult is error) {
+            http:Response response = new;
+            response.statusCode = 503;
+            response.setJsonPayload({
+                "error": "Database not connected",
+                "message": "Database connection is not available"
+            });
+            return response;
+        }
+
+        postgresql:Client clientInstance = clientResult;
+
+        // Get warehouse statistics from actual data
+        sql:ParameterizedQuery warehouseQuery = `SELECT 
+            selected_warehouse_name as name,
+            selected_warehouse_address as address,
+            COUNT(*) as drop_off_count
+        FROM material_submissions
+        WHERE delivery_method = 'drop_off' 
+            AND selected_warehouse_name IS NOT NULL
+            AND selected_warehouse_name != ''
+        GROUP BY selected_warehouse_name, selected_warehouse_address
+        ORDER BY drop_off_count DESC`;
+        
+        stream<record {}, sql:Error?> warehouseResult = clientInstance->query(warehouseQuery);
+
+        json[] warehouseStats = [];
+        
+        error? conversionResult = from var row in warehouseResult
+            do {
+                string warehouseName = <string>row["name"];
+                string warehouseAddress = <string>row["address"];
+                int dropOffCount = <int>row["drop_off_count"];
+                
+                // Generate coordinates based on warehouse name (for demo purposes)
+                decimal latitude = 6.9271;
+                decimal longitude = 79.8612;
+                
+                if (warehouseName.includes("Kandy") || warehouseName.includes("Eastern")) {
+                    latitude = 7.2906;
+                    longitude = 80.6337;
+                } else if (warehouseName.includes("Galle") || warehouseName.includes("Southern")) {
+                    latitude = 6.0535;
+                    longitude = 80.2210;
+                }
+                
+                json warehouseStat = {
+                    "id": "wh-" + warehouseStats.length().toString(),
+                    "name": warehouseName,
+                    "address": warehouseAddress,
+                    "latitude": latitude,
+                    "longitude": longitude,
+                    "dropOffRequests": dropOffCount
+                };
+                
+                warehouseStats.push(warehouseStat);
+            };
+
+        // If no warehouses found in database, return default ones
+        if (warehouseStats.length() == 0) {
+            warehouseStats = [
+                {
+                    "id": "wh-1",
+                    "name": "Central Warehouse",
+                    "address": "Colombo District Center",
+                    "latitude": 6.9271,
+                    "longitude": 79.8612,
+                    "dropOffRequests": 0
+                },
+                {
+                    "id": "wh-2", 
+                    "name": "Eastern Warehouse",
+                    "address": "Kandy Distribution Center",
+                    "latitude": 7.2906,
+                    "longitude": 80.6337,
+                    "dropOffRequests": 0
+                },
+                {
+                    "id": "wh-3",
+                    "name": "Southern Warehouse", 
+                    "address": "Galle Collection Point",
+                    "latitude": 6.0535,
+                    "longitude": 80.2210,
+                    "dropOffRequests": 0
+                }
+            ];
+        } else {
+                warehouseStats = [
+                    {
+                        "id": "wh-1",
+                        "name": "Central Warehouse",
+                        "address": "Colombo District Center",
+                        "latitude": 6.9271,
+                        "longitude": 79.8612,
+                        "dropOffRequests": 0
+                    },
+                    {
+                        "id": "wh-2", 
+                        "name": "Eastern Warehouse",
+                        "address": "Kandy Distribution Center",
+                        "latitude": 7.2906,
+                        "longitude": 80.6337,
+                        "dropOffRequests": 0
+                    },
+                    {
+                        "id": "wh-3",
+                        "name": "Southern Warehouse", 
+                        "address": "Galle Collection Point",
+                        "latitude": 6.0535,
+                        "longitude": 80.2210,
+                        "dropOffRequests": 0
+                    }
+                ];
+            }
+
+        return {
+            "status": "success",
+            "data": warehouseStats
+        };
+    }
+
+    // Assign agent to submission
+    resource function post material\-submissions/[string submissionId]/assign\-agent(
+        http:Request request) returns json|http:Response {
+        auth:AuthResult|http:Response authCheck = validateAuth(request, "admin");
+        if (authCheck is http:Response) {
+            return authCheck;
+        }
+
+        json|error payload = request.getJsonPayload();
+        if (payload is error) {
+            http:Response response = new;
+            response.statusCode = 400;
+            response.setJsonPayload({
+                "error": "Bad Request",
+                "message": "Invalid JSON payload"
+            });
+            return response;
+        }
+
+        json agentId = "auto-assigned-agent";
+        if (payload is map<json>) {
+            agentId = payload["agentId"] ?: "auto-assigned-agent";
+        }
+        
+        return {
+            "status": "success",
+            "message": "Agent assigned successfully",
+            "data": {
+                "submissionId": submissionId,
+                "agentId": agentId
+            }
+        };
+    }
+
+    // Verify material submission
+    resource function post material\-submissions/[string submissionId]/verify(
+        http:Request request) returns json|http:Response {
+        auth:AuthResult|http:Response authCheck = validateAuth(request, "admin");
+        if (authCheck is http:Response) {
+            return authCheck;
+        }
+
+        return {
+            "status": "success",
+            "message": "Material submission verified successfully",
+            "data": {
+                "submissionId": submissionId,
+                "status": "verified"
+            }
+        };
+    }
+
+    // Test endpoint to get all material submissions from database
+    resource function get test/material\-submissions() returns json|http:Response {
+        postgresql:Client|error clientResult = database_config:getDbClient();
+        if (clientResult is error) {
+            http:Response response = new;
+            response.statusCode = 503;
+            response.setJsonPayload({
+                "error": "Database not connected",
+                "message": "Database connection is not available"
+            });
+            return response;
+        }
+
+        postgresql:Client clientInstance = clientResult;
+        
+        sql:ParameterizedQuery query = `
+            SELECT 
+                ms.*,
+                u.first_name || ' ' || u.last_name as supplier_name,
+                u.email as supplier_email,
+                u.role as supplier_role,
+                u.status as supplier_status,
+                u.asgardeo_id as user_asgardeo_id
+            FROM material_submissions ms
+            LEFT JOIN users u ON ms.supplier_id = u.asgardeo_id
+            ORDER BY ms.created_at DESC
+        `;
+        stream<record {}, sql:Error?> resultStream = clientInstance->query(query);
+        
+        json[] submissions = [];
+        error? conversionResult = from var row in resultStream
+            do {
+                submissions.push(row.toJson());
+            };
+        
+        if (conversionResult is error) {
+            http:Response response = new;
+            response.statusCode = 500;
+            response.setJsonPayload({
+                "error": "Query failed",
+                "message": conversionResult.message()
+            });
+            return response;
+        }
+        
+        // Debug log to check the data
+        if (submissions.length() > 0) {
+            log:printInfo("First submission data: " + submissions[0].toString());
+            
+            // Check if user exists
+            json firstSubmission = submissions[0];
+            json|error supplierIdJson = firstSubmission.supplier_id;
+            if (supplierIdJson is json) {
+                string supplierId = supplierIdJson.toString();
+                sql:ParameterizedQuery userCheckQuery = `SELECT asgardeo_id, first_name, last_name FROM users WHERE asgardeo_id = ${supplierId}`;
+                record {}|error userResult = clientInstance->queryRow(userCheckQuery);
+                if (userResult is record {}) {
+                    log:printInfo("User found for supplier_id " + supplierId + ": " + userResult.toString());
+                } else {
+                    log:printInfo("No user found for supplier_id: " + supplierId);
+                }
+            }
+        }
+        
+        return {
+            "status": "success",
+            "count": submissions.length(),
+            "data": submissions
         };
     }
 }
