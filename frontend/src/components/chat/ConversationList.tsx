@@ -2,7 +2,6 @@
 
 import React, { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { useTranslation } from 'react-i18next';
 import { RootState } from '../../store';
 import { Conversation } from '../../services/chatWebSocket';
 import {
@@ -41,7 +40,6 @@ export const ConversationList: React.FC<ConversationListProps> = ({
   currentConversationId,
   isArchived = false,
 }) => {
-  const { t } = useTranslation();
   const dispatch = useDispatch();
   const { unreadCounts } = useSelector((state: RootState) => state.chat);
   
@@ -117,8 +115,8 @@ export const ConversationList: React.FC<ConversationListProps> = ({
           <div>
             <h3 className="text-sm font-medium text-gray-900 dark:text-white">
               {isArchived 
-                ? (t('chat.noArchivedConversations') || 'No archived conversations')
-                : (t('chat.noConversations') || 'No conversations')
+                ? 'No archived conversations'
+                : 'No conversations'
               }
             </h3>
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
@@ -242,12 +240,12 @@ export const ConversationList: React.FC<ConversationListProps> = ({
                                   {isArchived ? (
                                     <>
                                       <ArchiveBoxXMarkIcon className="w-4 h-4" />
-                                      <span>{t('chat.unarchive') || 'Unarchive'}</span>
+                                      <span>Unarchive</span>
                                     </>
                                   ) : (
                                     <>
                                       <ArchiveBoxIcon className="w-4 h-4" />
-                                      <span>{t('chat.archive') || 'Archive'}</span>
+                                      <span>Archive</span>
                                     </>
                                   )}
                                 </button>
@@ -263,7 +261,7 @@ export const ConversationList: React.FC<ConversationListProps> = ({
                                   } flex items-center space-x-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 w-full text-left`}
                                 >
                                   <FlagIcon className="w-4 h-4" />
-                                  <span>{t('chat.flag') || 'Flag'}</span>
+                                  <span>Flag</span>
                                 </button>
                               )}
                             </Menu.Item>
@@ -277,7 +275,7 @@ export const ConversationList: React.FC<ConversationListProps> = ({
                                   } flex items-center space-x-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 w-full text-left`}
                                 >
                                   <TrashIcon className="w-4 h-4" />
-                                  <span>{t('chat.delete') || 'Delete'}</span>
+                                  <span>Delete</span>
                                 </button>
                               )}
                             </Menu.Item>
@@ -297,7 +295,7 @@ export const ConversationList: React.FC<ConversationListProps> = ({
                         ? 'text-gray-900 dark:text-white font-medium' 
                         : 'text-gray-500 dark:text-gray-400'
                   }`}>
-                    {conversation.lastMessage?.content || t('chat.noMessages') || 'No messages yet'}
+                    {conversation.lastMessage?.content || 'No messages yet'}
                   </p>
                   
                   <span className={`text-xs ml-2 flex-shrink-0 ${
@@ -318,7 +316,7 @@ export const ConversationList: React.FC<ConversationListProps> = ({
                       <div className="w-1 h-1 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
                     </div>
                     <span className="text-xs text-blue-600 dark:text-blue-400">
-                      {conversation.isTyping[0]} {t('chat.typing') || 'is typing...'}
+                      {conversation.isTyping[0]} is typing...
                     </span>
                   </div>
                 )}

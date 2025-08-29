@@ -28,11 +28,6 @@ export default function AdminDashboard() {
         return;
       }
       
-      // Welcome message for admin/super admin
-      if (user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN') {
-        const roleDisplay = user?.role === 'SUPER_ADMIN' ? 'Super Admin' : 'Admin';
-        enhancedToast.admin(`Welcome back, ${user.firstName} ${user.lastName} (${roleDisplay})!`);
-      }
     }
   }, [loading, isAuthenticated, user, router]);
 

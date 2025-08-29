@@ -26,8 +26,8 @@ export function MainLayout({ children }: MainLayoutProps) {
                        (pathname && pathname.startsWith('/auction/') && pathname.endsWith('/bid')) ||
                        pathname === '/offline';
 
-  // Routes where footer should be hidden (supplier dashboard has its own layout)
-  const hideFooterRoutes = pathname?.startsWith('/supplier');
+  // Routes where footer should be hidden (supplier and admin dashboards have their own layouts)
+  const hideFooterRoutes = pathname?.startsWith('/supplier') || pathname?.startsWith('/admin');
 
   // Show FAB on public pages and some specific routes
   const showFAB = !isHiddenRoute && (

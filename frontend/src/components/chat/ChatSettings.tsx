@@ -2,7 +2,6 @@
 
 import React, { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { useTranslation } from 'react-i18next';
 import { RootState } from '../../store';
 import {
   updateChatSettings,
@@ -28,7 +27,6 @@ interface ChatSettingsProps {
 }
 
 export const ChatSettings: React.FC<ChatSettingsProps> = ({ isOpen, onClose }) => {
-  const { t, i18n } = useTranslation();
   const dispatch = useDispatch();
   
   const {
@@ -66,7 +64,6 @@ export const ChatSettings: React.FC<ChatSettingsProps> = ({ isOpen, onClose }) =
 
   const handleLanguageChange = (languageCode: string) => {
     dispatch(setSelectedLanguage(languageCode));
-    i18n.changeLanguage(languageCode);
   };
 
   const handleAutoTranslateChange = (enabled: boolean) => {
@@ -133,7 +130,7 @@ export const ChatSettings: React.FC<ChatSettingsProps> = ({ isOpen, onClose }) =
                 {/* Header */}
                 <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
                   <Dialog.Title as="h3" className="text-lg font-medium leading-6 text-gray-900 dark:text-white">
-                    {t('chat.settings.title') || 'Chat Settings'}
+                    Chat Settings
                   </Dialog.Title>
                   <button
                     onClick={onClose}
@@ -176,14 +173,14 @@ export const ChatSettings: React.FC<ChatSettingsProps> = ({ isOpen, onClose }) =
                       <Tab.Panel className="space-y-6">
                         <div>
                           <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-4">
-                            {t('chat.settings.notifications') || 'Notifications'}
+                            Notifications
                           </h4>
                           
                           <div className="space-y-4">
                             <div className="flex items-center justify-between">
                               <div>
                                 <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                                  {t('chat.settings.soundNotifications') || 'Sound notifications'}
+                                  Sound notifications
                                 </label>
                                 <p className="text-xs text-gray-500 dark:text-gray-400">
                                   Play sound when receiving messages
@@ -257,7 +254,7 @@ export const ChatSettings: React.FC<ChatSettingsProps> = ({ isOpen, onClose }) =
                         {/* Quiet Hours */}
                         <div>
                           <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-4">
-                            {t('chat.settings.quietHours') || 'Quiet Hours'}
+                            Quiet Hours
                           </h4>
                           
                           <div className="space-y-4">
@@ -314,7 +311,7 @@ export const ChatSettings: React.FC<ChatSettingsProps> = ({ isOpen, onClose }) =
                       <Tab.Panel className="space-y-6">
                         <div>
                           <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-4">
-                            {t('chat.settings.language') || 'Language'}
+                            Language
                           </h4>
                           
                           <div className="space-y-3">
@@ -349,7 +346,7 @@ export const ChatSettings: React.FC<ChatSettingsProps> = ({ isOpen, onClose }) =
                           <div className="flex items-center justify-between">
                             <div>
                               <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                                {t('chat.settings.autoTranslate') || 'Auto-translate messages'}
+                                Auto-translate messages
                               </label>
                               <p className="text-xs text-gray-500 dark:text-gray-400">
                                 Automatically translate messages to your preferred language
@@ -376,7 +373,7 @@ export const ChatSettings: React.FC<ChatSettingsProps> = ({ isOpen, onClose }) =
                       <Tab.Panel className="space-y-6">
                         <div>
                           <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-4">
-                            {t('chat.settings.theme') || 'Theme'}
+                            Theme
                           </h4>
                           
                           <div className="space-y-3">
@@ -437,7 +434,7 @@ export const ChatSettings: React.FC<ChatSettingsProps> = ({ isOpen, onClose }) =
                       <Tab.Panel className="space-y-6">
                         <div>
                           <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-4">
-                            {t('chat.templates.title') || 'Quick Responses'}
+                            Quick Responses
                           </h4>
                           
                           <div className="space-y-3">
@@ -485,13 +482,13 @@ export const ChatSettings: React.FC<ChatSettingsProps> = ({ isOpen, onClose }) =
                     onClick={onClose}
                     className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
                   >
-                    {t('cancel') || 'Cancel'}
+                    Cancel
                   </button>
                   <button
                     onClick={handleSave}
                     className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 transition-colors"
                   >
-                    {t('save') || 'Save'}
+                    Save
                   </button>
                 </div>
               </Dialog.Panel>

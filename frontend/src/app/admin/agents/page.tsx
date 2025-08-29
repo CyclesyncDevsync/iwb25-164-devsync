@@ -5,19 +5,19 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '../../../hooks/useAuth';
 import DashboardLayout from '../../../components/layout/DashboardLayout';
 import { Loading } from '../../../components/ui/Loading';
-import { MaterialsManagement } from '../../../components/admin/MaterialsManagement';
+import { AgentsManagement } from '../../../components/admin/AgentsManagement';
 import { enhancedToast } from '../../../components/ui/EnhancedToast';
 
-export default function MaterialsPage() {
+export default function AgentsPage() {
   const { user, loading, isAuthenticated } = useAuth();
   const router = useRouter();
 
-  // Protect the route - redirect if not admin
+  // Protect the route - redirect if not admin or super admin
   useEffect(() => {
     if (!loading) {
       if (!isAuthenticated) {
         enhancedToast.warning('Authentication required.');
-        router.push('/auth/login?redirect=/admin/materials');
+        router.push('/auth/login?redirect=/admin/agents');
         return;
       }
       
@@ -30,7 +30,7 @@ export default function MaterialsPage() {
   }, [loading, isAuthenticated, user, router]);
 
   if (loading) {
-    return <Loading text="Loading materials management..." fullScreen />;
+    return <Loading text="Loading agents management..." fullScreen />;
   }
 
   // If not authenticated or not admin/super admin, show loading until redirect happens
@@ -41,15 +41,15 @@ export default function MaterialsPage() {
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        <div>
+        <div className="border-b border-gray-200 dark:border-gray-700 pb-4">
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-            Materials Management
+            Agent Management
           </h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">
-            Monitor and manage material listings and quality standards
+          <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+            Manage field agents, their assignments, and performance metrics
           </p>
         </div>
-        <MaterialsManagement />
+        <AgentsManagement />
       </div>
     </DashboardLayout>
   );

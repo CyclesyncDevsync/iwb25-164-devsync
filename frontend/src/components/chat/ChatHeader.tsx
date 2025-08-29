@@ -2,13 +2,11 @@
 
 import React from 'react';
 import { useSelector } from 'react-redux';
-import { useTranslation } from 'react-i18next';
 import { RootState } from '../../store';
 import { ThemeToggle } from '../common/ThemeToggle';
 import {
   Bars3Icon,
   Cog6ToothIcon,
-  GlobeAltIcon,
   BellIcon,
   UserGroupIcon,
 } from '@heroicons/react/24/outline';
@@ -27,7 +25,6 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
   showSidebar,
   isMobile,
 }) => {
-  const { t, i18n } = useTranslation();
   const { user } = useSelector((state: RootState) => state.auth);
   const { conversations, unreadCounts } = useSelector((state: RootState) => state.chat);
 
@@ -48,23 +45,6 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
     }
   };
 
-  const cycleLanguage = () => {
-    const languages = ['en', 'si', 'ta'];
-    const currentIndex = languages.indexOf(i18n.language);
-    const nextIndex = (currentIndex + 1) % languages.length;
-    i18n.changeLanguage(languages[nextIndex]);
-  };
-
-  const getLanguageDisplay = () => {
-    switch (i18n.language) {
-      case 'si':
-        return 'සිං';
-      case 'ta':
-        return 'தமிழ்';
-      default:
-        return 'EN';
-    }
-  };
 
   return (
     <header className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl border-b border-gray-200/50 dark:border-gray-700/50 px-6 py-4 shadow-sm">
@@ -104,7 +84,7 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.1 }}
               >
-                {t('chat.title') || 'CircularSync Chat'}
+                CircularSync Chat
               </motion.h1>
               {!isMobile && (
                 <motion.div 
@@ -132,24 +112,6 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
 
         {/* Right Section */}
         <div className="flex items-center space-x-3">
-          {/* Language Switcher */}
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={cycleLanguage}
-            className="relative p-2.5 rounded-xl text-gray-500 hover:text-gray-700 hover:bg-gray-100/80 dark:text-gray-400 dark:hover:text-gray-300 dark:hover:bg-gray-700/50 transition-all duration-200 group"
-            aria-label="Change language"
-            title={`Current: ${getLanguageDisplay()}`}
-          >
-            <GlobeAltIcon className="w-5 h-5 transition-transform group-hover:scale-110" />
-            <motion.span 
-              className="absolute -top-1 -right-1 bg-gradient-to-r from-blue-500 to-purple-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold shadow-md"
-              whileHover={{ scale: 1.1 }}
-            >
-              {getLanguageDisplay().charAt(0)}
-            </motion.span>
-            <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-blue-500/20 to-purple-500/20 opacity-0 group-hover:opacity-100 transition-opacity -z-10" />
-          </motion.button>
 
           {/* Theme Toggle */}
           <ThemeToggle />

@@ -2,7 +2,6 @@
 
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { useTranslation } from 'react-i18next';
 import { RootState, AppDispatch } from '../../store';
 import { ChatSidebar } from '../../components/chat/ChatSidebar';
 import { ChatWindow } from '../../components/chat/ChatWindow';
@@ -14,10 +13,8 @@ import { QuickActionsModal } from '../../components/chat/QuickActionsModal';
 import { chatWebSocketService } from '../../services/chatWebSocket';
 import { setConnectionStatus, fetchConversations } from '../../store/slices/chatSlice';
 import { motion, AnimatePresence } from 'framer-motion';
-import '../../lib/i18n';
 
 export default function ChatPage() {
-  const { t } = useTranslation();
   const dispatch = useDispatch<AppDispatch>();
   const { currentConversationId, connectionStatus } = useSelector((state: RootState) => state.chat);
   const { user, token } = useSelector((state: RootState) => state.auth);
@@ -289,7 +286,7 @@ export default function ChatPage() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.2 }}
                   >
-                    Welcome to {t('chat.title') || 'CircularSync Chat'}
+                    Welcome to CircularSync Chat
                   </motion.h3>
                   <motion.p 
                     className="text-gray-600 dark:text-gray-300 text-lg leading-relaxed"

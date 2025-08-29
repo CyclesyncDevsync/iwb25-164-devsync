@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useCallback } from 'react';
-import { useTranslation } from 'react-i18next';
 import { XMarkIcon, CloudArrowUpIcon, DocumentIcon, PhotoIcon, FilmIcon } from '@heroicons/react/24/outline';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -20,7 +19,6 @@ export const FileShareModal: React.FC<FileShareModalProps> = ({
   isOpen,
   onClose
 }) => {
-  const { t } = useTranslation();
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const [uploading, setUploading] = useState(false);

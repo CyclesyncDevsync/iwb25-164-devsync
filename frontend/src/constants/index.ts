@@ -45,6 +45,7 @@ export const ROUTES = {
     HOME: '/admin',
     USERS: '/admin/users',
     MATERIALS: '/admin/materials',
+    AGENTS: '/admin/agents',
     AUCTIONS: '/admin/auctions',
     TRANSACTIONS: '/admin/transactions',
     DISPUTES: '/admin/disputes',
