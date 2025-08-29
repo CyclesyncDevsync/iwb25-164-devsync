@@ -1,6 +1,13 @@
 import ballerina/http;
 import ballerinax/postgresql;
 
+// Database configuration from Config.toml
+configurable string dbHost = ?;
+configurable int dbPort = ?;
+configurable string dbUsername = ?;
+configurable string dbPassword = ?;
+configurable string dbName = ?;
+
 # Agent Assignment API Service
 @http:ServiceConfig {
     cors: {
@@ -13,11 +20,11 @@ service /api/agent on new http:Listener(8091) {
     
     function init() returns error? {
         postgresql:Client dbClient = check new(
-            host = "localhost",
-            port = 5432,
-            database = "cyclesync",
-            username = "postgres",
-            password = "password"
+            host = dbHost,
+            port = dbPort,
+            database = dbName,
+            username = dbUsername,
+            password = dbPassword
         );
         
         self.agentService = new(dbClient);

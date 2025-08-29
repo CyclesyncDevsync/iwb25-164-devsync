@@ -139,3 +139,15 @@ CREATE INDEX IF NOT EXISTS idx_waste_data_points_waste_type ON waste_data_points
 CREATE INDEX IF NOT EXISTS idx_waste_data_points_location ON waste_data_points(location_id);
 CREATE INDEX IF NOT EXISTS idx_waste_data_points_recorded_at ON waste_data_points(recorded_at);
 CREATE INDEX IF NOT EXISTS idx_market_data_composite ON market_data(waste_type_id, location_id, recorded_at);
+
+-- 9. Newsletter Subscribers Table
+CREATE TABLE IF NOT EXISTS newsletter_subscribers (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    email VARCHAR(255) UNIQUE NOT NULL,
+    name VARCHAR(100),
+    subscribed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    is_active BOOLEAN DEFAULT true,
+    preferences JSONB DEFAULT '{"categories": ["business", "technology", "sustainability"]}',
+    last_sent_at TIMESTAMP,
+    unsubscribe_token VARCHAR(255) UNIQUE
+);

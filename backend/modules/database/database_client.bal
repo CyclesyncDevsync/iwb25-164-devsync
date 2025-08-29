@@ -65,6 +65,18 @@ public function getDatabaseClient() returns postgresql:Client|error {
     if (clientInstance is postgresql:Client) {
         return clientInstance;
     }
+    
+    // Try to initialize database if not already initialized
+    error? initResult = initializeDatabase();
+    if (initResult is error) {
+        return error("Database not connected and initialization failed: " + initResult.message());
+    }
+    
+    clientInstance = dbClientInstance;
+    if (clientInstance is postgresql:Client) {
+        return clientInstance;
+    }
+    
     return error("Database not connected. Call initializeDatabase() first.");
 }
 

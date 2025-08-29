@@ -2,20 +2,18 @@
 import { Button } from '../components/ui/Button';
 import Link from 'next/link';
 import Image from 'next/image';
+import NewsWidget from '../components/NewsWidget';
+import NewsletterSignup from '../components/NewsletterSignup';
 import { 
   ShieldCheck, 
   TrendingUp, 
-  CreditCard, 
-  Recycle, 
   Brain, 
   BarChart3, 
   Users, 
   ArrowRight,
   CheckCircle,
   Globe,
-  Leaf,
   Zap,
-  Star,
   Target,
   Lightbulb,
   PieChart,
@@ -556,6 +554,28 @@ export default function Home() {
               <div className="text-3xl md:text-4xl font-bold text-orange-600 mb-2">1.2M</div>
               <div className="text-gray-600 dark:text-gray-400 text-sm">Tons Processed</div>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* News Section */}
+      <section className="py-16 bg-white dark:bg-gray-900">
+        <div className="container mx-auto px-6">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
+              Industry News
+            </h2>
+            <p className="text-gray-600 dark:text-gray-400">Stay updated with the latest business and technology news</p>
+          </div>
+          <NewsWidget />
+        </div>
+      </section>
+
+      {/* Newsletter Signup Section */}
+      <section className="py-16 bg-gray-50 dark:bg-gray-900">
+        <div className="container mx-auto px-6">
+          <div className="max-w-md mx-auto">
+            <NewsletterSignup />
           </div>
         </div>
       </section>
