@@ -1,7 +1,6 @@
 'use client';
 
 import React from 'react';
-import { useTranslation } from 'react-i18next';
 import { Conversation } from '../../services/chatWebSocket';
 import {
   PhoneIcon,
@@ -24,7 +23,6 @@ export const ConversationHeader: React.FC<ConversationHeaderProps> = ({
   onToggleTranslation,
   showTranslation,
 }) => {
-  const { t } = useTranslation();
 
   const getOnlineParticipants = () => {
     return conversation.participants.filter(p => p.isOnline);
@@ -59,10 +57,10 @@ export const ConversationHeader: React.FC<ConversationHeaderProps> = ({
             </h3>
             <p className="text-xs text-gray-500 dark:text-gray-400">
               {otherParticipant.isOnline 
-                ? t('chat.online') || 'Online' 
+                ? 'Online' 
                 : otherParticipant.lastSeen 
                   ? `Last seen ${otherParticipant.lastSeen}`
-                  : t('chat.offline') || 'Offline'
+                  : 'Offline'
               }
             </p>
           </div>

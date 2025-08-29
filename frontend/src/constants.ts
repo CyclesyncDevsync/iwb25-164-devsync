@@ -1,9 +1,10 @@
 // User roles in the system
 export const USER_ROLES = {
-  ADMIN: 'admin',
-  AGENT: 'agent',
-  SUPPLIER: 'supplier',
-  BUYER: 'buyer',
+  SUPER_ADMIN: 'SUPER_ADMIN',
+  ADMIN: 'ADMIN',
+  AGENT: 'AGENT',
+  SUPPLIER: 'SUPPLIER',
+  BUYER: 'BUYER',
   GUEST: 'guest',
 };
 

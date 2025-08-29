@@ -20,7 +20,7 @@ import {
   StarIcon,
   ExclamationTriangleIcon
 } from '@heroicons/react/24/outline';
-import { useAppDispatch, useAppSelector } from '../../hooks/useAuth';
+import { useAppDispatch, useAppSelector } from '../../hooks/redux';
 import {
   Order,
   OrderStatus,

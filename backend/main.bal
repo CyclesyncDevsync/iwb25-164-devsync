@@ -1,5 +1,11 @@
+// The auth module will auto-register its services
+import Cyclesync.auth as _;
+// Auth module functions
+import Cyclesync.auth;
 // The chatbot module will auto-register its services
 import Cyclesync.chatbot as _;
+// Database module for connection management
+import Cyclesync.database;
 // The demand_prediction module will auto-register its services
 import Cyclesync.demand_prediction as _;
 // The quality_assessment module will auto-register its services
@@ -16,8 +22,7 @@ import ballerinax/postgresql;
 import Cyclesync.database_config;
 
 configurable int port = 8080;
-listener http:Listener server = new (port);
-
+public listener http:Listener server = check new (8080);
 
 // Initialize auth middleware
 final AuthMiddleware authMiddleware = new AuthMiddleware();
@@ -32,6 +37,14 @@ function init() {
         log:printError("Failed to initialize database connection", dbResult);
     } else {
         log:printInfo("Database connection initialized successfully");
+
+        // Initialize authentication schema
+        error? authResult = auth:initializeAuthSchema();
+        if (authResult is error) {
+            log:printError("Failed to initialize auth schema", authResult);
+        } else {
+            log:printInfo("Authentication schema initialized successfully");
+        }
     }
 
     log:printInfo(string `Main API Server starting on port ${port}`);
@@ -453,4 +466,3 @@ service /api/admin on server {
         };
     }
 }
-

@@ -42,21 +42,16 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const { user } = useAuth() as { user: User | null };
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  // Mock user for development when authentication is disabled
-  const mockUser = {
-    id: 'dev-user',
-    name: 'Development User',
-    email: 'dev@cyclesync.com',
-    role: USER_ROLES.ADMIN
-  };
-
-  // Use mock user if no authenticated user (for development)
-  const currentUser = user || mockUser;
+  // Use authenticated user
+  const currentUser = user;
 
   const userRole =
     currentUser?.role && Object.values(USER_ROLES).includes(currentUser.role)
       ? currentUser.role
       : USER_ROLES.GUEST;
+
+
+
 
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
@@ -68,8 +63,10 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   // Role-specific dashboard link
   const getDashboardRoute = () => {
     switch (userRole) {
+      case USER_ROLES.SUPER_ADMIN:
+        return '/admin'; // Super Admin uses admin dashboard with additional privileges
       case USER_ROLES.ADMIN:
-        return '/admin/dashboard'; // Admin specific dashboard
+        return '/admin'; // Admin dashboard
       case USER_ROLES.AGENT:
         return '/agent'; // Agent main dashboard
       case USER_ROLES.SUPPLIER:
@@ -93,26 +90,38 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   });
 
   // Role-specific links
-  if (userRole === USER_ROLES.ADMIN) {
+  if (userRole === USER_ROLES.ADMIN || userRole === USER_ROLES.SUPER_ADMIN) {
+    sidebarLinks.push({
+      href: ROUTES.ADMIN.USERS,
+      icon: (
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+        </svg>
+      ),
+      label: 'Users',
+    });
+    
+    sidebarLinks.push({
+      href: ROUTES.ADMIN.MATERIALS,
+      icon: (
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+        </svg>
+      ),
+      label: 'Materials',
+    });
+    
+    sidebarLinks.push({
+      href: '/admin/agents',
+      icon: (
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.982 18.725A7.488 7.488 0 0012 15.75a7.488 7.488 0 00-5.982 2.975m11.963 0a9 9 0 10-11.963 0m11.963 0A8.966 8.966 0 0112 21a8.966 8.966 0 01-5.982-2.275M15 9.75a3 3 0 11-6 0 3 3 0 016 0z" />
+        </svg>
+      ),
+      label: 'Agent Management',
+    });
+    
     sidebarLinks.push(
-      {
-        href: ROUTES.ADMIN.USERS,
-        icon: (
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-          </svg>
-        ),
-        label: 'Users',
-      },
-      {
-        href: ROUTES.ADMIN.MATERIALS,
-        icon: (
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-          </svg>
-        ),
-        label: 'Materials',
-      },
       {
         href: ROUTES.ADMIN.AUCTIONS,
         icon: (
@@ -130,8 +139,39 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           </svg>
         ),
         label: 'Transactions',
+      },
+      {
+        href: ROUTES.ADMIN.DISPUTES,
+        icon: (
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.464 0L4.34 16.5c-.77.833.192 2.5 1.732 2.5z" />
+          </svg>
+        ),
+        label: 'Disputes',
+      },
+      {
+        href: ROUTES.ADMIN.REPORTS,
+        icon: (
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+        ),
+        label: 'Reports',
       }
     );
+
+    // Super Admin specific section
+    if (userRole === USER_ROLES.SUPER_ADMIN) {
+      sidebarLinks.push({
+        href: '/admin/admin-management',
+        icon: (
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+          </svg>
+        ),
+        label: 'Admin Management',
+      });
+    }
   } else if (userRole === USER_ROLES.AGENT) {
     sidebarLinks.push(
       {
@@ -208,6 +248,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     label: 'Messages',
   });
 
+  // Filter out any links with undefined hrefs
+  const validSidebarLinks = sidebarLinks.filter(link => link.href);
+
   return (
     <div className="flex h-screen w-screen overflow-hidden fixed inset-0">
       {/* Sidebar for larger screens - Made sticky and full height */}
@@ -242,9 +285,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 </div>
               </div>
               <nav className="mt-5 flex-1 px-2 space-y-1">
-                {sidebarLinks.map((link) => (
+                {validSidebarLinks.map((link, index) => (
                   <SidebarLink
-                    key={link.href}
+                    key={`${link.href}-${index}`}
                     href={link.href}
                     icon={link.icon}
                     label={link.label}
@@ -294,9 +337,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               </h2>
             </div>
             <nav className="mt-5 px-2 space-y-1">
-              {sidebarLinks.map((link) => (
+              {validSidebarLinks.map((link, index) => (
                 <SidebarLink
-                  key={link.href}
+                  key={`mobile-${link.href}-${index}`}
                   href={link.href}
                   icon={link.icon}
                   label={link.label}
@@ -312,7 +355,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       {/* Main content - Full height without navbar */}
       <div className="flex flex-col w-0 flex-1 h-screen overflow-hidden">
         {/* Mobile menu button - Only show on mobile */}
-        <div className="md:hidden pl-3 pt-3 pb-3 bg-white dark:bg-dark-bg border-b border-gray-200 dark:border-gray-700">
+        <div className="md:hidden pl-3 pt-3 pb-3 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
           <button
             type="button"
             className="h-10 w-10 inline-flex items-center justify-center rounded-md text-gray-500 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary dark:text-gray-400 dark:hover:text-gray-50"
@@ -326,7 +369,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         </div>
         
         {/* Main content area */}
-        <main className="flex-1 relative overflow-y-auto focus:outline-none">
+        <main className="flex-1 relative overflow-y-auto focus:outline-none bg-gray-50 dark:bg-gray-900">
           <div className="h-full">
             {children}
           </div>

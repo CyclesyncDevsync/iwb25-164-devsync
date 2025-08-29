@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { useTranslation } from 'react-i18next';
 import { RootState } from '../../store';
 import { ConversationList } from './ConversationList';
 import { RoomList } from './RoomList';
@@ -24,7 +23,6 @@ interface ChatSidebarProps {
 export const ChatSidebar: React.FC<ChatSidebarProps> = ({
   onConversationSelect,
 }) => {
-  const { t } = useTranslation();
   const dispatch = useDispatch();
   const {
     filteredConversations,
@@ -97,9 +95,9 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
   };
 
   const tabs = [
-    { id: 'conversations', label: t('chat.conversations') || 'Conversations' },
-    { id: 'rooms', label: t('chat.rooms') || 'Rooms' },
-    { id: 'archived', label: t('chat.archived') || 'Archived' },
+    { id: 'conversations', label: 'Conversations' },
+    { id: 'rooms', label: 'Rooms' },
+    { id: 'archived', label: 'Archived' },
   ];
 
   return (
@@ -133,7 +131,7 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
           <SearchBar
             value={searchQuery}
             onChange={handleSearchChange}
-            placeholder={t('chat.search.placeholder') || 'Search conversations...'}
+            placeholder="Search conversations..."
           />
         </motion.div>
 
@@ -259,8 +257,8 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
             </motion.div>
             <span className="text-sm font-semibold">
               {activeTab === 'rooms' 
-                ? t('chat.newRoom') || 'Create New Room'
-                : t('chat.newConversation') || 'Start New Chat'
+                ? 'Create New Room'
+                : 'Start New Chat'
               }
             </span>
             <motion.div

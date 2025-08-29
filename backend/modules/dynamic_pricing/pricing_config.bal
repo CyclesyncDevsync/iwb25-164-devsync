@@ -1,6 +1,6 @@
 
 // Pricing Configuration
-configurable string PRICING_SERVICE_PORT = "8085";
+configurable string PRICING_SERVICE_PORT = "8088";
 
 // Pricing Parameters
 public const float MIN_PROFIT_MARGIN = 0.15;

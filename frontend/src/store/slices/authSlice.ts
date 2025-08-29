@@ -1,17 +1,21 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 
-export type UserRole = 'admin' | 'agent' | 'supplier' | 'buyer' | 'guest';
+export type UserRole = 'SUPER_ADMIN' | 'ADMIN' | 'AGENT' | 'SUPPLIER' | 'BUYER';
+
+export interface User {
+  id: number;
+  asgardeoId: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  role: UserRole;
+  status: 'APPROVED'; // All users are auto-approved now
+}
 
 interface AuthState {
   isAuthenticated: boolean;
   token: string | null;
-  user: {
-    id: string | null;
-    email: string | null;
-    name: string | null;
-    role: UserRole;
-    profileImage?: string | null;
-  };
+  user: User | null;
   loading: boolean;
   error: string | null;
 }
@@ -19,13 +23,7 @@ interface AuthState {
 const initialState: AuthState = {
   isAuthenticated: false,
   token: null,
-  user: {
-    id: null,
-    email: null,
-    name: null,
-    role: 'guest',
-    profileImage: null,
-  },
+  user: null,
   loading: false,
   error: null,
 };
@@ -38,26 +36,78 @@ export const authSlice = createSlice({
       state.loading = true;
       state.error = null;
     },
-    loginSuccess: (state, action: PayloadAction<{ token: string; user: Partial<AuthState['user']> }>) => {
+    loginSuccess: (state, action: PayloadAction<{ token: string; user: User }>) => {
       state.isAuthenticated = true;
       state.token = action.payload.token;
-      state.user = { ...state.user, ...action.payload.user };
+      state.user = action.payload.user;
       state.loading = false;
       state.error = null;
+      
+      // Store user data in localStorage (tokens are in HTTP-only cookies)
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('user', JSON.stringify(action.payload.user));
+      }
     },
     loginFailure: (state, action: PayloadAction<string>) => {
       state.loading = false;
       state.error = action.payload;
+      state.isAuthenticated = false;
+      state.user = null;
+      state.token = null;
+    },
+    registerStart: (state) => {
+      state.loading = true;
+      state.error = null;
+    },
+    registerSuccess: (state, action: PayloadAction<{ user: User }>) => {
+      state.isAuthenticated = true;
+      state.user = action.payload.user;
+      state.loading = false;
+      state.error = null;
+      
+      // Store user data in localStorage
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('user', JSON.stringify(action.payload.user));
+      }
+    },
+    registerFailure: (state, action: PayloadAction<string>) => {
+      state.loading = false;
+      state.error = action.payload;
+      state.isAuthenticated = false;
+      state.user = null;
     },
     logout: (state) => {
+      // Clear localStorage
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('user');
+      }
       return initialState;
     },
-    updateUserProfile: (state, action: PayloadAction<Partial<AuthState['user']>>) => {
-      state.user = { ...state.user, ...action.payload };
+    clearError: (state) => {
+      state.error = null;
+    },
+    setUser: (state, action: PayloadAction<User>) => {
+      state.user = action.payload;
+      state.isAuthenticated = true;
+      
+      // Store user data in localStorage
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('user', JSON.stringify(action.payload));
+      }
     },
   },
 });
 
-export const { loginStart, loginSuccess, loginFailure, logout, updateUserProfile } = authSlice.actions;
+export const { 
+  loginStart, 
+  loginSuccess, 
+  loginFailure, 
+  registerStart, 
+  registerSuccess, 
+  registerFailure, 
+  logout, 
+  clearError, 
+  setUser 
+} = authSlice.actions;
 
 export default authSlice.reducer;

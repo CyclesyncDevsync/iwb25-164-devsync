@@ -22,16 +22,12 @@ export default function AdminDashboard() {
         return;
       }
       
-      if (user?.role !== 'admin') {
+      if (user?.role !== 'ADMIN' && user?.role !== 'SUPER_ADMIN') {
         enhancedToast.error('Access denied. Admin privileges required.');
         router.push('/dashboard');
         return;
       }
       
-      // Welcome message for admin
-      if (user?.role === 'admin') {
-        enhancedToast.admin(`Welcome back, ${user.name || 'Admin'}!`);
-      }
     }
   }, [loading, isAuthenticated, user, router]);
 
@@ -39,7 +35,7 @@ export default function AdminDashboard() {
     return <Loading text="Loading admin dashboard..." fullScreen />;
   }
 
-  if (!isAuthenticated || user?.role !== 'admin') {
+  if (!isAuthenticated || (user?.role !== 'ADMIN' && user?.role !== 'SUPER_ADMIN')) {
     return <Loading text="Verifying admin credentials..." fullScreen />;
   }
 

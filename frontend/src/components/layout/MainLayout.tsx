@@ -26,6 +26,9 @@ export function MainLayout({ children }: MainLayoutProps) {
                        (pathname && pathname.startsWith('/auction/') && pathname.endsWith('/bid')) ||
                        pathname === '/offline';
 
+  // Routes where footer should be hidden (supplier and admin dashboards have their own layouts)
+  const hideFooterRoutes = pathname?.startsWith('/supplier') || pathname?.startsWith('/admin');
+
   // Show FAB on public pages and some specific routes
   const showFAB = !isHiddenRoute && (
     pathname === '/' || 
@@ -44,7 +47,7 @@ export function MainLayout({ children }: MainLayoutProps) {
       <main className="flex-grow">
         {children}
       </main>
-      <Footer />
+      {!hideFooterRoutes && <Footer />}
       {showFAB && <FloatingActionButton />}
     </div>
   );

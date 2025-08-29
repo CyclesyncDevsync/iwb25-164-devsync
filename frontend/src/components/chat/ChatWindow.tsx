@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { useTranslation } from 'react-i18next';
 import { RootState } from '../../store';
 import { MessageList } from './MessageList';
 import { MessageInput } from './MessageInput';
@@ -36,7 +35,6 @@ interface ChatWindowProps {
 }
 
 export const ChatWindow: React.FC<ChatWindowProps> = ({ conversationId }) => {
-  const { t } = useTranslation();
   const dispatch = useDispatch();
   
   const { messages, conversations, typingStatuses, selectedLanguage, autoTranslate, quickResponses } = useSelector((state: RootState) => state.chat);
@@ -262,7 +260,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ conversationId }) => {
                   whileTap={{ scale: 0.9 }}
                   onClick={() => setShowFileUpload(true)}
                   className="p-2 rounded-full text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-300 dark:hover:bg-gray-700 transition-colors"
-                  title={t('chat.input.file') || 'Attach file'}
+                  title="Attach file"
                 >
                   <PaperClipIcon className="w-5 h-5" />
                 </motion.button>
@@ -273,7 +271,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ conversationId }) => {
                   whileTap={{ scale: 0.9 }}
                   onClick={() => setShowLocationPicker(true)}
                   className="p-2 rounded-full text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-300 dark:hover:bg-gray-700 transition-colors"
-                  title={t('chat.input.location') || 'Share location'}
+                  title="Share location"
                 >
                   <MapPinIcon className="w-5 h-5" />
                 </motion.button>
@@ -301,7 +299,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ conversationId }) => {
                   value={messageText}
                   onChange={setMessageText}
                   onKeyPress={handleKeyPress}
-                  placeholder={t('chat.input.placeholder') || 'Type your message...'}
+                  placeholder="Type your message..."
                   disabled={isRecording}
                 />
               </div>
@@ -314,7 +312,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ conversationId }) => {
                     whileTap={{ scale: 0.95 }}
                     onClick={() => handleSendMessage(messageText)}
                     className="p-2 rounded-full bg-blue-600 text-white hover:bg-blue-700 transition-colors"
-                    title={t('send') || 'Send'}
+                    title="Send"
                   >
                     <PaperAirplaneIcon className="w-5 h-5" />
                   </motion.button>
@@ -328,7 +326,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ conversationId }) => {
                         ? 'bg-red-600 text-white'
                         : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-300 dark:hover:bg-gray-700'
                     }`}
-                    title={t('chat.input.voice') || 'Record voice message'}
+                    title="Record voice message"
                   >
                     <MicrophoneIcon className="w-5 h-5" />
                   </motion.button>
