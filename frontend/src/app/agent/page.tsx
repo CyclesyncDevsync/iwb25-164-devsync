@@ -55,7 +55,12 @@ const AgentDashboard = () => {
           });
         },
         (error) => {
-          console.error('Error getting location:', error);
+          console.warn('Geolocation access denied or unavailable:', error.message || 'Unknown error');
+          // Set a default location if geolocation fails
+          setCurrentLocation({
+            lat: 6.9271, // Default to Colombo, Sri Lanka
+            lng: 79.8612
+          });
         }
       );
     }
