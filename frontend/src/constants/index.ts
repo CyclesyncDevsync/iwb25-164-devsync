@@ -3,10 +3,11 @@ export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost
 
 // User Roles
 export const USER_ROLES = {
-  ADMIN: 'admin',
-  AGENT: 'agent',
-  SUPPLIER: 'supplier',
-  BUYER: 'buyer',
+  SUPER_ADMIN: 'SUPER_ADMIN',
+  ADMIN: 'ADMIN',
+  AGENT: 'AGENT',
+  SUPPLIER: 'SUPPLIER',
+  BUYER: 'BUYER',
   GUEST: 'guest',
 } as const;
 
@@ -46,6 +47,8 @@ export const ROUTES = {
     MATERIALS: '/admin/materials',
     AUCTIONS: '/admin/auctions',
     TRANSACTIONS: '/admin/transactions',
+    DISPUTES: '/admin/disputes',
+    REPORTS: '/admin/reports',
   },
   AGENT: {
     HOME: '/agent',

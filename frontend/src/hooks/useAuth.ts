@@ -70,9 +70,14 @@ export function useAuth() {
         const data = await response.json();
         console.log('Auth check successful, user data:', data);
         if (data.user) {
-          localStorage.setItem('user', JSON.stringify(data.user));
+          // Normalize role to uppercase
+          const normalizedUser = {
+            ...data.user,
+            role: data.user.role.toUpperCase()
+          };
+          localStorage.setItem('user', JSON.stringify(normalizedUser));
           setAuthState({
-            user: data.user,
+            user: normalizedUser,
             loading: false,
             error: null
           });
@@ -184,9 +189,14 @@ export function useAuth() {
       if (data.success && data.user) {
         console.log('Success! Storing user data in localStorage...');
         console.log('User data to store:', JSON.stringify(data.user, null, 2));
-        localStorage.setItem('user', JSON.stringify(data.user));
+        // Normalize role to uppercase
+        const normalizedUser = {
+          ...data.user,
+          role: data.user.role.toUpperCase()
+        };
+        localStorage.setItem('user', JSON.stringify(normalizedUser));
         setAuthState({
-          user: data.user,
+          user: normalizedUser,
           loading: false,
           error: null
         });

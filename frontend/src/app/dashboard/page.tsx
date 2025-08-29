@@ -63,10 +63,10 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              <p><strong>Name:</strong> {user?.name || 'Not provided'}</p>
+              <p><strong>Name:</strong> {user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : 'Not provided'}</p>
               <p><strong>Email:</strong> {user?.email || 'Not provided'}</p>
-              <p><strong>First Name:</strong> {user?.given_name || 'Not provided'}</p>
-              <p><strong>Last Name:</strong> {user?.family_name || 'Not provided'}</p>
+              <p><strong>First Name:</strong> {user?.firstName || 'Not provided'}</p>
+              <p><strong>Last Name:</strong> {user?.lastName || 'Not provided'}</p>
               <p><strong>User ID:</strong> {user?.id || 'Not provided'}</p>
             </div>
             <div className="mt-4 p-4 bg-gray-100 dark:bg-gray-800 rounded">

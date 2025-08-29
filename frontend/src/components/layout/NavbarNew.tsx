@@ -70,7 +70,7 @@ const navigationItems: NavItem[] = [
     href: '/admin',
     icon: BuildingOfficeIcon,
     requiresAuth: true,
-    roles: [USER_ROLES.ADMIN],
+    roles: [USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN],
     children: [
       { label: 'Users', href: '/admin/users' },
       { label: 'Materials', href: '/admin/materials' },

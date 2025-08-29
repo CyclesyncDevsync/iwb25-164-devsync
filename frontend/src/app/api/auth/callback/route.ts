@@ -65,76 +65,75 @@ export async function GET(request: NextRequest) {
     console.log('Tokens received successfully');
     console.log('Token response includes id_token:', !!tokens.id_token);
 
-    // Check flow type to determine if this is login or registration
-    const flowType = request.cookies.get('flow_type')?.value;
-    console.log('Flow type detected:', flowType);
-
-    if (flowType === 'login') {
-      // For login flow - validate with backend to check if user exists
-      const backendResponse = await fetch(`${BALLERINA_AUTH_URL}/api/auth/validate`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${tokens.id_token}`
-        }
-      });
-
-      const backendData = await backendResponse.json();
-      console.log('Backend validation response for login:', backendData);
-      
-      if (!backendResponse.ok || !backendData.user) {
-        console.error('Login failed - user not found in system');
-        return NextResponse.redirect(`${baseUrl}/auth/login?error=user_not_found&message=${encodeURIComponent('User not registered. Please create an account first.')}`);
+    // Check if user exists in our backend database FIRST using the new checkUser endpoint
+    // This won't create the user automatically like the validate endpoint does
+    console.log('Checking if user exists in backend database...');
+    
+    const checkUserResponse = await fetch(`${BALLERINA_AUTH_URL}/api/auth/checkUser`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${tokens.id_token}`
       }
+    });
 
-      // User exists - redirect to dashboard
-      console.log('User found during login, redirecting to dashboard');
+    console.log('Backend checkUser response status:', checkUserResponse.status);
+    
+    if (checkUserResponse.ok) {
+      const userData = await checkUserResponse.json();
+      console.log('Backend checkUser result:', userData);
       
-      const dashboardRoute = getDashboardRoute(backendData.user.role);
-      const response = NextResponse.redirect(`${baseUrl}${dashboardRoute}`);
-      
-      // Set authentication cookies
-      response.cookies.set('asgardeo_id_token', tokens.id_token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        maxAge: tokens.expires_in || 3600,
-        path: '/'
-      });
-      
-      response.cookies.set('user_data', JSON.stringify(backendData.user), {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        maxAge: tokens.expires_in || 3600,
-        path: '/'
-      });
+      // If user exists and has completed role selection (has a role)
+      if (userData.userExists && userData.user && userData.user.role) {
+        console.log('Existing user found with role:', userData.user.role);
+        
+        // Redirect to their dashboard
+        const dashboardRoute = getDashboardRoute(userData.user.role);
+        const response = NextResponse.redirect(`${baseUrl}${dashboardRoute}`);
+        
+        // Set authentication cookies
+        response.cookies.set('asgardeo_id_token', tokens.id_token, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === 'production',
+          maxAge: tokens.expires_in || 3600,
+          path: '/'
+        });
+        
+        response.cookies.set('user_data', JSON.stringify(userData.user), {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === 'production',
+          maxAge: tokens.expires_in || 3600,
+          path: '/'
+        });
 
-      // Clean up temporary cookies
-      response.cookies.delete('code_verifier');
-      response.cookies.delete('auth_state');
-      response.cookies.delete('flow_type');
+        // Clean up temporary cookies
+        response.cookies.delete('code_verifier');
+        response.cookies.delete('auth_state');
+        response.cookies.delete('flow_type');
 
-      return response;
-    } else {
-      // For registration flow - always redirect to role selection
-      console.log('Registration flow - redirecting to role selection');
-      
-      const response = NextResponse.redirect(`${baseUrl}/auth/role-selection`);
-      
-      // Store ID token temporarily for role selection
-      response.cookies.set('pending_id_token', tokens.id_token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        maxAge: 600, // 10 minutes
-        path: '/'
-      });
-
-      // Clean up temporary cookies
-      response.cookies.delete('code_verifier');
-      response.cookies.delete('auth_state');
-      response.cookies.delete('flow_type');
-
-      return response;
+        return response;
+      }
     }
+
+    // If we reach here, user either doesn't exist or needs role selection
+    console.log('User not found or needs role selection - redirecting to role selection');
+    
+    const response = NextResponse.redirect(`${baseUrl}/auth/role-selection`);
+    
+    // Store ID token temporarily for role selection
+    response.cookies.set('pending_id_token', tokens.id_token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 600, // 10 minutes
+      path: '/'
+    });
+
+    // Clean up temporary cookies
+    response.cookies.delete('code_verifier');
+    response.cookies.delete('auth_state');
+    response.cookies.delete('flow_type');
+
+    return response;
 
   } catch (error) {
     console.error('Callback processing error:', error);

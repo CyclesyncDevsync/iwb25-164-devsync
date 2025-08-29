@@ -68,8 +68,10 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   // Role-specific dashboard link
   const getDashboardRoute = () => {
     switch (userRole) {
+      case USER_ROLES.SUPER_ADMIN:
+        return '/admin'; // Super Admin uses admin dashboard with additional privileges
       case USER_ROLES.ADMIN:
-        return '/admin/dashboard'; // Admin specific dashboard
+        return '/admin'; // Admin dashboard
       case USER_ROLES.AGENT:
         return '/agent'; // Agent main dashboard
       case USER_ROLES.SUPPLIER:
@@ -93,7 +95,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   });
 
   // Role-specific links
-  if (userRole === USER_ROLES.ADMIN) {
+  if (userRole === USER_ROLES.ADMIN || userRole === USER_ROLES.SUPER_ADMIN) {
     sidebarLinks.push(
       {
         href: ROUTES.ADMIN.USERS,
@@ -130,8 +132,39 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           </svg>
         ),
         label: 'Transactions',
+      },
+      {
+        href: ROUTES.ADMIN.DISPUTES,
+        icon: (
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.464 0L4.34 16.5c-.77.833.192 2.5 1.732 2.5z" />
+          </svg>
+        ),
+        label: 'Disputes',
+      },
+      {
+        href: ROUTES.ADMIN.REPORTS,
+        icon: (
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+        ),
+        label: 'Reports',
       }
     );
+
+    // Super Admin specific section
+    if (userRole === USER_ROLES.SUPER_ADMIN) {
+      sidebarLinks.push({
+        href: '/admin/admin-management',
+        icon: (
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+          </svg>
+        ),
+        label: 'Admin Management',
+      });
+    }
   } else if (userRole === USER_ROLES.AGENT) {
     sidebarLinks.push(
       {

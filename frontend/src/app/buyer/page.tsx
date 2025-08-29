@@ -25,7 +25,7 @@ const BuyerDashboard = () => {
   console.log('=== BUYER DASHBOARD RENDER ===');
   console.log('User from useAuth:', user);
   console.log('Loading state:', loading);
-  console.log('localStorage user:', localStorage.getItem('user'));
+  console.log('localStorage user:', typeof window !== 'undefined' ? localStorage.getItem('user') : 'SSR');
 
   // Show loading state while fetching user data
   if (loading) {

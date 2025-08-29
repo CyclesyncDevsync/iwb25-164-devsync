@@ -24,6 +24,7 @@ export async function GET(request: NextRequest) {
     });
 
     const backendData = await backendResponse.json();
+    console.log('Backend validation response:', backendData);
     
     if (!backendResponse.ok) {
       console.error('Backend validation failed:', backendData);
@@ -39,7 +40,10 @@ export async function GET(request: NextRequest) {
       return response;
     }
 
-    if (backendData.success && backendData.user) {
+    // Check for the correct response format from Ballerina backend
+    if (backendData.code === 200 && backendData.user) {
+      console.log('User authenticated successfully:', backendData.user);
+      
       // Update user data cookie with fresh data
       const response = NextResponse.json({
         success: true,
@@ -56,8 +60,9 @@ export async function GET(request: NextRequest) {
       
       return response;
     } else {
+      console.error('Unexpected backend response format:', backendData);
       return NextResponse.json(
-        { success: false, message: 'User not found' },
+        { success: false, message: 'User not found or invalid response format' },
         { status: 404 }
       );
     }
