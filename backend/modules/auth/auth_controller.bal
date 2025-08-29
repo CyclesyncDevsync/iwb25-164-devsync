@@ -6,7 +6,7 @@ import ballerina/jwt;
 import ballerina/log;
 
 # Auth API service  
-service /api/auth on new http:Listener(8085) {
+service /api/auth on new http:Listener(8087) {
 
     private final AuthMiddleware authMiddleware;
 
