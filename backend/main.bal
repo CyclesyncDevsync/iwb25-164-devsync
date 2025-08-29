@@ -1,9 +1,9 @@
-// The chatbot module will auto-register its services
 
 // The auth module will auto-register its services
 import Cyclesync.auth as _;
 // Auth module functions
 import Cyclesync.auth;
+// The chatbot module will auto-register its services
 import Cyclesync.chatbot as _;
 // Database module for connection management
 import Cyclesync.database;
@@ -11,9 +11,12 @@ import Cyclesync.database;
 import Cyclesync.demand_prediction as _;
 // The quality_assessment module will auto-register its services
 import Cyclesync.quality_assessment as _;
+// The dynamic_pricing module will auto-register its services
+import Cyclesync.dynamic_pricing as _;
 
 import ballerina/http;
 import ballerina/log;
+
 
 configurable int port = 8080;
 public listener http:Listener server = check new (8080);
@@ -82,4 +85,5 @@ service / on server {
         return testResult;
     }
 }
+
 
