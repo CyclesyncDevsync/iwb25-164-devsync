@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -18,6 +18,7 @@ import {
   MapPinIcon,
   ExclamationTriangleIcon
 } from '@heroicons/react/24/outline';
+import InteractiveLocationMap from '../supplier/InteractiveLocationMap';
 
 // Define enums locally to avoid imports
 enum MaterialCategory {
@@ -937,26 +938,56 @@ function LocationStep({ register, control, errors, setValue, deliveryMethod }: a
 
   const handleUseCurrentLocation = () => {
     if ('geolocation' in navigator && deliveryMethod === 'agent_visit') {
-      navigator.geolocation.getCurrentPosition((position) => {
-        const coords = {
-          lat: position.coords.latitude,
-          lng: position.coords.longitude
-        };
-        setMapCenter(coords);
-        setMarkerPosition(coords);
-        setValue('location.coordinates', {
-          latitude: coords.lat,
-          longitude: coords.lng
-        });
-      });
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const coords = {
+            lat: position.coords.latitude,
+            lng: position.coords.longitude
+          };
+          setMapCenter(coords);
+          setMarkerPosition(coords);
+          setValue('location.coordinates', {
+            latitude: coords.lat,
+            longitude: coords.lng
+          });
+        },
+        (error) => {
+          console.error('Error getting location:', error);
+          alert('Unable to get your location. Please ensure location services are enabled.');
+        }
+      );
     }
   };
+
+  // Handle map click for agent visit location
+  const handleMapClick = (lat: number, lng: number) => {
+    setMarkerPosition({ lat, lng });
+    setValue('location.coordinates', { latitude: lat, longitude: lng });
+  };
+
+  // Initialize warehouse coordinates on mount or delivery method change
+  useEffect(() => {
+    if (deliveryMethod === 'drop_off' && selectedWarehouse) {
+      setValue('location.address', selectedWarehouse.address);
+      setValue('location.coordinates', {
+        latitude: selectedWarehouse.coords.lat,
+        longitude: selectedWarehouse.coords.lng
+      });
+    }
+  }, [deliveryMethod, selectedWarehouse, setValue]);
 
   const handleWarehouseChange = (warehouseIndex: number) => {
     const warehouse = warehouseLocations[warehouseIndex];
     setSelectedWarehouse(warehouse);
     setMapCenter(warehouse.coords);
     setMarkerPosition(warehouse.coords);
+    
+    // Save warehouse coordinates and details to form
+    setValue('location.address', warehouse.address);
+    setValue('location.coordinates', {
+      latitude: warehouse.coords.lat,
+      longitude: warehouse.coords.lng
+    });
   };
 
   // Generate OpenStreetMap URL with marker
@@ -1144,29 +1175,27 @@ function LocationStep({ register, control, errors, setValue, deliveryMethod }: a
                     Use Current Location
                   </button>
 
-                  {/* OpenStreetMap Embed */}
-                  <div className="rounded-lg overflow-hidden border border-gray-300 dark:border-gray-600">
-                    <iframe
-                      ref={mapRef}
-                      width="100%"
-                      height="400"
-                      frameBorder="0"
-                      scrolling="no"
-                      marginHeight={0}
-                      marginWidth={0}
-                      src={getMapUrl()}
-                      className="w-full"
-                    />
-                  </div>
+                  {/* Interactive Map with Draggable Marker */}
+                  <InteractiveLocationMap
+                    center={mapCenter}
+                    markerPosition={markerPosition}
+                    onLocationSelect={handleMapClick}
+                  />
 
                   {markerPosition && (
-                    <p className="text-sm text-emerald-600 dark:text-emerald-400">
-                      Location selected: {markerPosition.lat.toFixed(4)}, {markerPosition.lng.toFixed(4)}
-                    </p>
+                    <div className="space-y-1">
+                      <p className="text-sm text-emerald-600 dark:text-emerald-400">
+                        Location selected: {markerPosition.lat.toFixed(6)}, {markerPosition.lng.toFixed(6)}
+                      </p>
+                      <p className="text-xs text-gray-600 dark:text-gray-400">
+                        These coordinates will be saved with your material submission
+                      </p>
+                    </div>
                   )}
 
                   <p className="text-xs text-gray-500 dark:text-gray-400">
-                    Note: Click "Use Current Location" to set your pickup point. For manual selection, please enter the address details above.
+                    Note: Click on the map to place a marker or use "Use Current Location" for GPS. 
+                    You can drag the marker to adjust the exact pickup location.
                   </p>
                 </div>
               </div>
