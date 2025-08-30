@@ -208,10 +208,10 @@ const dummyAuctions: SerializableAuction[] = [
 ];
 
 const initialState: AuctionState = {
-  auctions: dummyAuctions,
-  watchedAuctions: [dummyAuctions[0]], // First auction is watched
-  featuredAuctions: dummyAuctions,
-  trendingAuctions: dummyAuctions,
+  auctions: [],
+  watchedAuctions: [],
+  featuredAuctions: [],
+  trendingAuctions: [],
   currentAuction: null,
   realTimeData: {},
   autoBidSettings: {},

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useSelector, useDispatch } from 'react-redux';
 import { 
   ClockIcon,
   EyeIcon,
@@ -16,31 +17,15 @@ import {
   UserGroupIcon
 } from '@heroicons/react/24/outline';
 import { CheckCircleIcon } from '@heroicons/react/24/solid';
+import { 
+  selectAuctions, 
+  selectFeaturedAuctions,
+  fetchAuctions 
+} from '@/store/slices/auctionSlice';
+import type { AppDispatch } from '@/store';
+import type { Auction } from '@/types/auction';
 
-interface Auction {
-  id: string;
-  title: string;
-  description: string;
-  category: string;
-  startingPrice: number;
-  currentPrice: number;
-  reservePrice?: number;
-  quantity: number;
-  unit: string;
-  timeLeft: number; // in seconds
-  status: 'upcoming' | 'live' | 'ending_soon' | 'ended';
-  totalBids: number;
-  participants: number;
-  isParticipating: boolean;
-  myHighestBid?: number;
-  myPosition?: number;
-  autoBidEnabled: boolean;
-  autoBidMax?: number;
-  images: string[];
-  supplier: string;
-  location: string;
-  endTime: string;
-}
+// Using Auction interface from types/auction.ts
 
 interface BidHistory {
   id: string;
@@ -51,6 +36,11 @@ interface BidHistory {
 }
 
 const AuctionsPage = () => {
+  const dispatch = useDispatch<AppDispatch>();
+  const auctions = useSelector(selectAuctions);
+  const loading = useSelector((state: any) => state.auctions.loading.auctions);
+  const error = useSelector((state: any) => state.auctions.error.auctions);
+  
   const [activeTab, setActiveTab] = useState<'live' | 'upcoming' | 'ended' | 'my_bids'>('live');
   const [selectedAuction, setSelectedAuction] = useState<Auction | null>(null);
   const [bidAmount, setBidAmount] = useState('');
@@ -58,79 +48,25 @@ const AuctionsPage = () => {
   const [showBidHistory, setShowBidHistory] = useState(false);
   const [watchlist, setWatchlist] = useState<string[]>(['1', '3']);
 
-  const [auctions, setAuctions] = useState<Auction[]>([
-    {
-      id: '1',
-      title: 'Premium Plastic Bottles - PET Grade A',
-      description: 'High-quality PET bottles, cleaned and sorted. Perfect for recycling.',
-      category: 'Plastic',
-      startingPrice: 800,
-      currentPrice: 1250,
-      reservePrice: 1000,
-      quantity: 500,
-      unit: 'kg',
-      timeLeft: 3600, // 1 hour
-      status: 'live',
-      totalBids: 15,
-      participants: 8,
-      isParticipating: true,
-      myHighestBid: 1200,
-      myPosition: 2,
-      autoBidEnabled: true,
-      autoBidMax: 1400,
-      images: ['/api/placeholder/400/300'],
-      supplier: 'EcoRecycle Ltd.',
-      location: 'Mumbai, Maharashtra',
-      endTime: '2024-01-15T16:00:00Z'
-    },
-    {
-      id: '2',
-      title: 'Mixed Paper Waste - Office Grade',
-      description: 'Clean office paper waste, suitable for high-quality recycling.',
-      category: 'Paper',
-      startingPrice: 500,
-      currentPrice: 750,
-      quantity: 200,
-      unit: 'kg',
-      timeLeft: 1800, // 30 minutes
-      status: 'ending_soon',
-      totalBids: 22,
-      participants: 12,
-      isParticipating: false,
-      autoBidEnabled: false,
-      images: ['/api/placeholder/400/300'],
-      supplier: 'Paper Solutions',
-      location: 'Delhi, NCR',
-      endTime: '2024-01-15T15:30:00Z'
-    },
-    {
-      id: '3',
-      title: 'Aluminum Scrap - Food Grade',
-      description: 'Clean aluminum from food packaging, high purity.',
-      category: 'Metal',
-      startingPrice: 2000,
-      currentPrice: 2000,
-      quantity: 100,
-      unit: 'kg',
-      timeLeft: 7200, // 2 hours
-      status: 'upcoming',
-      totalBids: 0,
-      participants: 0,
-      isParticipating: false,
-      autoBidEnabled: false,
-      images: ['/api/placeholder/400/300'],
-      supplier: 'Metro Metals',
-      location: 'Bangalore, Karnataka',
-      endTime: '2024-01-15T18:00:00Z'
-    }
-  ]);
-
   const [bidHistory, setBidHistory] = useState<BidHistory[]>([
     { id: '1', amount: 1250, timestamp: '2 minutes ago', bidder: 'Bidder A', isMyBid: false },
     { id: '2', amount: 1200, timestamp: '5 minutes ago', bidder: 'You', isMyBid: true },
     { id: '3', amount: 1150, timestamp: '8 minutes ago', bidder: 'Bidder B', isMyBid: false },
     { id: '4', amount: 1100, timestamp: '12 minutes ago', bidder: 'Bidder C', isMyBid: false }
   ]);
+
+  const getTimeLeft = (endTime: Date): number => {
+    const now = new Date();
+    return Math.max(0, Math.floor((endTime.getTime() - now.getTime()) / 1000));
+  };
+
+  const getAuctionDisplayStatus = (auction: Auction) => {
+    const timeLeft = getTimeLeft(auction.endTime);
+    if (timeLeft <= 0) return 'ended';
+    if (timeLeft <= 1800 && auction.status === 'active') return 'ending_soon'; // 30 minutes
+    if (auction.status === 'active') return 'live';
+    return auction.status;
+  };
 
   const formatTimeLeft = (seconds: number) => {
     if (seconds <= 0) return 'Ended';
@@ -204,26 +140,24 @@ const AuctionsPage = () => {
   };
 
   const filteredAuctions = auctions.filter(auction => {
+    const displayStatus = getAuctionDisplayStatus(auction);
     switch (activeTab) {
-      case 'live': return auction.status === 'live' || auction.status === 'ending_soon';
-      case 'upcoming': return auction.status === 'upcoming';
-      case 'ended': return auction.status === 'ended';
-      case 'my_bids': return auction.isParticipating;
+      case 'live': return displayStatus === 'live' || displayStatus === 'ending_soon';
+      case 'upcoming': return displayStatus === 'upcoming';
+      case 'ended': return displayStatus === 'ended';
+      case 'my_bids': return auction.isUserBidding || false;
       default: return true;
     }
   });
 
-  // Simulate real-time updates
+  // Load auctions from Redux
   useEffect(() => {
-    const interval = setInterval(() => {
-      setAuctions(prev => prev.map(auction => ({
-        ...auction,
-        timeLeft: Math.max(0, auction.timeLeft - 1)
-      })));
-    }, 1000);
+    console.log('Dispatching fetchAuctions action...');
+    dispatch(fetchAuctions({ page: 1, limit: 20 }));
+  }, [dispatch]);
 
-    return () => clearInterval(interval);
-  }, []);
+  // Note: Real-time updates should be handled via WebSocket and Redux actions
+  // This simulation is removed since we're using Redux state
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -245,10 +179,13 @@ const AuctionsPage = () => {
           <div className="mt-6 border-b border-gray-200">
             <nav className="flex space-x-8">
               {[
-                { key: 'live', label: 'Live Auctions', count: auctions.filter(a => a.status === 'live' || a.status === 'ending_soon').length },
-                { key: 'upcoming', label: 'Upcoming', count: auctions.filter(a => a.status === 'upcoming').length },
-                { key: 'my_bids', label: 'My Bids', count: auctions.filter(a => a.isParticipating).length },
-                { key: 'ended', label: 'Ended', count: auctions.filter(a => a.status === 'ended').length }
+                { key: 'live', label: 'Live Auctions', count: auctions.filter(a => {
+                  const displayStatus = getAuctionDisplayStatus(a);
+                  return displayStatus === 'live' || displayStatus === 'ending_soon';
+                }).length },
+                { key: 'upcoming', label: 'Upcoming', count: auctions.filter(a => getAuctionDisplayStatus(a) === 'upcoming').length },
+                { key: 'my_bids', label: 'My Bids', count: auctions.filter(a => a.isUserBidding || false).length },
+                { key: 'ended', label: 'Ended', count: auctions.filter(a => getAuctionDisplayStatus(a) === 'ended').length }
               ].map(tab => (
                 <button
                   key={tab.key}
@@ -275,7 +212,7 @@ const AuctionsPage = () => {
               <FireIcon className="h-5 w-5 text-red-500" />
               <span className="text-sm text-gray-600">Active Auctions</span>
             </div>
-            <p className="text-2xl font-bold text-gray-900">{auctions.filter(a => a.status === 'live').length}</p>
+            <p className="text-2xl font-bold text-gray-900">{auctions.filter(a => getAuctionDisplayStatus(a) === 'live').length}</p>
           </div>
           <div className="bg-white p-4 rounded-lg shadow-sm border">
             <div className="flex items-center gap-2">
@@ -289,7 +226,7 @@ const AuctionsPage = () => {
               <BoltIcon className="h-5 w-5 text-blue-500" />
               <span className="text-sm text-gray-600">Auto Bids</span>
             </div>
-            <p className="text-2xl font-bold text-gray-900">{auctions.filter(a => a.autoBidEnabled).length}</p>
+            <p className="text-2xl font-bold text-gray-900">0</p>
           </div>
           <div className="bg-white p-4 rounded-lg shadow-sm border">
             <div className="flex items-center gap-2">
@@ -300,9 +237,44 @@ const AuctionsPage = () => {
           </div>
         </div>
 
+        {/* Loading State */}
+        {loading && (
+          <div className="flex justify-center items-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+          </div>
+        )}
+
+        {/* Error State */}
+        {error && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+            <p className="text-red-600">{error}</p>
+            <button
+              onClick={() => window.location.reload()}
+              className="mt-2 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+            >
+              Retry
+            </button>
+          </div>
+        )}
+
+        {/* Empty State */}
+        {!loading && !error && filteredAuctions.length === 0 && (
+          <div className="text-center py-12">
+            <FireIcon className="mx-auto h-12 w-12 text-gray-400" />
+            <h3 className="mt-2 text-sm font-medium text-gray-900">No auctions found</h3>
+            <p className="mt-1 text-sm text-gray-500">
+              {activeTab === 'live' ? 'No live auctions at the moment.' : 
+               activeTab === 'upcoming' ? 'No upcoming auctions.' :
+               activeTab === 'my_bids' ? 'You haven\'t participated in any auctions yet.' :
+               'No ended auctions.'}
+            </p>
+          </div>
+        )}
+
         {/* Auctions Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-          {filteredAuctions.map((auction, index) => (
+        {!loading && !error && filteredAuctions.length > 0 && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+            {filteredAuctions.map((auction, index) => (
             <motion.div
               key={auction.id}
               initial={{ opacity: 0, y: 20 }}
@@ -443,8 +415,9 @@ const AuctionsPage = () => {
                 )}
               </div>
             </motion.div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
 
         {/* Bid Modal */}
         <AnimatePresence>
