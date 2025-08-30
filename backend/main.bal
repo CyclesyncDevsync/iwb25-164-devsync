@@ -12,6 +12,8 @@ import Cyclesync.quality_assessment as _;
 import Cyclesync.dynamic_pricing as _;
 // The material_workflow module will auto-register its services
 import Cyclesync.material_workflow as _;
+// The auction module will auto-register its services
+import Cyclesync.auction as _;
 
 import ballerina/http;
 import ballerina/log;
