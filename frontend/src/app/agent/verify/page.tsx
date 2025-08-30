@@ -67,44 +67,104 @@ const VerifyPage = () => {
     }
 
     try {
+      // First get the token through the API route
+      const authResponse = await fetch('/api/auth/me');
+      if (!authResponse.ok) {
+        console.error('Failed to get auth token');
+        setIsLoading(false);
+        return;
+      }
+      
+      const authData = await authResponse.json();
+      const idToken = authData.idToken;
+      
       const response = await fetch(`/backend/agent/${userId}/assignments`, {
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${idToken}`
         }
       });
 
       if (response.ok) {
         const data = await response.json();
-        if (data.success && data.assignments) {
+        console.log('Raw API response:', data);
+        if (data.assignments) {
+          console.log('First assignment raw data:', data.assignments[0]);
           // Transform backend data to match new interface
           const transformedAssignments = data.assignments.map((assignment: any) => ({
-            id: assignment.assignmentId || assignment.id,
-            assignmentId: assignment.assignmentId || assignment.id,
-            materialId: assignment.materialId || assignment.materialDetails?.id,
-            supplierId: assignment.supplierId,
-            supplierName: assignment.supplierName || 'Unknown Supplier',
+            id: assignment.assignment_id || assignment.id,
+            assignmentId: assignment.assignment_id || assignment.id,
+            materialId: assignment.material_id || assignment.id,
+            supplierId: assignment.supplier_id,
+            supplierName: assignment.supplier_name || 'Unknown Supplier',
+            supplierEmail: assignment.supplier_email,
+            transactionId: assignment.transaction_id,
+            workflowId: assignment.workflow_id,
+            submissionId: assignment.submission_id,
             materialDetails: {
-              title: assignment.materialDetails?.title || `${assignment.materialDetails?.type || 'Material'} Submission`,
-              type: assignment.materialDetails?.type || 'Material',
-              quantity: parseFloat(assignment.materialDetails?.quantity) || 1,
-              unit: assignment.materialDetails?.unit || 'kg',
-              condition: assignment.materialDetails?.condition || 'good',
-              description: assignment.materialDetails?.description || 'No description',
-              expectedPrice: parseFloat(assignment.materialDetails?.expectedPrice) || 0,
+              title: assignment.title || 'Material Submission',
+              type: assignment.material_type || 'Material',
+              subCategory: assignment.sub_category,
+              quantity: parseFloat(assignment.quantity) || 1,
+              unit: assignment.unit || 'kg',
+              condition: assignment.condition || 'good',
+              description: assignment.description || 'No description',
+              expectedPrice: parseFloat(assignment.expected_price) || 0,
+              minimumPrice: parseFloat(assignment.minimum_price) || 0,
+              negotiable: assignment.negotiable || false,
+              deliveryMethod: assignment.delivery_method || 'agent_visit',
+              materialType: assignment.material_type,
+              color: assignment.material_color,
+              brand: assignment.material_brand,
+              model: assignment.material_model,
+              manufacturingYear: assignment.manufacturing_year,
+              dimensions: {
+                length: assignment.dimension_length,
+                width: assignment.dimension_width,
+                height: assignment.dimension_height,
+                weight: assignment.dimension_weight
+              },
             },
             materialLocation: {
-              latitude: assignment.materialLocation?.latitude || 6.9271,
-              longitude: assignment.materialLocation?.longitude || 79.8612,
-              address: assignment.location?.address || assignment.materialLocation?.address || 'Address not specified',
+              latitude: assignment.location_latitude || 6.9271,
+              longitude: assignment.location_longitude || 79.8612,
+              address: assignment.location_address || 'Address not specified',
+              city: assignment.location_city,
+              district: assignment.location_district,
+              province: assignment.location_province,
+              postalCode: assignment.location_postal_code,
             },
-            status: assignment.status || 'pending',
+            location: {
+              address: assignment.location_address,
+              city: assignment.location_city,
+              district: assignment.location_district,
+              province: assignment.location_province,
+              postalCode: assignment.location_postal_code,
+              latitude: assignment.location_latitude,
+              longitude: assignment.location_longitude,
+            },
+            warehouse: {
+              name: assignment.selected_warehouse_name,
+              address: assignment.selected_warehouse_address,
+              phone: assignment.selected_warehouse_phone,
+            },
+            photos: assignment.photos || [],
+            tags: assignment.tags || [],
+            status: assignment.assignment_status === 'assigned' ? 'pending' : 
+                    assignment.assignment_status === 'in_progress' ? 'in-progress' :
+                    assignment.assignment_status === 'completed' ? 'completed' :
+                    assignment.assignment_status || 'pending',
             urgency: assignment.urgency || 'medium',
-            createdAt: assignment.createdAt || new Date().toISOString(),
-            assignedAt: assignment.assignedAt || new Date().toISOString(),
-            startedAt: assignment.startedAt,
-            completedAt: assignment.completedAt,
-            estimatedTime: Math.ceil(assignment.agent?.costBreakdown?.estimatedDuration * 60) || 45,
+            createdAt: assignment.created_at || new Date().toISOString(),
+            assignedAt: assignment.assigned_at || new Date().toISOString(),
+            startedAt: assignment.started_at,
+            completedAt: assignment.completed_at,
+            estimatedTime: 45,
             notes: assignment.notes,
+            verificationDate: assignment.verification_date,
+            agentId: assignment.agent_id,
+            category: assignment.category,
+            subCategory: assignment.sub_category,
           }));
           
           setAssignments(transformedAssignments);
@@ -415,7 +475,7 @@ const VerifyPage = () => {
                             className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-md text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center justify-center"
                           >
                             <EyeIcon className="w-4 h-4 mr-2" />
-                            View Details
+                            Review Supply
                           </button>
                         </>
                       )}
@@ -441,7 +501,7 @@ const VerifyPage = () => {
                             className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-md text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center justify-center"
                           >
                             <EyeIcon className="w-4 h-4 mr-2" />
-                            View Details
+                            Review Supply
                           </button>
                         </>
                       )}

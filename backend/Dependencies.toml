@@ -512,6 +512,7 @@ modules = [
 	{org = "hp", packageName = "Cyclesync", moduleName = "Cyclesync.dynamic_pricing"},
 	{org = "hp", packageName = "Cyclesync", moduleName = "Cyclesync.material_workflow"},
 	{org = "hp", packageName = "Cyclesync", moduleName = "Cyclesync.notification_system.disabled"},
+	{org = "hp", packageName = "Cyclesync", moduleName = "Cyclesync.notifications"},
 	{org = "hp", packageName = "Cyclesync", moduleName = "Cyclesync.payment_distribution.disabled"},
 	{org = "hp", packageName = "Cyclesync", moduleName = "Cyclesync.quality_assessment"},
 	{org = "hp", packageName = "Cyclesync", moduleName = "Cyclesync.warehouse_inventory.disabled"}

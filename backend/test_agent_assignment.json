@@ -1,0 +1,72 @@
+{
+  "description": "Test examples for agent assignment PUT endpoint",
+  "endpoint": "PUT /api/material-submissions/{workflowId}/status",
+  "examples": [
+    {
+      "name": "Assign agent to submission",
+      "request": {
+        "method": "PUT",
+        "url": "/api/material-submissions/WF123456/status",
+        "headers": {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer {token}"
+        },
+        "body": {
+          "submission_status": "assigned",
+          "agent_id": "AGENT001",
+          "verification_date": "2024-01-15T10:30:00Z",
+          "additional_details": "Agent will visit on Monday morning"
+        }
+      },
+      "expected_response": {
+        "message": "Submission status updated successfully",
+        "workflow_id": "WF123456",
+        "status": "assigned"
+      }
+    },
+    {
+      "name": "Update status without agent",
+      "request": {
+        "method": "PUT",
+        "url": "/api/material-submissions/WF123456/status",
+        "headers": {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer {token}"
+        },
+        "body": {
+          "submission_status": "pending_review",
+          "additional_details": "Awaiting quality assessment"
+        }
+      },
+      "expected_response": {
+        "message": "Submission status updated successfully",
+        "workflow_id": "WF123456",
+        "status": "pending_review"
+      }
+    },
+    {
+      "name": "Error - Missing agent_id when status is assigned",
+      "request": {
+        "method": "PUT",
+        "url": "/api/material-submissions/WF123456/status",
+        "headers": {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer {token}"
+        },
+        "body": {
+          "submission_status": "assigned"
+        }
+      },
+      "expected_response": {
+        "message": "Agent ID is required when status is 'assigned'"
+      },
+      "expected_status": 400
+    }
+  ],
+  "curl_examples": [
+    {
+      "description": "Assign agent using curl",
+      "command": "curl -X PUT http://localhost:9090/api/material-submissions/WF123456/status \\\n  -H \"Content-Type: application/json\" \\\n  -H \"Authorization: Bearer YOUR_TOKEN\" \\\n  -d '{\n    \"submission_status\": \"assigned\",\n    \"agent_id\": \"AGENT001\",\n    \"verification_date\": \"2024-01-15T10:30:00Z\",\n    \"additional_details\": \"Agent will visit on Monday morning\"\n  }'"
+    }
+  ]
+}

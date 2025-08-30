@@ -493,6 +493,39 @@ export function MaterialVerification() {
         const assignmentData = await response.json();
         console.log('Assignment successful:', assignmentData);
         
+        // Now update the submission status in the database
+        console.log('Updating submission status in database...');
+        try {
+          const updateResponse = await fetch(`/backend/material-submissions/${selectedSubmissionForAgent.id}/status`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              submission_status: 'assigned',
+              agent_id: selectedAgent.asgardeo_id,
+              // Remove verification_date for now as it's causing format issues
+              additional_details: JSON.stringify({
+                assigned_by: 'admin',
+                assignment_time: new Date().toISOString(),
+                assignment_id: assignmentData.assignment.assignmentId,
+                notification_sent: true
+              })
+            })
+          });
+
+          if (updateResponse.ok) {
+            const updateResult = await updateResponse.json();
+            console.log('Submission status updated successfully:', updateResult);
+          } else {
+            console.error('Failed to update submission status:', await updateResponse.text());
+            // Log but don't fail the whole operation
+          }
+        } catch (updateError) {
+          console.error('Error updating submission status:', updateError);
+          // Log but don't fail the whole operation
+        }
+        
         // Update local state with real agent information
         const updatedSubmissions = submissions.map(sub => {
           if (sub.id === selectedSubmissionForAgent.id) {
@@ -502,7 +535,10 @@ export function MaterialVerification() {
                 id: assignmentData.assignment.agent.agentId,
                 name: assignmentData.assignment.agent.agentName,
                 distance: assignmentData.assignment.agent.distanceFromMaterial || 0
-              }
+              },
+              submission_status: 'assigned',
+              agent_assigned: true,
+              agent_id: selectedAgent.asgardeo_id
             };
           }
           return sub;

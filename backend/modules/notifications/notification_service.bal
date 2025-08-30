@@ -73,7 +73,7 @@ public isolated class NotificationService {
     public isolated function getUserNotifications(
         string userId, 
         boolean includeRead = false, 
-        int 'limit = 50
+        int maxResults = 50
     ) returns Notification[]|error {
         
         sql:ParameterizedQuery query;
@@ -83,7 +83,7 @@ public isolated class NotificationService {
                 WHERE user_id = ${userId}
                 AND (expires_at IS NULL OR expires_at > CURRENT_TIMESTAMP)
                 ORDER BY created_at DESC
-                LIMIT ${'limit}
+                LIMIT ${maxResults}
             `;
         } else {
             query = `
@@ -92,7 +92,7 @@ public isolated class NotificationService {
                 AND read_status = false
                 AND (expires_at IS NULL OR expires_at > CURRENT_TIMESTAMP)
                 ORDER BY created_at DESC
-                LIMIT ${'limit}
+                LIMIT ${maxResults}
             `;
         }
         

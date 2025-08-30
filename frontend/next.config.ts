@@ -14,11 +14,15 @@ const nextConfig: NextConfig = {
     return [
       {
         source: '/backend/agent/:path*',
-        destination: 'http://localhost:8091/api/agent/:path*',
+        destination: 'http://localhost:8080/api/agent/:path*',
       },
       {
         source: '/backend/notifications/:path*',
         destination: 'http://localhost:9102/api/notifications/:path*',
+      },
+      {
+        source: '/backend/material-submissions/:path*',
+        destination: 'http://localhost:8086/api/material-submissions/:path*',
       },
     ];
   },

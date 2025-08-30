@@ -50,9 +50,9 @@ service /api/notifications on new http:Listener(notificationPort) {
     # + return - List of notifications or error
     resource function get .(@http:Query string userId, 
                            @http:Query boolean includeRead = false,
-                           @http:Query int 'limit = 50) returns Notification[]|http:InternalServerError {
+                           @http:Query int maxResults = 50) returns Notification[]|http:InternalServerError {
         do {
-            return check notificationService.getUserNotifications(userId, includeRead, 'limit);
+            return check notificationService.getUserNotifications(userId, includeRead, maxResults);
         } on fail error e {
             log:printError("Failed to get notifications", e);
             return {body: {message: "Failed to retrieve notifications"}};
