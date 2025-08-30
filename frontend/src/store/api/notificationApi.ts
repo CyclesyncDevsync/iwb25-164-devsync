@@ -2,6 +2,7 @@ import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 import { Notification, NotificationPreferences, NotificationFilter } from '../slices/notificationSlice';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api';
+const NOTIFICATION_API_URL = '/backend/notifications';
 
 interface NotificationResponse {
   notifications: Notification[];
@@ -30,7 +31,7 @@ interface NotificationActionRequest {
 export const notificationApi = createApi({
   reducerPath: 'notificationApi',
   baseQuery: fetchBaseQuery({
-    baseUrl: `${API_BASE_URL}/notifications`,
+    baseUrl: NOTIFICATION_API_URL,
     prepareHeaders: (headers, { getState }) => {
       const token = (getState() as any).auth.token;
       if (token) {
@@ -43,14 +44,64 @@ export const notificationApi = createApi({
   endpoints: (builder) => ({
     // Fetch notifications with pagination and filtering
     getNotifications: builder.query<NotificationResponse, NotificationQueryParams>({
-      query: ({ page = 1, limit = 20, filter = {} }) => ({
-        url: '',
-        params: {
-          page,
-          limit,
-          ...filter,
-        },
-      }),
+      query: ({ page = 1, limit = 20, filter = {} }) => {
+        // Get userId from localStorage or state
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        const userId = user?.asgardeoId || user?.asgardeo_id || user?.id;
+        
+        return {
+          url: '',
+          params: {
+            userId,
+            includeRead: true,
+            limit,
+            ...filter,
+          },
+        };
+      },
+      transformResponse: (response: any[]) => {
+        // Transform backend notification format to frontend format
+        const notifications = (response || []).map(notification => {
+          // Convert Ballerina time:Civil to JavaScript Date string
+          const parseDate = (dateObj: any) => {
+            if (!dateObj) return undefined;
+            if (typeof dateObj === 'string') return dateObj;
+            // Handle Ballerina time:Civil format {year: 2025, month: 8, day: 30, hour: 17, minute: 30, second: 48}
+            if (typeof dateObj === 'object' && dateObj.year) {
+              return new Date(
+                dateObj.year,
+                dateObj.month - 1, // JavaScript months are 0-indexed
+                dateObj.day,
+                dateObj.hour || 0,
+                dateObj.minute || 0,
+                dateObj.second || 0
+              ).toISOString();
+            }
+            return new Date().toISOString(); // Fallback to current date
+          };
+
+          return {
+            id: notification.notificationId,
+            type: notification.notificationType === 'AGENT_ASSIGNED_TO_SUPPLIER' ? 'verification_required' : notification.notificationType.toLowerCase(),
+            title: notification.title,
+            message: notification.message,
+            priority: 'medium' as const,
+            isRead: notification.readStatus,
+            createdAt: parseDate(notification.createdAt),
+            expiresAt: parseDate(notification.expiresAt),
+            data: notification.data,
+            userId: notification.userId,
+            channels: ['in_app'] as const,
+          };
+        });
+        
+        return {
+          notifications,
+          total: notifications.length,
+          unreadCount: notifications.filter(n => !n.isRead).length,
+          hasMore: false
+        };
+      },
       providesTags: (result) =>
         result
           ? [
@@ -80,7 +131,14 @@ export const notificationApi = createApi({
 
     // Get unread count
     getUnreadCount: builder.query<{ count: number }, void>({
-      query: () => '/unread-count',
+      query: () => {
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        const userId = user?.asgardeoId || user?.asgardeo_id || user?.id;
+        return {
+          url: '/count',
+          params: { userId }
+        };
+      },
       providesTags: [{ type: 'UnreadCount', id: 'COUNT' }],
     }),
 
@@ -89,11 +147,22 @@ export const notificationApi = createApi({
       Notification,
       { id: string; isRead: boolean }
     >({
-      query: ({ id, isRead }) => ({
-        url: `/${id}/status`,
-        method: 'PATCH',
-        body: { isRead },
-      }),
+      query: ({ id, isRead }) => {
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        const userId = user?.asgardeoId || user?.asgardeo_id || user?.id;
+        
+        // Backend only supports marking as read, not unread
+        if (isRead) {
+          return {
+            url: `/${id}/read`,
+            method: 'PUT',
+            params: { userId }
+          };
+        } else {
+          // For mark as unread, we'll need to handle this differently
+          throw new Error('Mark as unread not supported by backend');
+        }
+      },
       invalidatesTags: (result, error, { id }) => [
         { type: 'Notification', id },
         { type: 'UnreadCount', id: 'COUNT' },

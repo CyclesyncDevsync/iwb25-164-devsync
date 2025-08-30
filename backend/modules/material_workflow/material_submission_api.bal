@@ -61,14 +61,14 @@ service class MaterialSubmissionAPI {
                 ms.submission_status,
                 ms.created_at,
                 ms.updated_at,
-                u.name as supplier_name,
+                COALESCE(u.first_name || ' ' || u.last_name, 'Unknown Supplier') as supplier_name,
                 u.email as supplier_email,
                 aa.agent_id,
-                agent.name as agent_name
+                COALESCE(agent.first_name || ' ' || agent.last_name, 'Unknown Agent') as agent_name
             FROM material_submissions ms
-            LEFT JOIN users u ON ms.supplier_id = u.id
-            LEFT JOIN agent_assignments aa ON ms.workflow_id = aa.workflow_id
-            LEFT JOIN users agent ON aa.agent_id = agent.id
+            LEFT JOIN users u ON ms.supplier_id = u.asgardeo_id
+            LEFT JOIN agent_assignments aa ON ms.id = aa.material_id
+            LEFT JOIN users agent ON aa.agent_id = agent.asgardeo_id
             WHERE 1=1
         `;
 

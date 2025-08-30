@@ -35,12 +35,22 @@ service /api/material/workflow on workflowListener {
     
     function init() returns error? {
         // Initialize database connection
+        postgresql:Options options = {};
+        if (dbSsl) {
+            options = {
+                ssl: {
+                    mode: postgresql:REQUIRE
+                }
+            };
+        }
+        
         dbClient = check new (
             host = dbHost,
             username = dbUsername, 
             password = dbPassword,
             database = dbName,
-            port = dbPort
+            port = dbPort,
+            options = options
         );
         
         log:printInfo("Material Workflow Service initialized successfully with database connection");

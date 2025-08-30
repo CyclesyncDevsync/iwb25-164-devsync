@@ -24,7 +24,9 @@ public function initializeDatabase() returns error? {
     postgresql:Options connectionOptions = {
         ssl: {
             mode: dbSsl ? "REQUIRE" : "DISABLE"
-        }
+        },
+        connectTimeout: 30,
+        socketTimeout: 30
     };
 
     // Initialize the PostgreSQL client

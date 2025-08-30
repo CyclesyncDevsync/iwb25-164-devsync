@@ -10,6 +10,18 @@ const nextConfig: NextConfig = {
   },
   reactStrictMode: true,
   // No experimental settings for now
+  async rewrites() {
+    return [
+      {
+        source: '/backend/agent/:path*',
+        destination: 'http://localhost:8091/api/agent/:path*',
+      },
+      {
+        source: '/backend/notifications/:path*',
+        destination: 'http://localhost:9102/api/notifications/:path*',
+      },
+    ];
+  },
 };
 
 const pwaConfig = withPWA({
