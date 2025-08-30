@@ -9,7 +9,14 @@ const nextConfig: NextConfig = {
     domains: ['images.unsplash.com', 'cloudinary.com'],
   },
   reactStrictMode: true,
-  // No experimental settings for now
+  async rewrites() {
+    return [
+      {
+        source: '/api/auction/:path*',
+        destination: 'http://localhost:8096/api/auction/:path*',
+      },
+    ];
+  },
 };
 
 const pwaConfig = withPWA({
