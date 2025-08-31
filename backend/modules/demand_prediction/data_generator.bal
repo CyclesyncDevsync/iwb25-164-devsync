@@ -46,13 +46,13 @@ public function generateHistoricalData(string wasteType, string location) return
         float weeklyFactor = dayOfWeek < 5 ? 1.0 : 0.6;
         
         // Add random noise and trend
-        float noiseFactor = 0.8 + (random:createDecimal() * 0.4);
+        float noiseFactor = 0.8 + (random:createFloat() * 0.4);
         float trendFactor = 1.0 + (<float>i / 365.0) * 0.15; // 15% annual growth
         
         float quantity = profile.baseQuantity * seasonalFactor * 
                         weeklyFactor * noiseFactor * trendFactor;
         
-        float price = profile.basePrice * (0.85 + random:createDecimal() * 0.3) * trendFactor;
+        float price = profile.basePrice * (0.85 + random:createFloat() * 0.3) * trendFactor;
         
         WasteDataPoint dataPoint = {
             id: string `${wasteType}_${location}_${i}`,
@@ -75,17 +75,17 @@ public function generateHistoricalData(string wasteType, string location) return
 // Generate current market conditions
 public function generateMarketConditions(string location) returns MarketConditions {
     return {
-        economicIndex: 65.0 + (random:createDecimal() * 20.0), // 65-85
-        rawMaterialPrices: 800.0 + (random:createDecimal() * 400.0), // 800-1200
-        transportationCosts: 2.5 + (random:createDecimal() * 1.0), // 2.5-3.5 per mile
-        weatherFactor: 0.7 + (random:createDecimal() * 0.6), // 0.7-1.3
+        economicIndex: 65.0 + (random:createFloat() * 20.0), // 65-85
+        rawMaterialPrices: 800.0 + (random:createFloat() * 400.0), // 800-1200
+        transportationCosts: 2.5 + (random:createFloat() * 1.0), // 2.5-3.5 per mile
+        weatherFactor: 0.7 + (random:createFloat() * 0.6), // 0.7-1.3
         industryGrowth: {
-            "manufacturing": 0.03 + (random:createDecimal() * 0.05), // 3-8%
-            "construction": 0.02 + (random:createDecimal() * 0.04), // 2-6%
-            "retail": 0.01 + (random:createDecimal() * 0.03), // 1-4%
-            "hospitality": 0.04 + (random:createDecimal() * 0.06) // 4-10%
+            "manufacturing": 0.03 + (random:createFloat() * 0.05), // 3-8%
+            "construction": 0.02 + (random:createFloat() * 0.04), // 2-6%
+            "retail": 0.01 + (random:createFloat() * 0.03), // 1-4%
+            "hospitality": 0.04 + (random:createFloat() * 0.06) // 4-10%
         },
-        regulatoryImpact: 0.1 + (random:createDecimal() * 0.3) // 10-40% policy impact
+        regulatoryImpact: 0.1 + (random:createFloat() * 0.3) // 10-40% policy impact
     };
 }
 
@@ -186,21 +186,21 @@ function getCategoryForWasteType(string wasteType) returns string {
 // Helper function to generate quality metrics
 function generateQualityMetrics(string wasteType) returns map<float> {
     map<float> baseMetrics = {
-        "purity": 0.7 + (random:createDecimal() * 0.25), // 70-95%
-        "contamination": random:createDecimal() * 0.3, // 0-30%
-        "moisture": random:createDecimal() * 0.2 // 0-20%
+        "purity": 0.7 + (random:createFloat() * 0.25), // 70-95%
+        "contamination": random:createFloat() * 0.3, // 0-30%
+        "moisture": random:createFloat() * 0.2 // 0-20%
     };
     
     // Add waste-type specific metrics
     if (wasteType == "organic") {
-        baseMetrics["decomposition_rate"] = random:createDecimal() * 0.5;
-        baseMetrics["nutrient_content"] = 0.3 + (random:createDecimal() * 0.4);
+        baseMetrics["decomposition_rate"] = random:createFloat() * 0.5;
+        baseMetrics["nutrient_content"] = 0.3 + (random:createFloat() * 0.4);
     } else if (wasteType == "plastic") {
-        baseMetrics["polymer_type_consistency"] = 0.6 + (random:createDecimal() * 0.35);
-        baseMetrics["color_consistency"] = 0.5 + (random:createDecimal() * 0.4);
+        baseMetrics["polymer_type_consistency"] = 0.6 + (random:createFloat() * 0.35);
+        baseMetrics["color_consistency"] = 0.5 + (random:createFloat() * 0.4);
     } else if (wasteType == "metal") {
-        baseMetrics["alloy_purity"] = 0.8 + (random:createDecimal() * 0.15);
-        baseMetrics["oxidation_level"] = random:createDecimal() * 0.4;
+        baseMetrics["alloy_purity"] = 0.8 + (random:createFloat() * 0.15);
+        baseMetrics["oxidation_level"] = random:createFloat() * 0.4;
     }
     
     return baseMetrics;
@@ -217,7 +217,7 @@ function getRandomSourceIndustry(string wasteType) returns string {
     };
     
     string[] typeIndustries = industries[wasteType] ?: ["general", "mixed", "commercial"];
-    int randomIndex = <int>(random:createDecimal() * <float>typeIndustries.length());
+    int randomIndex = <int>(random:createFloat() * <float>typeIndustries.length());
     // Ensure index is within bounds (random can return 1.0 which would cause out of bounds)
     randomIndex = ints:min(randomIndex, typeIndustries.length() - 1);
     return typeIndustries[randomIndex];

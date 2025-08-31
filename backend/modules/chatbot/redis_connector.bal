@@ -1,12 +1,13 @@
 // Copyright (c) 2025 CircularSync
 // Chatbot Module - Redis Connector
 
-import ballerina/tcp;
+import ballerina/io;
+import ballerina/socket;
 import ballerina/log;
 
 # Redis connector for session management and caching
 public class RedisConnector {
-    private final tcp:Client tcpClient;
+    private final socket:Client tcpClient;
     private final string host;
     private final int port;
     private final string? password;
