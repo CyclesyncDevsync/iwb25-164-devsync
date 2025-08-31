@@ -8,6 +8,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { Loading } from '../../components/ui/Loading';
 import { AdminFAB } from '../../components/ui/FloatingActionButton';
 import { enhancedToast } from '../../components/ui/EnhancedToast';
+import WalletBalance from '../../components/shared/WalletBalance';
 
 export default function AdminDashboard() {
   const { user, loading, isAuthenticated } = useAuth();
@@ -51,6 +52,12 @@ export default function AdminDashboard() {
           </p>
         </div>
         <AdminOverview />
+        
+        {/* Wallet Balance Section */}
+        <div className="mt-8">
+          <WalletBalance />
+        </div>
+        
         <AdminFAB />
       </div>
     </DashboardLayout>
