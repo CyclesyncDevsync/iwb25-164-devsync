@@ -327,7 +327,7 @@ service /api/material/workflow on workflowListener {
             
             json response = {
                 "supplierId": supplierId,
-                "submissions": <json>submissions,
+                "submissions": submissions.toJson(),
                 "count": submissions.length()
             };
             return response;

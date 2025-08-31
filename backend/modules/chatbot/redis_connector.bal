@@ -150,7 +150,9 @@ public isolated class RedisConnector {
         
         // Send command
         byte[] messageBytes = message.toBytes();
-        check self.tcpClient->writeBytes(messageBytes);
+        lock {
+            check self.tcpClient->writeBytes(messageBytes);
+        }
         
         // Read complete response
         string responseStr = check self.readCompleteResponse();
@@ -162,7 +164,10 @@ public isolated class RedisConnector {
     # + return - Complete response string
     isolated function readCompleteResponse() returns string|error {
         // Read first part to determine response type and size
-        byte[] initialBytes = check self.tcpClient->readBytes();
+        byte[] initialBytes;
+        lock {
+            initialBytes = check self.tcpClient->readBytes();
+        }
         string response = check string:fromBytes(initialBytes);
         
         // If it's a bulk string, we might need to read more
@@ -179,7 +184,10 @@ public isolated class RedisConnector {
                     
                     // Read more if needed
                     while response.length() < totalExpected {
-                        byte[] moreBytes = check self.tcpClient->readBytes();
+                        byte[] moreBytes;
+                        lock {
+                            moreBytes = check self.tcpClient->readBytes();
+                        }
                         string moreData = check string:fromBytes(moreBytes);
                         response = response + moreData;
                     }
@@ -196,7 +204,9 @@ public isolated class RedisConnector {
     isolated function executeArray(string[] command) returns string[]|error {
         string message = self.buildRespMessage(command);
         byte[] messageBytes = message.toBytes();
-        check self.tcpClient->writeBytes(messageBytes);
+        lock {
+            check self.tcpClient->writeBytes(messageBytes);
+        }
         
         string responseStr = check self.readCompleteResponse();
         
