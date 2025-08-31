@@ -1,0 +1,17 @@
+# Use official Ballerina runtime image
+FROM ballerina/ballerina:2201.8.5
+
+# Set working directory
+WORKDIR /home/ballerina
+
+# Copy the entire project
+COPY . .
+
+# Build the Ballerina project
+RUN bal build --skip-tests
+
+# Expose all service ports
+EXPOSE 9090 8084 8087 8088 8091 9095
+
+# Run the generated JAR file
+CMD ["java", "-jar", "target/bin/Cyclesync.jar"]
