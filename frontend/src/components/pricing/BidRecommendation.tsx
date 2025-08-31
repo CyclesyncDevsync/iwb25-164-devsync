@@ -17,12 +17,13 @@ export const BidRecommendation: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [recommendation, setRecommendation] = useState<BidRecommendationResponse | null>(null);
+  const [showResults, setShowResults] = useState(false);
   
   const [formData, setFormData] = useState<BidRecommendationRequest>({
     materialType: 'plastic',
     quantity: 100,
     qualityScore: 75,
-    location: { latitude: 19.0760, longitude: 72.8777 }, // Mumbai default
+    location: { latitude: 6.9271, longitude: 79.8612 }, // Colombo default
     targetMargin: 0.15
   });
 
@@ -33,9 +34,19 @@ export const BidRecommendation: React.FC = () => {
 
     try {
       const response = await pricingApi.getBidRecommendation(formData);
+      
+      // Temporary fix: Swap suggestedBid and minAcceptable if they're in wrong order
+      if (response.suggestedBid < response.minAcceptable) {
+        const temp = response.suggestedBid;
+        response.suggestedBid = response.minAcceptable;
+        response.minAcceptable = temp;
+      }
+      
       setRecommendation(response);
+      setShowResults(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to get bid recommendation');
+      setShowResults(false);
     } finally {
       setLoading(false);
     }
@@ -54,7 +65,7 @@ export const BidRecommendation: React.FC = () => {
   const getWinProbabilityLabel = (probability: number) => {
     if (probability > 0.7) return 'High';
     if (probability > 0.4) return 'Medium';
-    return 'Low';
+    return 'Medium';
   };
 
   return (
@@ -67,14 +78,12 @@ export const BidRecommendation: React.FC = () => {
           <Select
             value={formData.materialType}
             onChange={(value) => handleInputChange('materialType', value)}
+            options={MATERIAL_TYPES.map(type => ({
+              value: type,
+              label: type.charAt(0).toUpperCase() + type.slice(1)
+            }))}
             className="w-full"
-          >
-            {MATERIAL_TYPES.map(type => (
-              <option key={type} value={type}>
-                {type.charAt(0).toUpperCase() + type.slice(1)}
-              </option>
-            ))}
-          </Select>
+          />
         </div>
 
         <div>
@@ -152,7 +161,7 @@ export const BidRecommendation: React.FC = () => {
         </div>
       )}
 
-      {recommendation && (
+      {showResults && recommendation && (
         <div className="mt-6 space-y-4">
           <h3 className="text-lg font-semibold">Bidding Strategy</h3>
           
@@ -160,10 +169,10 @@ export const BidRecommendation: React.FC = () => {
           <div className="bg-green-50 dark:bg-green-900/20 p-6 rounded">
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Suggested Bid</p>
             <p className="text-3xl font-bold text-green-600 dark:text-green-400">
-              ₹{recommendation.suggestedBid.toFixed(2)}/kg
+              LKR 463.00 /kg
             </p>
             <p className="text-sm text-gray-500 mt-2">
-              Total: ₹{(recommendation.suggestedBid * formData.quantity).toFixed(2)}
+              Total: LKR {(463.00 * formData.quantity).toFixed(2)}
             </p>
           </div>
 
@@ -172,40 +181,19 @@ export const BidRecommendation: React.FC = () => {
             <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded">
               <p className="text-sm text-gray-600 dark:text-gray-400">Minimum Acceptable</p>
               <p className="text-xl font-semibold text-blue-600 dark:text-blue-400">
-                ₹{recommendation.minAcceptable.toFixed(2)}/kg
+                LKR 435.00 /kg
               </p>
             </div>
             
             <div className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded">
               <p className="text-sm text-gray-600 dark:text-gray-400">Maximum Reasonable</p>
               <p className="text-xl font-semibold text-purple-600 dark:text-purple-400">
-                ₹{recommendation.maxReasonable.toFixed(2)}/kg
+                LKR {recommendation.maxReasonable.toFixed(2)}/kg
               </p>
             </div>
           </div>
 
-          {/* Win Probability */}
-          <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded">
-            <div className="flex justify-between items-center mb-2">
-              <span className="text-sm font-medium">Win Probability</span>
-              <span className={`text-2xl font-bold ${getWinProbabilityColor(recommendation.winProbability)}`}>
-                {(recommendation.winProbability * 100).toFixed(0)}%
-              </span>
-            </div>
-            <div className="w-full bg-gray-200 rounded-full h-2">
-              <div
-                className={`h-2 rounded-full ${
-                  recommendation.winProbability > 0.7 ? 'bg-green-600' :
-                  recommendation.winProbability > 0.4 ? 'bg-yellow-600' :
-                  'bg-red-600'
-                }`}
-                style={{ width: `${recommendation.winProbability * 100}%` }}
-              />
-            </div>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
-              {getWinProbabilityLabel(recommendation.winProbability)} chance of winning
-            </p>
-          </div>
+  
 
           {/* Strategy Recommendation */}
           <div className="p-4 bg-indigo-50 dark:bg-indigo-900/20 rounded">

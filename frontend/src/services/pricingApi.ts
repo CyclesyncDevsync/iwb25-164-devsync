@@ -10,7 +10,7 @@ import {
   Location
 } from '@/types/pricing';
 
-const PRICING_API_URL = process.env.NEXT_PUBLIC_PRICING_API_URL || 'http://localhost:8085';
+const PRICING_API_URL = process.env.NEXT_PUBLIC_PRICING_API_URL || 'http://localhost:8088';
 
 class PricingApiService {
   private baseUrl: string;
@@ -148,8 +148,8 @@ class PricingApiService {
       materialType,
       quantity,
       qualityScore,
-      pickup: { latitude: 19.0760, longitude: 72.8777 }, // Mumbai
-      delivery: { latitude: 19.0760, longitude: 72.8777 }, // Same city
+      pickup: { latitude: 6.9271, longitude: 79.8612 }, // Colombo
+      delivery: { latitude: 6.9271, longitude: 79.8612 }, // Same city
       urgency: 'standard',
     };
 

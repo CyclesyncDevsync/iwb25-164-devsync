@@ -53,7 +53,7 @@ export default function ChatBot({ className = '' }: ChatBotProps) {
 
   const connectWebSocket = () => {
     try {
-      wsRef.current = new WebSocket('ws://localhost:8083/chat');
+      wsRef.current = new WebSocket('ws://localhost:8094/chat');
       
       wsRef.current.onopen = () => {
         console.log('Connected to chatbot');
@@ -162,7 +162,7 @@ export default function ChatBot({ className = '' }: ChatBotProps) {
       <div className={`fixed bottom-4 right-4 ${className}`}>
         <button
           onClick={() => setIsOpen(true)}
-          className="bg-blue-600 hover:bg-blue-700 text-white rounded-full p-4 shadow-lg transition-all hover:scale-110"
+          className="bg-green-600 hover:bg-green-700 text-white rounded-full p-4 shadow-lg transition-all hover:scale-110"
           aria-label="Open chat"
         >
           <Bot size={24} />
@@ -174,7 +174,7 @@ export default function ChatBot({ className = '' }: ChatBotProps) {
   return (
     <div className={`fixed bottom-4 right-4 w-96 bg-white rounded-lg shadow-2xl flex flex-col ${isMinimized ? 'h-14' : 'h-[600px]'} transition-all ${className}`}>
       {/* Header */}
-      <div className="bg-blue-600 text-white p-4 rounded-t-lg flex items-center justify-between">
+      <div className="bg-green-600 text-white p-4 rounded-t-lg flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Bot size={20} />
           <h3 className="font-semibold">CircularSync Assistant</h3>
@@ -183,14 +183,14 @@ export default function ChatBot({ className = '' }: ChatBotProps) {
         <div className="flex items-center gap-2">
           <button
             onClick={() => setIsMinimized(!isMinimized)}
-            className="hover:bg-blue-700 p-1 rounded transition-colors"
+            className="hover:bg-green-700 p-1 rounded transition-colors"
             aria-label={isMinimized ? 'Maximize' : 'Minimize'}
           >
             {isMinimized ? <Maximize2 size={18} /> : <Minimize2 size={18} />}
           </button>
           <button
             onClick={() => setIsOpen(false)}
-            className="hover:bg-blue-700 p-1 rounded transition-colors"
+            className="hover:bg-green-700 p-1 rounded transition-colors"
             aria-label="Close chat"
           >
             <X size={18} />
@@ -218,7 +218,7 @@ export default function ChatBot({ className = '' }: ChatBotProps) {
                 <div
                   className={`max-w-[80%] p-3 rounded-lg ${
                     message.type === 'user'
-                      ? 'bg-blue-600 text-white'
+                      ? 'bg-green-600 text-white'
                       : 'bg-gray-100 text-gray-800'
                   }`}
                 >
@@ -254,7 +254,7 @@ export default function ChatBot({ className = '' }: ChatBotProps) {
                   <button
                     key={index}
                     onClick={() => handleSuggestionClick(suggestion)}
-                    className="px-3 py-1.5 text-sm bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-full border border-blue-200 transition-colors"
+                    className="px-3 py-1.5 text-sm bg-green-50 hover:bg-green-100 text-green-700 rounded-full border border-green-200 transition-colors"
                     disabled={!isConnected}
                   >
                     {suggestion}
@@ -280,12 +280,12 @@ export default function ChatBot({ className = '' }: ChatBotProps) {
                 onKeyPress={handleKeyPress}
                 placeholder="Type your message..."
                 disabled={!isConnected}
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
+                className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 disabled:bg-gray-100"
               />
               <button
                 onClick={() => sendMessage()}
                 disabled={!isConnected || !inputMessage.trim()}
-                className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white p-2 rounded-md transition-colors"
+                className="bg-green-600 hover:bg-green-700 disabled:bg-gray-300 text-white p-2 rounded-md transition-colors"
                 aria-label="Send message"
               >
                 <Send size={20} />
