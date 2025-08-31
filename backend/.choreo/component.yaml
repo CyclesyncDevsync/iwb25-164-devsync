@@ -15,12 +15,12 @@ metadata:
 
 spec:
   type: service
-  buildPreset: dockerfile
+  buildPreset: ballerina
   
-  # Dockerfile configuration
-  dockerfile:
-    path: Dockerfile
-    context: .
+  # Build configuration for Ballerina
+  build:
+    buildContext: .
+    ballerinaVersion: "2201.8.5"
   
   # Service endpoints
   endpoints:
