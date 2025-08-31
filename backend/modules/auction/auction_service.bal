@@ -425,6 +425,7 @@ public type AuctionCreationRequest record {|
     int durationDays;
     string[] photos;
     json verificationDetails;
+    # Optional notes from the verifying agent
     string? agentNotes?;
 |};
 

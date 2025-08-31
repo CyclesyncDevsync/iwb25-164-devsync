@@ -14,6 +14,10 @@ import Cyclesync.dynamic_pricing as _;
 import Cyclesync.material_workflow as _;
 // The auction module will auto-register its services
 import Cyclesync.auction as _;
+// The agent_assignment module will auto-register its services
+import Cyclesync.agent_assignment as _;
+// The notifications module will auto-register its services
+import Cyclesync.notifications as _;
 
 import ballerina/http;
 import ballerina/log;
@@ -1294,6 +1298,184 @@ service /api/admin on server {
             "status": "success",
             "count": submissions.length(),
             "data": submissions
+        };
+    }
+}
+
+// Agent endpoints  
+service /api/agent on server {
+    # Get agent assignments with material submission details
+    # + agentId - The agent ID
+    # + return - Agent assignments with full material details
+    resource function get [string agentId]/assignments(http:Request request) returns json|http:Response {
+        // Validate auth
+        auth:AuthResult|http:Response authCheck = validateAuth(request);
+        if (authCheck is http:Response) {
+            return authCheck;
+        }
+
+        auth:AuthContext? authContext = authCheck.context;
+        if (authContext == ()) {
+            http:Response response = new;
+            response.statusCode = 500;
+            response.setJsonPayload({
+                "error": "Internal server error", 
+                "message": "Auth context is missing"
+            });
+            return response;
+        }
+
+        postgresql:Client|error clientResult = database_config:getDbClient();
+        if (clientResult is error) {
+            http:Response response = new;
+            response.statusCode = 503;
+            response.setJsonPayload({
+                "error": "Database connection failed",
+                "message": clientResult.message()
+            });
+            return response;
+        }
+
+        postgresql:Client clientInstance = clientResult;
+
+        // Query to get material submissions assigned to this agent
+        sql:ParameterizedQuery query = `
+            SELECT 
+                ms.id::text as assignment_id,
+                ms.agent_id,
+                ms.supplier_id,
+                ms.id::text as material_id,
+                ms.submission_status as assignment_status,
+                ms.created_at as assigned_at,
+                ms.created_at as started_at,
+                ms.updated_at as completed_at,
+                ms.additional_details as notes,
+                ms.expected_price as estimated_cost,
+                ms.id as submission_id,
+                ms.transaction_id,
+                ms.workflow_id,
+                ms.title,
+                ms.description,
+                ms.category,
+                ms.sub_category,
+                ms.quantity,
+                ms.unit,
+                ms.condition,
+                ms.expected_price,
+                ms.minimum_price,
+                ms.negotiable,
+                ms.delivery_method,
+                ms.location_address,
+                ms.location_city,
+                ms.location_district,
+                ms.location_province,
+                ms.location_postal_code,
+                ms.location_latitude,
+                ms.location_longitude,
+                ms.selected_warehouse_name,
+                ms.selected_warehouse_address,
+                ms.selected_warehouse_phone,
+                ms.material_type,
+                ms.material_color,
+                ms.material_brand,
+                ms.material_model,
+                ms.manufacturing_year,
+                ms.dimension_length,
+                ms.dimension_width,
+                ms.dimension_height,
+                ms.dimension_weight,
+                ms.tags,
+                ms.photos,
+                ms.submission_status,
+                ms.created_at,
+                ms.updated_at,
+                COALESCE(u.first_name || ' ' || u.last_name, 'Unknown Supplier') as supplier_name,
+                u.email as supplier_email,
+                'medium' as urgency
+            FROM material_submissions ms
+            LEFT JOIN users u ON ms.supplier_id = u.asgardeo_id
+            WHERE ms.agent_id = ${agentId} 
+            AND ms.agent_assigned = true
+            AND ms.submission_status = 'assigned'
+            ORDER BY ms.created_at DESC
+        `;
+
+        stream<record {}, sql:Error?> resultStream = clientInstance->query(query);
+        
+        json[] assignments = [];
+        error? conversionResult = from var row in resultStream
+            do {
+                map<json> assignment = {
+                    "assignment_id": <json>row["assignment_id"],
+                    "material_id": <json>row["material_id"], 
+                    "supplier_id": <json>row["supplier_id"],
+                    "supplier_name": <json>row["supplier_name"],
+                    "supplier_email": <json>row["supplier_email"],
+                    "transaction_id": <json>row["transaction_id"],
+                    "workflow_id": <json>row["workflow_id"],
+                    "submission_id": <json>row["submission_id"],
+                    "title": <json>row["title"],
+                    "description": <json>row["description"],
+                    "category": <json>row["category"],
+                    "sub_category": <json>row["sub_category"],
+                    "quantity": <json>row["quantity"],
+                    "unit": <json>row["unit"],
+                    "condition": <json>row["condition"],
+                    "expected_price": <json>row["expected_price"],
+                    "minimum_price": <json>row["minimum_price"],
+                    "negotiable": <json>row["negotiable"],
+                    "delivery_method": <json>row["delivery_method"],
+                    "location_address": <json>row["location_address"],
+                    "location_city": <json>row["location_city"],
+                    "location_district": <json>row["location_district"],
+                    "location_province": <json>row["location_province"],
+                    "location_postal_code": <json>row["location_postal_code"],
+                    "location_latitude": <json>row["location_latitude"],
+                    "location_longitude": <json>row["location_longitude"],
+                    "selected_warehouse_name": <json>row["selected_warehouse_name"],
+                    "selected_warehouse_address": <json>row["selected_warehouse_address"],
+                    "selected_warehouse_phone": <json>row["selected_warehouse_phone"],
+                    "material_type": <json>row["material_type"],
+                    "material_color": <json>row["material_color"],
+                    "material_brand": <json>row["material_brand"],
+                    "material_model": <json>row["material_model"],
+                    "manufacturing_year": <json>row["manufacturing_year"],
+                    "dimension_length": <json>row["dimension_length"],
+                    "dimension_width": <json>row["dimension_width"],
+                    "dimension_height": <json>row["dimension_height"],
+                    "dimension_weight": <json>row["dimension_weight"],
+                    "tags": <json>row["tags"],
+                    "photos": <json>row["photos"],
+                    "submission_status": <json>row["submission_status"],
+                    "created_at": <json>row["created_at"],
+                    "updated_at": <json>row["updated_at"],
+                    "assigned_at": <json>row["assigned_at"],
+                    "started_at": <json>row["started_at"],
+                    "completed_at": <json>row["completed_at"],
+                    "urgency": <json>row["urgency"],
+                    "notes": <json>row["notes"],
+                    "estimated_cost": <json>row["estimated_cost"],
+                    "assignment_status": <json>row["assignment_status"],
+                    "agent_id": <json>row["agent_id"],
+                    "verification_date": <json>row["verification_date"]
+                };
+                assignments.push(assignment);
+            };
+        
+        if (conversionResult is error) {
+            http:Response response = new;
+            response.statusCode = 500;
+            response.setJsonPayload({
+                "error": "Query failed",
+                "message": conversionResult.message()
+            });
+            return response;
+        }
+        
+        return {
+            "success": true,
+            "assignments": assignments,
+            "count": assignments.length()
         };
     }
 }

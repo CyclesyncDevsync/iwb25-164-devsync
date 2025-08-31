@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { format } from 'date-fns';
 import 'leaflet/dist/leaflet.css';
+import toast from 'react-hot-toast';
 
 // Fix for default markers
 import L from 'leaflet';
@@ -448,7 +449,7 @@ export function MaterialVerification() {
       return;
     }
 
-    const selectedAgent = agents.find(a => a.id === agentId);
+    const selectedAgent = agents.find(a => a.asgardeo_id === agentId);
     if (!selectedAgent) {
       console.log('Agent not found');
       return;
@@ -456,48 +457,116 @@ export function MaterialVerification() {
     console.log('Selected agent:', selectedAgent);
 
     try {
-      // For now, simulate the API call since the endpoint doesn't exist
-      console.log('Would call API to assign agent:', {
+      console.log('Assigning agent via backend API:', {
         submissionId: selectedSubmissionForAgent.id,
         agentId: selectedAgent.asgardeo_id
       });
       
-      // Simulate success response
-      const response = { ok: true };
-      
-      /* When backend endpoint is ready, use this:
-      const response = await fetch(`http://localhost:8080/api/admin/material-submissions/${selectedSubmissionForAgent.id}/assign-agent`, {
+      // Call your working backend API endpoint through Next.js proxy to avoid CORS
+      const response = await fetch(`/backend/agent/assignment-with-notification`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('auth_token') || ''}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          agentId: selectedAgent.asgardeo_id
+          materialLocation: {
+            latitude: selectedSubmissionForAgent.location_latitude || 6.9271,
+            longitude: selectedSubmissionForAgent.location_longitude || 79.8612
+          },
+          supplierId: selectedSubmissionForAgent.supplier_id || 'unknown-supplier',
+          supplierName: selectedSubmissionForAgent.supplier_name || 'Unknown Supplier',
+          materialId: String(selectedSubmissionForAgent.id),
+          materialDetails: {
+            type: selectedSubmissionForAgent.category,
+            title: selectedSubmissionForAgent.title,
+            description: selectedSubmissionForAgent.description,
+            quantity: selectedSubmissionForAgent.quantity,
+            condition: selectedSubmissionForAgent.condition,
+            expectedPrice: selectedSubmissionForAgent.expected_price
+          },
+          urgency: 'medium',
+          notes: `Material submission #${selectedSubmissionForAgent.id} assigned by admin`
         })
       });
-      */
 
       if (response.ok) {
-        // Update local state
+        const assignmentData = await response.json();
+        console.log('Assignment successful:', assignmentData);
+        
+        // Now update the submission status in the database
+        console.log('Updating submission status in database...');
+        try {
+          const updateResponse = await fetch(`/backend/material-submissions/${selectedSubmissionForAgent.id}/status`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              submission_status: 'assigned',
+              agent_id: selectedAgent.asgardeo_id,
+              // Remove verification_date for now as it's causing format issues
+              additional_details: JSON.stringify({
+                assigned_by: 'admin',
+                assignment_time: new Date().toISOString(),
+                assignment_id: assignmentData.assignment.assignmentId,
+                notification_sent: true
+              })
+            })
+          });
+
+          if (updateResponse.ok) {
+            const updateResult = await updateResponse.json();
+            console.log('Submission status updated successfully:', updateResult);
+          } else {
+            console.error('Failed to update submission status:', await updateResponse.text());
+            // Log but don't fail the whole operation
+          }
+        } catch (updateError) {
+          console.error('Error updating submission status:', updateError);
+          // Log but don't fail the whole operation
+        }
+        
+        // Update local state with real agent information
         const updatedSubmissions = submissions.map(sub => {
           if (sub.id === selectedSubmissionForAgent.id) {
             return { 
               ...sub, 
               assigned_agent: {
-                id: selectedAgent.asgardeo_id,
-                name: `${selectedAgent.first_name} ${selectedAgent.last_name}`,
-                distance: Math.random() * 5 + 1 // Mock distance
-              }
+                id: assignmentData.assignment.agent.agentId,
+                name: assignmentData.assignment.agent.agentName,
+                distance: assignmentData.assignment.agent.distanceFromMaterial || 0
+              },
+              submission_status: 'assigned',
+              agent_assigned: true,
+              agent_id: selectedAgent.asgardeo_id
             };
           }
           return sub;
         });
         setSubmissions(updatedSubmissions);
         setShowAgentModal(false);
-        console.log('Agent assigned successfully');
+        
+        // Show success toast message
+        toast.success(
+          `Agent ${assignmentData.assignment.agent.agentName} assigned successfully! Notification sent.`,
+          {
+            duration: 4000,
+            position: 'top-right',
+            icon: '✅',
+            style: {
+              background: '#10B981',
+              color: '#fff',
+              fontWeight: '500',
+            },
+          }
+        );
       } else {
-        console.log('API response not OK:', response.status);
+        const errorData = await response.json().catch(() => ({}));
+        console.error('API response not OK:', response.status, errorData);
+        toast.error('Failed to assign agent. Please try again.', {
+          duration: 4000,
+          position: 'top-right',
+        });
       }
     } catch (error) {
       console.error('Failed to assign agent:', error);
@@ -1002,7 +1071,7 @@ export function MaterialVerification() {
                   {agents.map(agent => (
                     <div
                       key={agent.id}
-                      onClick={() => assignAgent(agent.id)}
+                      onClick={() => assignAgent(agent.asgardeo_id)}
                       className={`relative flex items-center p-4 rounded-lg cursor-pointer transition-all ${
                         selectedSubmissionForAgent?.assigned_agent?.id === agent.asgardeo_id
                           ? 'bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-500'

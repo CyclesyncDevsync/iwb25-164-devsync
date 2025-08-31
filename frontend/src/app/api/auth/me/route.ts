@@ -48,7 +48,8 @@ export async function GET(request: NextRequest) {
       const response = NextResponse.json({
         success: true,
         message: 'User authenticated',
-        user: backendData.user
+        user: backendData.user,
+        idToken: idToken
       });
       
       response.cookies.set('user_data', JSON.stringify(backendData.user), {
