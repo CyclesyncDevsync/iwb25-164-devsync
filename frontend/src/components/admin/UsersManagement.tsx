@@ -1,61 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/Card';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
-import { Dialog, DialogHeader, DialogTitle, DialogContent } from '../ui/Dialog';
-
-interface User {
-  id: string;
-  name: string;
-  email: string;
-  role: 'admin' | 'agent' | 'supplier' | 'buyer';
-  status: 'active' | 'inactive' | 'pending';
-  joinedAt: string;
-}
+import { Dialog, DialogHeader, DialogTitle } from '../ui/Dialog';
+import { userManagementService, User } from '../../services/userManagement';
 
 export function UsersManagement() {
-  const [users, setUsers] = useState<User[]>([
-    {
-      id: 'user1',
-      name: 'John Admin',
-      email: 'john@example.com',
-      role: 'admin',
-      status: 'active',
-      joinedAt: '2025-07-01T10:00:00Z'
-    },
-    {
-      id: 'user2',
-      name: 'Alice Agent',
-      email: 'alice@example.com',
-      role: 'agent',
-      status: 'active',
-      joinedAt: '2025-07-15T14:30:00Z'
-    },
-    {
-      id: 'user3',
-      name: 'Bob Supplier',
-      email: 'bob@example.com',
-      role: 'supplier',
-      status: 'pending',
-      joinedAt: '2025-08-01T09:15:00Z'
-    },
-    {
-      id: 'user4',
-      name: 'Carol Buyer',
-      email: 'carol@example.com',
-      role: 'buyer',
-      status: 'active',
-      joinedAt: '2025-07-20T16:45:00Z'
-    },
-    {
-      id: 'user5',
-      name: 'David Supplier',
-      email: 'david@example.com',
-      role: 'supplier',
-      status: 'inactive',
-      joinedAt: '2025-06-10T11:20:00Z'
-    }
-  ]);
+  const [users, setUsers] = useState<User[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
@@ -66,6 +19,24 @@ export function UsersManagement() {
   
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [editForm, setEditForm] = useState<Partial<User>>({});
+
+  // Load users on component mount
+  useEffect(() => {
+    loadUsers();
+  }, []);
+
+  const loadUsers = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await userManagementService.getUsers();
+      setUsers(response.data.users);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load users');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
@@ -79,16 +50,13 @@ export function UsersManagement() {
     setStatusFilter(value);
   };
 
-  const handleStatusChange = (userId: string, newStatus: User['status']) => {
-    setUsers(users.map(user => 
-      user.id === userId ? { ...user, status: newStatus } : user
-    ));
-  };
-
-  const handleRoleChange = (userId: string, newRole: User['role']) => {
-    setUsers(users.map(user => 
-      user.id === userId ? { ...user, role: newRole } : user
-    ));
+  const handleStatusChange = async (userId: number, newStatus: User['status']) => {
+    try {
+      await userManagementService.updateUser(userId, { status: newStatus });
+      await loadUsers(); // Reload users to get updated data
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update user status');
+    }
   };
 
   const openDetails = (user: User) => {
@@ -101,13 +69,21 @@ export function UsersManagement() {
     setIsEditOpen(true);
   };
 
-  const handleEditSubmit = (e: React.FormEvent) => {
+  const handleEditSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (editForm.id) {
-      setUsers(users.map(user => 
-        user.id === editForm.id ? { ...user, ...editForm } as User : user
-      ));
-      setIsEditOpen(false);
+      try {
+        await userManagementService.updateUser(editForm.id, {
+          firstName: editForm.firstName,
+          lastName: editForm.lastName,
+          role: editForm.role,
+          status: editForm.status,
+        });
+        setIsEditOpen(false);
+        await loadUsers(); // Reload users to get updated data
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to update user');
+      }
     }
   };
 
@@ -132,6 +108,13 @@ export function UsersManagement() {
 
   return (
     <div className="space-y-6">
+      {/* Error Display */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+          {error}
+        </div>
+      )}
+
       {/* Filters and Search */}
       <Card>
         <CardContent className="p-6">
@@ -149,6 +132,7 @@ export function UsersManagement() {
                 onChange={(e) => handleRoleFilterChange(e.target.value)}
               >
                 <option value="all">All Roles</option>
+                <option value="super_admin">Super Admin</option>
                 <option value="admin">Admin</option>
                 <option value="agent">Agent</option>
                 <option value="supplier">Supplier</option>
@@ -161,9 +145,9 @@ export function UsersManagement() {
                 onChange={(e) => handleStatusFilterChange(e.target.value)}
               >
                 <option value="all">All Statuses</option>
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
+                <option value="approved">Approved</option>
                 <option value="pending">Pending</option>
+                <option value="rejected">Rejected</option>
               </select>
             </div>
           </div>
@@ -176,87 +160,90 @@ export function UsersManagement() {
           <CardTitle>Users</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b">
-                  <th className="text-left p-2">Name</th>
-                  <th className="text-left p-2">Email</th>
-                  <th className="text-left p-2">Role</th>
-                  <th className="text-left p-2">Status</th>
-                  <th className="text-left p-2">Joined</th>
-                  <th className="text-right p-2">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredUsers.map(user => (
-                  <tr key={user.id} className="border-b hover:bg-gray-50">
-                    <td className="p-2">{user.name}</td>
-                    <td className="p-2">{user.email}</td>
-                    <td className="p-2">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        user.role === 'admin' ? 'bg-purple-100 text-purple-800' : 
-                        user.role === 'agent' ? 'bg-blue-100 text-blue-800' : 
-                        user.role === 'supplier' ? 'bg-green-100 text-green-800' : 
-                        'bg-amber-100 text-amber-800'
-                      }`}>
-                        {user.role}
-                      </span>
-                    </td>
-                    <td className="p-2">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        user.status === 'active' ? 'bg-green-100 text-green-800' : 
-                        user.status === 'inactive' ? 'bg-gray-100 text-gray-800' : 
-                        'bg-amber-100 text-amber-800'
-                      }`}>
-                        {user.status}
-                      </span>
-                    </td>
-                    <td className="p-2">{new Date(user.joinedAt).toLocaleDateString()}</td>
-                    <td className="p-2 text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => openDetails(user)}
-                        >
-                          View
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => openEdit(user)}
-                        >
-                          Edit
-                        </Button>
-                        {user.status === 'active' ? (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleStatusChange(user.id, 'inactive')}
-                          >
-                            Deactivate
-                          </Button>
-                        ) : (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleStatusChange(user.id, 'active')}
-                          >
-                            Activate
-                          </Button>
-                        )}
-                      </div>
-                    </td>
+          {loading ? (
+            <div className="text-center py-8">Loading users...</div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b">
+                    <th className="text-left p-2">Name</th>
+                    <th className="text-left p-2">Email</th>
+                    <th className="text-left p-2">Role</th>
+                    <th className="text-left p-2">Status</th>
+                    <th className="text-left p-2">Joined</th>
+                    <th className="text-right p-2">Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {filteredUsers.map(user => (
+                    <tr key={user.id} className="border-b hover:bg-gray-50">
+                      <td className="p-2">{user.name}</td>
+                      <td className="p-2">{user.email}</td>
+                      <td className="p-2">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          user.role === 'super_admin' ? 'bg-red-100 text-red-800' :
+                          user.role === 'admin' ? 'bg-purple-100 text-purple-800' : 
+                          user.role === 'agent' ? 'bg-blue-100 text-blue-800' : 
+                          user.role === 'supplier' ? 'bg-green-100 text-green-800' : 
+                          'bg-amber-100 text-amber-800'
+                        }`}>
+                          {user.role.replace('_', ' ')}
+                        </span>
+                      </td>
+                      <td className="p-2">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          user.status === 'approved' ? 'bg-green-100 text-green-800' : 
+                          user.status === 'pending' ? 'bg-amber-100 text-amber-800' : 
+                          'bg-red-100 text-red-800'
+                        }`}>
+                          {user.status}
+                        </span>
+                      </td>
+                      <td className="p-2">{new Date(user.createdAt).toLocaleDateString()}</td>
+                      <td className="p-2 text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => openDetails(user)}
+                          >
+                            View
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => openEdit(user)}
+                          >
+                            Edit
+                          </Button>
+                          {user.status === 'approved' ? (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleStatusChange(user.id, 'rejected')}
+                            >
+                              Deactivate
+                            </Button>
+                          ) : (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleStatusChange(user.id, 'approved')}
+                            >
+                              Activate
+                            </Button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </CardContent>
-      </Card>
-
-      {/* User Details Dialog */}
+      </Card>      {/* User Details Dialog */}
       {selectedUser && (
         <Dialog 
           isOpen={isDetailsOpen} 
@@ -276,7 +263,7 @@ export function UsersManagement() {
             </div>
             <div>
               <h3 className="text-sm font-medium text-gray-500">Role</h3>
-              <p className="mt-1">{selectedUser.role}</p>
+              <p className="mt-1">{selectedUser.role.replace('_', ' ')}</p>
             </div>
             <div>
               <h3 className="text-sm font-medium text-gray-500">Status</h3>
@@ -284,8 +271,14 @@ export function UsersManagement() {
             </div>
             <div>
               <h3 className="text-sm font-medium text-gray-500">Joined</h3>
-              <p className="mt-1">{new Date(selectedUser.joinedAt).toLocaleDateString()}</p>
+              <p className="mt-1">{new Date(selectedUser.createdAt).toLocaleDateString()}</p>
             </div>
+            {selectedUser.rejectionReason && (
+              <div>
+                <h3 className="text-sm font-medium text-gray-500">Rejection Reason</h3>
+                <p className="mt-1">{selectedUser.rejectionReason}</p>
+              </div>
+            )}
             
             <div className="pt-4 flex justify-end gap-2">
               <Button onClick={() => setIsDetailsOpen(false)}>Close</Button>
@@ -314,13 +307,25 @@ export function UsersManagement() {
         <form onSubmit={handleEditSubmit}>
           <div className="space-y-4">
             <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-                Name
+              <label htmlFor="firstName" className="block text-sm font-medium text-gray-700">
+                First Name
               </label>
               <Input
-                id="name"
-                name="name"
-                value={editForm.name || ''}
+                id="firstName"
+                name="firstName"
+                value={editForm.firstName || ''}
+                onChange={handleEditChange}
+                className="mt-1"
+              />
+            </div>
+            <div>
+              <label htmlFor="lastName" className="block text-sm font-medium text-gray-700">
+                Last Name
+              </label>
+              <Input
+                id="lastName"
+                name="lastName"
+                value={editForm.lastName || ''}
                 onChange={handleEditChange}
                 className="mt-1"
               />
@@ -349,6 +354,7 @@ export function UsersManagement() {
                 value={editForm.role}
                 onChange={(e) => setEditForm({...editForm, role: e.target.value as User['role']})}
               >
+                <option value="super_admin">Super Admin</option>
                 <option value="admin">Admin</option>
                 <option value="agent">Agent</option>
                 <option value="supplier">Supplier</option>
@@ -366,9 +372,9 @@ export function UsersManagement() {
                 value={editForm.status}
                 onChange={(e) => setEditForm({...editForm, status: e.target.value as User['status']})}
               >
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
+                <option value="approved">Approved</option>
                 <option value="pending">Pending</option>
+                <option value="rejected">Rejected</option>
               </select>
             </div>
             

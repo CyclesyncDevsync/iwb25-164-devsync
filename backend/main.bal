@@ -2,6 +2,10 @@
 import Cyclesync.auth as _;
 // Auth module functions
 import Cyclesync.auth;
+// The agent_assignment module will auto-register its services
+import Cyclesync.agent_assignment as _;
+// The agent_review module will auto-register its services
+import Cyclesync.agent_review as _;
 // The chatbot module will auto-register its services
 import Cyclesync.chatbot as _;
 // The demand_prediction module will auto-register its services
@@ -14,14 +18,10 @@ import Cyclesync.dynamic_pricing as _;
 import Cyclesync.material_workflow as _;
 // The auction module will auto-register its services
 import Cyclesync.auction as _;
-
-// The wallet module will auto-register its services
-import Cyclesync.wallet as _;
-
-// The agent_assignment module will auto-register its services
-import Cyclesync.agent_assignment as _;
 // The notifications module will auto-register its services
 import Cyclesync.notifications as _;
+// The wallet module will auto-register its services
+import Cyclesync.wallet as _;
 
 
 import ballerina/http;
@@ -112,7 +112,7 @@ function init() {
     log:printInfo(string `Main API Server starting on port ${port}`);
     log:printInfo("Demand Prediction Service initialized on http://localhost:8084/api/ai/demand");
     log:printInfo("Quality Assessment Service initialized on /api/ai/quality");
-    log:printInfo("Chatbot WebSocket Service initialized on ws://localhost:8094/chat");
+    log:printInfo("Chatbot WebSocket Service initialized on ws://localhost:8083/chat");
     log:printInfo("Chatbot Health Check initialized on http://localhost:8095/health");
 }
 
@@ -1119,6 +1119,10 @@ service /api/admin on server {
                 
                 warehouseStats.push(warehouseStat);
             };
+        
+        if (conversionResult is error) {
+            log:printError("Error processing warehouse data: " + conversionResult.message());
+        }
 
         // If no warehouses found in database, return default ones
         if (warehouseStats.length() == 0) {
@@ -1305,6 +1309,9 @@ service /api/admin on server {
             "data": submissions
         };
     }
+
+    // Note: Agent Management CRUD operations have been moved to modules/agent_management/
+    // The agent management endpoints are now available at /agents
 }
 
 // Agent endpoints  

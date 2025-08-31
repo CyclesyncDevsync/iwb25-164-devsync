@@ -15,24 +15,25 @@ public isolated class AgentAssignmentService {
     # + urgency - The urgency level (high, medium, low)
     # + return - The assigned agent with cost details or error
     public isolated function assignAgent(Location materialLocation, string urgency = "medium") returns Agent|error {
-        // Get available agents from the database
+        // Get available agents from the users table (role = 'agent')
         sql:ParameterizedQuery query = `
             SELECT 
-                a.agent_id,
-                a.name,
-                a.phone,
-                a.email,
-                a.location_lat,
-                a.location_lng,
-                a.current_workload,
-                a.max_workload,
-                a.rating,
-                a.specializations,
-                a.hourly_rate
-            FROM agents a
-            WHERE a.status = 'active' 
-            AND a.current_workload < a.max_workload
-            ORDER BY a.rating DESC, a.current_workload ASC
+                u.id as agent_id,
+                CONCAT(u.first_name, ' ', u.last_name) as name,
+                u.phone,
+                u.email,
+                0.0 as location_lat,  -- Default values until location is added
+                0.0 as location_lng,
+                COALESCE(u.total_assignments - u.completed_assignments, 0) as current_workload,
+                COALESCE(u.max_workload, 10) as max_workload,
+                COALESCE(u.rating, 0.0) as rating,
+                ARRAY[COALESCE(u.specialization, 'General')] as specializations,
+                COALESCE(u.hourly_rate, 25.00) as hourly_rate
+            FROM users u
+            WHERE u.role = 'agent' 
+            AND u.status = 'approved' 
+            AND (u.total_assignments - u.completed_assignments) < COALESCE(u.max_workload, 10)
+            ORDER BY u.rating DESC, (u.total_assignments - u.completed_assignments) ASC
         `;
         
         stream<record {|

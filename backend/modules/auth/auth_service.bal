@@ -404,6 +404,24 @@ public function deleteUser(int userId) returns error? {
     return;
 }
 
+# Get user by ID
+#
+# + userId - User ID
+# + return - User record or error if not found
+public function getUserById(int userId) returns User|error {
+    postgresql:Client dbClient = check database_config:getDbClient();
+
+    sql:ParameterizedQuery query = `
+        SELECT id, asgardeo_id, email, first_name, last_name, role, status,
+               created_at, updated_at, approved_by, rejected_by, rejection_reason
+        FROM users
+        WHERE id = ${userId}
+    `;
+
+    User|error result = dbClient->queryRow(query);
+    return result;
+}
+
 # Check if user has permission for action
 #
 # + userRole - User's role
