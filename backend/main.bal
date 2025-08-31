@@ -27,6 +27,7 @@ import Cyclesync.notifications as _;
 import ballerina/http;
 import ballerina/log;
 import ballerina/sql;
+import ballerina/time;
 // Database configuration (import from local file)
 import ballerinax/postgresql;
 import Cyclesync.database_config;
@@ -36,6 +37,27 @@ configurable int port = 8080;
 listener http:Listener httpListener = new (port);
 
 public listener http:Listener server = httpListener;
+
+// Explicit service declaration for Choreo endpoint detection
+@http:ServiceConfig {
+    cors: {
+        allowOrigins: ["*"],
+        allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        allowHeaders: ["*"],
+        allowCredentials: true,
+        maxAge: 86400
+    }
+}
+service / on httpListener {
+    
+    resource function get health() returns json {
+        return {
+            status: "healthy",
+            message: "CycleSync Backend is running",
+            timestamp: time:utcNow().toString()
+        };
+    }
+}
 
 // Auth validation helper function
 function validateAuth(http:Request request, string? requiredRole = ()) returns auth:AuthResult|http:Response {

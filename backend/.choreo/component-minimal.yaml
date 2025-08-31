@@ -1,0 +1,19 @@
+# Minimal Choreo Component Configuration for Testing
+schemaVersion: 1.2
+apiVersion: core.choreo.dev/v1beta1
+kind: Component
+metadata:
+  name: cyclesync-backend
+  displayName: CycleSync Backend
+  description: Backend services
+  version: 0.1.0
+
+spec:
+  type: service
+  buildPreset: ballerina
+  
+  endpoints:
+    - name: api
+      port: 8080
+      type: REST
+      networkVisibility: Public
