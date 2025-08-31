@@ -7,11 +7,8 @@ WORKDIR /app
 # Copy project files
 COPY . .
 
-# Remove any existing target directory and build artifacts
-RUN rm -rf target Dependencies.toml
-
-# Build the project
-RUN bal build
+# Build the project with clean target
+RUN bal clean && bal build
 
 # Runtime stage
 FROM ballerina/ballerina:2201.8.5-openjdk17
