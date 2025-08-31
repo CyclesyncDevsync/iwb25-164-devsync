@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { 
   MagnifyingGlassIcon, 
@@ -8,7 +8,8 @@ import {
   ClockIcon,
   ChartBarIcon,
   HeartIcon,
-  BellIcon
+  BellIcon,
+  WalletIcon
 } from '@heroicons/react/24/outline';
 import { 
   ShoppingBagIcon,
@@ -16,16 +17,52 @@ import {
   CreditCardIcon
 } from '@heroicons/react/24/solid';
 import { useAuth } from '@/hooks/useAuth';
+import WalletBalance from '@/components/shared/WalletBalance';
 
 const BuyerDashboard = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const { user, loading } = useAuth();
+  const [walletBalance, setWalletBalance] = useState<number | null>(null);
 
   // Debug logging
   console.log('=== BUYER DASHBOARD RENDER ===');
   console.log('User from useAuth:', user);
   console.log('Loading state:', loading);
   console.log('localStorage user:', typeof window !== 'undefined' ? localStorage.getItem('user') : 'SSR');
+
+  // Fetch wallet balance
+  useEffect(() => {
+    const fetchWalletBalance = async () => {
+      try {
+        const response = await fetch('/api/wallet/balance', {
+          method: 'GET',
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          if (data.status === 'success' && data.data && data.data.available_balance !== undefined) {
+            setWalletBalance(data.data.available_balance);
+          } else {
+            setWalletBalance(null);
+          }
+        } else {
+          // Handle user not found gracefully
+          setWalletBalance(null);
+        }
+      } catch (error) {
+        console.log('Failed to fetch wallet balance:', error);
+        setWalletBalance(null);
+      }
+    };
+
+    if (user && !loading) {
+      fetchWalletBalance();
+    }
+  }, [user, loading]);
 
   // Show loading state while fetching user data
   if (loading) {
@@ -96,6 +133,14 @@ const BuyerDashboard = () => {
       color: 'text-orange-600',
       bgColor: 'bg-orange-100',
       change: '2 arriving today'
+    },
+    {
+      title: 'Wallet Balance',
+      value: walletBalance !== null ? `Rs.${walletBalance.toLocaleString()}` : 'Loading...',
+      icon: WalletIcon,
+      color: 'text-indigo-600',
+      bgColor: 'bg-indigo-100',
+      change: 'Available balance'
     }
   ];
 
@@ -154,6 +199,13 @@ const BuyerDashboard = () => {
       icon: ChartBarIcon,
       href: '/buyer/analytics',
       color: 'bg-blue-500 hover:bg-blue-600'
+    },
+    {
+      title: 'My Wallet',
+      description: 'Manage balance & transactions',
+      icon: WalletIcon,
+      href: '/wallet',
+      color: 'bg-indigo-500 hover:bg-indigo-600'
     }
   ];
 
@@ -210,8 +262,12 @@ const BuyerDashboard = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Quick Actions */}
-          <div className="lg:col-span-1">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h2>
+          <div className="lg:col-span-1 space-y-6">
+            {/* Wallet Balance */}
+            <WalletBalance />
+            
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h2>
             <div className="space-y-3">
               {quickActions.map((action, index) => (
                 <motion.a
@@ -235,6 +291,7 @@ const BuyerDashboard = () => {
                   </div>
                 </motion.a>
               ))}
+            </div>
             </div>
           </div>
 

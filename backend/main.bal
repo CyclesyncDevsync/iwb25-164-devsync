@@ -14,6 +14,8 @@ import Cyclesync.dynamic_pricing as _;
 import Cyclesync.material_workflow as _;
 // The auction module will auto-register its services
 import Cyclesync.auction as _;
+// The wallet module will auto-register its services
+import Cyclesync.wallet as _;
 
 import ballerina/http;
 import ballerina/log;

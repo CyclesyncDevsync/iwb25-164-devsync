@@ -508,6 +508,7 @@ modules = [
 	{org = "hp", packageName = "Cyclesync", moduleName = "Cyclesync.demand_prediction"},
 	{org = "hp", packageName = "Cyclesync", moduleName = "Cyclesync.dynamic_pricing"},
 	{org = "hp", packageName = "Cyclesync", moduleName = "Cyclesync.material_workflow"},
-	{org = "hp", packageName = "Cyclesync", moduleName = "Cyclesync.quality_assessment"}
+	{org = "hp", packageName = "Cyclesync", moduleName = "Cyclesync.quality_assessment"},
+	{org = "hp", packageName = "Cyclesync", moduleName = "Cyclesync.wallet"}
 ]
 
