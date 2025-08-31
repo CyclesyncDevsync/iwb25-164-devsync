@@ -1,33 +1,54 @@
+# +required The configuration file schema version
 schemaVersion: 1.2
-apiVersion: core.choreo.dev/v1beta1
-kind: ComponentConfig
-metadata:
-  name: cyclesync-backend
-  displayName: CycleSync Backend
-  description: Backend services for CycleSync
-  version: 1.0.0
-spec:
-  service:
-    name: cyclesync-backend
-    port: 8080
-  endpoints:
-    - name: main
+
+# +optional Incoming connection details for the component
+endpoints:
+  # Main API endpoint
+  - name: main-api
+    displayName: CycleSync Main API
+    service:
+      basePath: /api
       port: 8080
-      type: REST
-      networkVisibility: Public
-      context: /
-    - name: auth
+    type: REST
+    networkVisibilities: 
+      - Public
+    
+  # Authentication service endpoint
+  - name: auth-service
+    displayName: Authentication Service
+    service:
+      basePath: /auth
       port: 8084
-      type: REST
-      networkVisibility: Public
-      context: /auth
-    - name: wallet
+    type: REST
+    networkVisibilities: 
+      - Public
+    
+  # Wallet service endpoint
+  - name: wallet-service
+    displayName: Wallet Service
+    service:
+      basePath: /wallet
       port: 8097
-      type: REST
-      networkVisibility: Public
-      context: /wallet
-    - name: chat
+    type: REST
+    networkVisibilities: 
+      - Public
+    
+  # Notification service endpoint
+  - name: notification-service
+    displayName: Notification Service
+    service:
+      basePath: /notifications
+      port: 8087
+    type: REST
+    networkVisibilities: 
+      - Organization
+    
+  # WebSocket endpoint for chat
+  - name: chat-websocket
+    displayName: Chat WebSocket
+    service:
+      basePath: /chat
       port: 8094
-      type: WebSocket
-      networkVisibility: Public
-      context: /chat
+    type: WS
+    networkVisibilities: 
+      - Public
