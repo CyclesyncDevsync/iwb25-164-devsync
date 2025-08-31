@@ -4,10 +4,14 @@ import { UserManagementTable } from './UserManagementTable';
 import { RevenueChart } from './RevenueChart';
 import { SystemHealthMonitor } from './SystemHealthMonitor';
 import { SystemConfigPanel } from './SystemConfigPanel';
+import WalletBalance from '../shared/WalletBalance';
 
 export function SuperAdminDashboard() {
   return (
     <div className="space-y-6">
+      {/* Wallet Balance Section */}
+      <WalletBalance className="max-w-md" />
+      
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader>

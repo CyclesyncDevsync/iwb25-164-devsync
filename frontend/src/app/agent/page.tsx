@@ -8,6 +8,7 @@ import QuickActionCard from '@/components/agent/QuickActionCard';
 import AssignmentCard from '@/components/agent/AssignmentCard';
 import GPSTaskList from '@/components/agent/GPSTaskList';
 import { useAuth } from '@/hooks/useAuth';
+import WalletBalance from '@/components/shared/WalletBalance';
 
 interface Assignment {
   id: string;
@@ -269,6 +270,11 @@ const AgentDashboard = () => {
               </div>
               <div className="text-sm text-gray-600 dark:text-gray-300">Rating</div>
             </motion.div>
+          </div>
+
+          {/* Wallet Balance */}
+          <div className="mb-6">
+            <WalletBalance />
           </div>
 
           {/* Quick Actions */}
