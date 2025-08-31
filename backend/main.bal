@@ -32,7 +32,10 @@ import ballerinax/postgresql;
 import Cyclesync.database_config;
 
 configurable int port = 8080;
-public listener http:Listener server = check new (8080);
+
+listener http:Listener httpListener = new (port);
+
+public listener http:Listener server = httpListener;
 
 // Auth validation helper function
 function validateAuth(http:Request request, string? requiredRole = ()) returns auth:AuthResult|http:Response {
