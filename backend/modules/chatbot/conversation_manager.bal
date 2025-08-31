@@ -7,7 +7,7 @@ import ballerina/uuid;
 import ballerina/lang.value;
 
 # Manages conversation state and context
-public isolated class ConversationManager {
+public class ConversationManager {
     private final RedisConnector redis;
     private final int sessionTimeout;
     private final int maxHistorySize;
@@ -18,7 +18,7 @@ public isolated class ConversationManager {
     # Initialize conversation manager
     # + sessionTimeout - Session timeout in seconds (default: 1800 = 30 minutes)
     # + maxHistorySize - Maximum conversation history size (default: 50)
-    public isolated function init(int sessionTimeout = 1800, int maxHistorySize = 50) returns error? {
+    public function init(int sessionTimeout = 1800, int maxHistorySize = 50) returns error? {
         self.sessionTimeout = sessionTimeout;
         self.maxHistorySize = maxHistorySize;
         
@@ -38,7 +38,7 @@ public isolated class ConversationManager {
     # + userId - User ID
     # + metadata - Session metadata
     # + return - Session ID or error
-    public isolated function createSession(string userId, map<string>? metadata = ()) returns string|error {
+    public function createSession(string userId, map<string>? metadata = ()) returns string|error {
         string sessionId = uuid:createType4AsString();
         
         Session session = {
@@ -84,7 +84,7 @@ public isolated class ConversationManager {
     # Get session
     # + sessionId - Session ID
     # + return - Session or error
-    public isolated function getSession(string sessionId) returns Session|error {
+    public function getSession(string sessionId) returns Session|error {
         string sessionKey = self.sessionPrefix + sessionId;
         string? sessionJson = check self.redis.get(sessionKey);
         
@@ -110,7 +110,7 @@ public isolated class ConversationManager {
     # + sessionId - Session ID
     # + context - Updated context
     # + return - Error if any
-    public isolated function updateContext(string sessionId, ConversationContext context) returns error? {
+    public function updateContext(string sessionId, ConversationContext context) returns error? {
         Session session = check self.getSession(sessionId);
         
         session.context = context;
@@ -139,7 +139,7 @@ public isolated class ConversationManager {
     # + sessionId - Session ID
     # + message - Chat message
     # + return - Error if any
-    public isolated function addMessage(string sessionId, ChatMessage message) returns error? {
+    public function addMessage(string sessionId, ChatMessage message) returns error? {
         Session session = check self.getSession(sessionId);
         
         session.context.history.push(message);
@@ -152,7 +152,7 @@ public isolated class ConversationManager {
     # + sessionId - Session ID
     # + intent - Recognized intent
     # + return - Error if any
-    public isolated function updateIntent(string sessionId, Intent intent) returns error? {
+    public function updateIntent(string sessionId, Intent intent) returns error? {
         Session session = check self.getSession(sessionId);
         
         session.context.currentIntent = intent;
@@ -164,7 +164,7 @@ public isolated class ConversationManager {
     # + sessionId - Session ID
     # + variables - Variables to update
     # + return - Error if any
-    public isolated function updateVariables(string sessionId, map<json> variables) returns error? {
+    public function updateVariables(string sessionId, map<json> variables) returns error? {
         Session session = check self.getSession(sessionId);
         
         foreach var [key, value] in variables.entries() {
@@ -177,7 +177,7 @@ public isolated class ConversationManager {
     # Get conversation context
     # + sessionId - Session ID
     # + return - Conversation context or error
-    public isolated function getContext(string sessionId) returns ConversationContext|error {
+    public function getContext(string sessionId) returns ConversationContext|error {
         // Try to get from Redis first
         string contextKey = self.contextPrefix + sessionId;
         string? contextJson = check self.redis.get(contextKey);
@@ -196,7 +196,7 @@ public isolated class ConversationManager {
     # + sessionId - Session ID
     # + preferences - Updated preferences
     # + return - Error if any
-    public isolated function updatePreferences(string sessionId, UserPreferences preferences) returns error? {
+    public function updatePreferences(string sessionId, UserPreferences preferences) returns error? {
         Session session = check self.getSession(sessionId);
         
         session.context.preferences = preferences;
@@ -208,7 +208,7 @@ public isolated class ConversationManager {
     # + sessionId - Session ID
     # + count - Number of messages to retrieve
     # + return - Recent messages or error
-    public isolated function getRecentMessages(string sessionId, int count = 10) returns ChatMessage[]|error {
+    public function getRecentMessages(string sessionId, int count = 10) returns ChatMessage[]|error {
         Session session = check self.getSession(sessionId);
         
         int historyLength = session.context.history.length();
@@ -223,7 +223,7 @@ public isolated class ConversationManager {
     # Check if session is active
     # + sessionId - Session ID
     # + return - True if active, false otherwise
-    public isolated function isSessionActive(string sessionId) returns boolean {
+    public function isSessionActive(string sessionId) returns boolean {
         Session|error session = self.getSession(sessionId);
         if session is error {
             return false;
@@ -235,7 +235,7 @@ public isolated class ConversationManager {
     # Close session
     # + sessionId - Session ID
     # + return - Error if any
-    public isolated function closeSession(string sessionId) returns error? {
+    public function closeSession(string sessionId) returns error? {
         Session session = check self.getSession(sessionId);
         
         session.status = CLOSED;
@@ -252,7 +252,7 @@ public isolated class ConversationManager {
     # Get user's active sessions
     # + userId - User ID
     # + return - List of active session IDs
-    public isolated function getUserSessions(string userId) returns string[] {
+    public function getUserSessions(string userId) returns string[] {
         // TODO: Implement with Redis SCAN command
         // For now, return empty array
         return [];
@@ -260,7 +260,7 @@ public isolated class ConversationManager {
     
     # Clean expired sessions
     # + return - Number of cleaned sessions
-    public isolated function cleanExpiredSessions() returns int {
+    public function cleanExpiredSessions() returns int {
         // Redis handles expiration automatically with TTL
         return 0;
     }
@@ -268,7 +268,7 @@ public isolated class ConversationManager {
     # Get session analytics
     # + sessionId - Session ID
     # + return - Analytics data or error
-    public isolated function getSessionAnalytics(string sessionId) returns ChatAnalytics|error {
+    public function getSessionAnalytics(string sessionId) returns ChatAnalytics|error {
         Session session = check self.getSession(sessionId);
         
         map<int> intentCounts = {};
@@ -305,7 +305,7 @@ public isolated class ConversationManager {
     # + rating - User rating (1-5)
     # + feedback - Optional text feedback
     # + return - Error if any
-    public isolated function saveFeedback(string sessionId, int rating, string? feedback = ()) returns error? {
+    public function saveFeedback(string sessionId, int rating, string? feedback = ()) returns error? {
         Session session = check self.getSession(sessionId);
         
         session.context.variables["feedbackRating"] = rating;
