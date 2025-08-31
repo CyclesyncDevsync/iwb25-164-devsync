@@ -7,8 +7,9 @@ import ballerina/lang.'int as ints;
 
 // Simple pseudo-random number generator
 isolated function getRandomFloat() returns float {
-    int nano = time:utcNow()[1];
-    float normalized = <float>(nano % 1000000) / 1000000.0;
+    decimal nano = time:utcNow()[1];
+    int nanoInt = <int>nano;
+    float normalized = <float>(nanoInt % 1000000) / 1000000.0;
     return normalized;
 }
 

@@ -36,7 +36,7 @@ public class RedisConnector {
         self.cache[key] = value;
         
         if ttl is int {
-            time:Utc expiryTime = time:utcAddSeconds(time:utcNow(), ttl);
+            time:Utc expiryTime = time:utcAddSeconds(time:utcNow(), <time:Seconds>ttl);
             self.expiryTimes[key] = expiryTime;
         }
         
@@ -51,7 +51,7 @@ public class RedisConnector {
         if self.cache.hasKey(key) {
             if self.expiryTimes.hasKey(key) {
                 time:Utc expiryTime = self.expiryTimes.get(key);
-                if time:utcDiffSeconds(expiryTime, time:utcNow()) < 0 {
+                if time:utcDiffSeconds(expiryTime, time:utcNow()) < <time:Seconds>0 {
                     // Key has expired
                     _ = self.cache.remove(key);
                     _ = self.expiryTimes.remove(key);
@@ -86,7 +86,7 @@ public class RedisConnector {
             // Check if expired
             if self.expiryTimes.hasKey(key) {
                 time:Utc expiryTime = self.expiryTimes.get(key);
-                if time:utcDiffSeconds(expiryTime, time:utcNow()) < 0 {
+                if time:utcDiffSeconds(expiryTime, time:utcNow()) < <time:Seconds>0 {
                     // Key has expired
                     _ = self.cache.remove(key);
                     _ = self.expiryTimes.remove(key);
@@ -104,7 +104,7 @@ public class RedisConnector {
     # + return - True if expiration was set
     public function expire(string key, int seconds) returns boolean|error {
         if self.cache.hasKey(key) {
-            time:Utc expiryTime = time:utcAddSeconds(time:utcNow(), seconds);
+            time:Utc expiryTime = time:utcAddSeconds(time:utcNow(), <time:Seconds>seconds);
             self.expiryTimes[key] = expiryTime;
             return true;
         }
@@ -173,8 +173,8 @@ public class RedisConnector {
     
     # Close connection
     public function close() returns error? {
-        self.cache.clear();
-        self.expiryTimes.clear();
+        self.cache.removeAll();
+        self.expiryTimes.removeAll();
         return;
     }
 }
