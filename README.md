@@ -63,6 +63,11 @@ CircularSync revolutionizes the circular economy by connecting industrial waste 
 - **WebSocket:** Real-time bidding 
 - **Deployment:** Choreo Platform (WSO2)
 
+  ![WhatsApp Image 2025-09-01 at 01 52 29_3e7f0fee](https://github.com/user-attachments/assets/6bf153d0-8e09-403e-a37a-f66dade264c7)
+  ![WhatsApp Image 2025-09-01 at 01 52 56_15e9f180](https://github.com/user-attachments/assets/73e45daf-2776-4e16-a8ed-3057a61bdf03)
+
+
+
 ### Infrastructure & Security
 - **Cloud:** Choreo Platform with auto-scaling
 - **Database:** Neon PostgreSQL with connection pooling
