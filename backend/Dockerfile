@@ -1,27 +1,33 @@
-# Use official Ballerina runtime
-FROM ballerina/ballerina:2201.8.5
-
-# Create a non-root user and group
-RUN groupadd -g 10014 cyclesync && \
-    useradd -u 10014 -g cyclesync -m -s /bin/bash cyclesync
+# Multi-stage build for Choreo
+FROM ballerina/ballerina:2201.8.5 AS builder
 
 # Set working directory
-WORKDIR /home/cyclesync
+WORKDIR /app
 
-# Copy project files with correct ownership
-COPY --chown=cyclesync:cyclesync . .
+# Copy project files
+COPY . .
 
-# Switch to non-root user for building
-USER cyclesync
+# Build the project
+RUN bal build
 
-# Remove cloud.toml if exists to avoid cloud extension issues
-RUN rm -f Cloud.toml || true
+# Runtime stage
+FROM ballerina/ballerina:2201.8.5-openjdk17
 
-# Build the Ballerina project without cloud extension
-RUN bal build --skip-tests --offline || bal build --skip-tests
+# Create non-root user
+RUN addgroup -g 10014 choreo && \
+    adduser -D -u 10014 -G choreo choreo
 
-# Expose all service ports
-EXPOSE 9090 8084 8085 8086 8087 8088 8091 8097 9095
+# Set working directory
+WORKDIR /home/choreo
 
-# Run the application as non-root user
-CMD ["java", "-jar", "target/bin/Cyclesync.jar"]
+# Copy built jar from builder stage
+COPY --from=builder --chown=choreo:choreo /app/target/bin/*.jar app.jar
+
+# Switch to non-root user
+USER 10014
+
+# Expose ports
+EXPOSE 8080 8084 8088 8091 8092 8093 8094 8095 8096 8097 9102
+
+# Run the application
+CMD ["java", "-jar", "app.jar"]
