@@ -6,6 +6,7 @@ import { Providers } from "../components/common/Providers";
 import { MainLayout } from "../components/layout/MainLayout";
 
 import ChatBot from "@/components/ChatBot";
+import { Toaster } from 'react-hot-toast';
 
 
 // Using Inter as a replacement for Geist since it's more widely supported
@@ -42,6 +43,7 @@ export default function RootLayout({
         <Providers>
           <MainLayout>{children}</MainLayout>
           <ChatBot />
+          <Toaster />
         </Providers>
       </body>
     </html>

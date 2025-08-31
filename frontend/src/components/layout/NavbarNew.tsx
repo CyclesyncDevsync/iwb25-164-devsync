@@ -21,7 +21,8 @@ import { useAuth } from '../../hooks/useAuth';
 import { ROUTES, USER_ROLES } from '../../constants';
 import { Button } from '../../components/ui/Button';
 import { NavDarkModeToggle } from '../../components/ui/DarkModeToggle';
-import { NotificationDropdown, useNotifications } from './NotificationDropdown';
+import { NotificationDropdown } from './NotificationDropdown';
+import { useNotifications } from '../../hooks/useNotifications';
 import { NavbarSearch } from './NavbarSearch';
 import { UserAvatar } from '../ui/UserAvatar';
 import { Breadcrumb, useBreadcrumbs } from './Breadcrumb';
@@ -223,6 +224,7 @@ export function Navbar() {
             {navbarConfig.showNotifications && isAuthenticated && (
               <NotificationDropdown
                 notifications={notifications}
+                unreadCount={unreadCount}
                 onMarkAsRead={markAsRead}
                 onMarkAllAsRead={markAllAsRead}
                 onClearAll={clearAll}

@@ -4,7 +4,7 @@ import ballerina/time;
 import ballerinax/postgresql;
 
 # API endpoints for material submission management
-service class MaterialSubmissionAPI {
+public service class MaterialSubmissionAPI {
     private final postgresql:Client dbClient;
 
     function init(postgresql:Client dbClient) {
@@ -61,14 +61,14 @@ service class MaterialSubmissionAPI {
                 ms.submission_status,
                 ms.created_at,
                 ms.updated_at,
-                u.name as supplier_name,
+                COALESCE(u.first_name || ' ' || u.last_name, 'Unknown Supplier') as supplier_name,
                 u.email as supplier_email,
                 aa.agent_id,
-                agent.name as agent_name
+                COALESCE(agent.first_name || ' ' || agent.last_name, 'Unknown Agent') as agent_name
             FROM material_submissions ms
-            LEFT JOIN users u ON ms.supplier_id = u.id
-            LEFT JOIN agent_assignments aa ON ms.workflow_id = aa.workflow_id
-            LEFT JOIN users agent ON aa.agent_id = agent.id
+            LEFT JOIN users u ON ms.supplier_id = u.asgardeo_id
+            LEFT JOIN agent_assignments aa ON ms.id = aa.material_id
+            LEFT JOIN users agent ON aa.agent_id = agent.asgardeo_id
             WHERE 1=1
         `;
 
@@ -273,6 +273,159 @@ service class MaterialSubmissionAPI {
         
         return stats;
     }
+
+    # Update submission status when agent is assigned
+    # + submissionId - The ID of the submission
+    # + payload - Update payload containing agent assignment details
+    # + return - Success message or error
+    isolated resource function put submissions/[string submissionId]/status(SubmissionStatusUpdate payload) 
+        returns http:Ok|http:BadRequest|http:NotFound|error {
+        
+        // Check if submission exists
+        sql:ParameterizedQuery checkQuery = `
+            SELECT id, workflow_id FROM material_submissions 
+            WHERE id = ${submissionId}
+        `;
+        
+        stream<record {|string id; string workflow_id;|}, sql:Error?> resultStream = self.dbClient->query(checkQuery);
+        record {|record {|string id; string workflow_id;|} value;|}? result = check resultStream.next();
+        check resultStream.close();
+        
+        record {|string id; string workflow_id;|}? submission = result is () ? () : result.value;
+        
+        if submission is () {
+            return <http:NotFound>{
+                body: {
+                    message: "Submission not found"
+                }
+            };
+        }
+
+        // Validate status transition
+        string? agentId = payload?.agent_id;
+        time:Utc? verificationDate = payload?.verification_date;
+        string? additionalDetails = payload?.additional_details;
+        
+        if payload.submission_status == "assigned" && agentId is () {
+            return <http:BadRequest>{
+                body: {
+                    message: "Agent ID is required when status is 'assigned'"
+                }
+            };
+        }
+
+        // Build parameterized update query
+        sql:ParameterizedQuery updateQuery;
+        
+        if payload.submission_status == "assigned" && agentId is string {
+            // Update with agent assignment
+            if verificationDate is time:Utc && additionalDetails is string {
+                updateQuery = `UPDATE material_submissions 
+                    SET submission_status = ${payload.submission_status},
+                        agent_assigned = true,
+                        agent_id = ${agentId},
+                        verification_date = ${verificationDate},
+                        additional_details = ${additionalDetails},
+                        updated_at = CURRENT_TIMESTAMP
+                    WHERE id = ${submissionId}`;
+            } else if verificationDate is time:Utc {
+                updateQuery = `UPDATE material_submissions 
+                    SET submission_status = ${payload.submission_status},
+                        agent_assigned = true,
+                        agent_id = ${agentId},
+                        verification_date = ${verificationDate},
+                        updated_at = CURRENT_TIMESTAMP
+                    WHERE id = ${submissionId}`;
+            } else if additionalDetails is string {
+                updateQuery = `UPDATE material_submissions 
+                    SET submission_status = ${payload.submission_status},
+                        agent_assigned = true,
+                        agent_id = ${agentId},
+                        additional_details = ${additionalDetails},
+                        updated_at = CURRENT_TIMESTAMP
+                    WHERE id = ${submissionId}`;
+            } else {
+                updateQuery = `UPDATE material_submissions 
+                    SET submission_status = ${payload.submission_status},
+                        agent_assigned = true,
+                        agent_id = ${agentId},
+                        updated_at = CURRENT_TIMESTAMP
+                    WHERE id = ${submissionId}`;
+            }
+        } else {
+            // Update status only
+            if verificationDate is time:Utc && additionalDetails is string {
+                updateQuery = `UPDATE material_submissions 
+                    SET submission_status = ${payload.submission_status},
+                        verification_date = ${verificationDate},
+                        additional_details = ${additionalDetails},
+                        updated_at = CURRENT_TIMESTAMP
+                    WHERE id = ${submissionId}`;
+            } else if verificationDate is time:Utc {
+                updateQuery = `UPDATE material_submissions 
+                    SET submission_status = ${payload.submission_status},
+                        verification_date = ${verificationDate},
+                        updated_at = CURRENT_TIMESTAMP
+                    WHERE id = ${submissionId}`;
+            } else if additionalDetails is string {
+                updateQuery = `UPDATE material_submissions 
+                    SET submission_status = ${payload.submission_status},
+                        additional_details = ${additionalDetails},
+                        updated_at = CURRENT_TIMESTAMP
+                    WHERE id = ${submissionId}`;
+            } else {
+                updateQuery = `UPDATE material_submissions 
+                    SET submission_status = ${payload.submission_status},
+                        updated_at = CURRENT_TIMESTAMP
+                    WHERE id = ${submissionId}`;
+            }
+        }
+        
+        sql:ExecutionResult updateResult = check self.dbClient->execute(updateQuery);
+        
+        if updateResult.affectedRowCount == 0 {
+            return <http:BadRequest>{
+                body: {
+                    message: "Failed to update submission"
+                }
+            };
+        }
+
+        // If agent is assigned, also update the agent_assignments table
+        if payload.submission_status == "assigned" && agentId is string && submission is record {|string id; string workflow_id;|} {
+            sql:ParameterizedQuery assignmentQuery = `
+                INSERT INTO agent_assignments (
+                    workflow_id, 
+                    material_id,
+                    agent_id, 
+                    assigned_at, 
+                    status
+                )
+                VALUES (
+                    ${submission.workflow_id},
+                    ${submissionId},
+                    ${agentId}, 
+                    ${time:utcNow()}, 
+                    'assigned'
+                )
+                ON CONFLICT (workflow_id) 
+                DO UPDATE SET 
+                    agent_id = ${agentId},
+                    assigned_at = ${time:utcNow()},
+                    status = 'assigned'
+            `;
+            
+            _ = check self.dbClient->execute(assignmentQuery);
+        }
+        
+        return <http:Ok>{
+            body: {
+                message: "Submission status updated successfully",
+                submission_id: submissionId,
+                status: payload.submission_status
+            }
+        };
+    }
 }
 
 # Type definitions for API responses
@@ -402,15 +555,23 @@ type AssignedAgentResponse record {|
     string name;
 |};
 
-type SubmissionStats record {|
+public type SubmissionStats record {|
     int totalSubmissions;
     int agentVisits;
     int dropOffs;
     int pendingVerifications;
 |};
 
-type WarehouseStats record {|
+public type WarehouseStats record {|
     string name;
     string address;
     int dropOffRequests;
+|};
+
+# Type for submission status update payload
+public type SubmissionStatusUpdate record {|
+    string submission_status;
+    string? agent_id?;
+    time:Utc? verification_date?;
+    string? additional_details?;
 |};

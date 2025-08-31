@@ -9,11 +9,25 @@ const nextConfig: NextConfig = {
     domains: ['images.unsplash.com', 'cloudinary.com'],
   },
   reactStrictMode: true,
+
+  // No experimental settings for now
   async rewrites() {
     return [
       {
         source: '/api/auction/:path*',
         destination: 'http://localhost:8096/api/auction/:path*',
+      },
+      {
+        source: '/backend/agent/:path*',
+        destination: 'http://localhost:8080/api/agent/:path*',
+      },
+      {
+        source: '/backend/notifications/:path*',
+        destination: 'http://localhost:9102/api/notifications/:path*',
+      },
+      {
+        source: '/backend/material-submissions/:path*',
+        destination: 'http://localhost:8086/api/material-submissions/:path*',
       },
     ];
   },

@@ -22,6 +22,8 @@ configurable boolean dbSsl = true;
 // Database client
 postgresql:Client? dbClient = ();
 
+// Import the type from material_submission_api.bal which already has this type defined
+
 // Main material workflow service
 @http:ServiceConfig {
     cors: {
@@ -35,12 +37,22 @@ service /api/material/workflow on workflowListener {
     
     function init() returns error? {
         // Initialize database connection
+        postgresql:Options options = {};
+        if (dbSsl) {
+            options = {
+                ssl: {
+                    mode: postgresql:REQUIRE
+                }
+            };
+        }
+        
         dbClient = check new (
             host = dbHost,
             username = dbUsername, 
             password = dbPassword,
             database = dbName,
-            port = dbPort
+            port = dbPort,
+            options = options
         );
         
         log:printInfo("Material Workflow Service initialized successfully with database connection");
@@ -403,6 +415,213 @@ service /api/material/workflow on workflowListener {
             "message": "Material Workflow Service status",
             "database": dbConnected ? "connected" : "disconnected",
             "timestamp": time:utcNow().toString()
+        };
+    }
+}
+
+// Material Submission API Service
+@http:ServiceConfig {
+    cors: {
+        allowOrigins: ["http://localhost:3000", "http://192.168.80.1:3000", "https://cyclesync.com"],
+        allowCredentials: true,
+        allowHeaders: ["Authorization", "Content-Type"],
+        allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+    }
+}
+service /api/material\-submissions on workflowListener {
+    
+    # Update submission status when agent is assigned
+    # + submissionId - The ID of the submission
+    # + payload - Update payload containing agent assignment details
+    # + return - Success message or error
+    resource function put [string submissionId]/status(@http:Payload SubmissionStatusUpdate payload) 
+        returns http:Ok|http:BadRequest|http:NotFound|error {
+        
+        postgresql:Client? dbClientLocal = dbClient;
+        if dbClientLocal is () {
+            return error("Database client not initialized");
+        }
+        
+        // Convert submissionId to integer
+        int submissionIdInt = check int:fromString(submissionId);
+        
+        // Check if submission exists
+        sql:ParameterizedQuery checkQuery = `
+            SELECT id, workflow_id FROM material_submissions 
+            WHERE id = ${submissionIdInt}
+        `;
+        
+        stream<record {|int id; string workflow_id;|}, sql:Error?> resultStream = dbClientLocal->query(checkQuery);
+        record {|record {|int id; string workflow_id;|} value;|}? result = check resultStream.next();
+        check resultStream.close();
+        
+        record {|int id; string workflow_id;|}? submission = result is () ? () : result.value;
+        
+        if submission is () {
+            return <http:NotFound>{
+                body: {
+                    message: "Submission not found"
+                }
+            };
+        }
+
+        // Validate status transition
+        string? agentId = payload?.agent_id;
+        time:Utc? verificationDate = payload?.verification_date;
+        string? additionalDetails = payload?.additional_details;
+        
+        if payload.submission_status == "assigned" && agentId is () {
+            return <http:BadRequest>{
+                body: {
+                    message: "Agent ID is required when status is 'assigned'"
+                }
+            };
+        }
+
+        // Build parameterized update query
+        sql:ParameterizedQuery updateQuery;
+        
+        if payload.submission_status == "assigned" && agentId is string {
+            // Update with agent assignment
+            if verificationDate is time:Utc && additionalDetails is string {
+                updateQuery = `UPDATE material_submissions 
+                    SET submission_status = ${payload.submission_status},
+                        agent_assigned = true,
+                        agent_id = ${agentId},
+                        verification_date = ${verificationDate},
+                        additional_details = ${additionalDetails}::jsonb,
+                        updated_at = CURRENT_TIMESTAMP
+                    WHERE id = ${submissionIdInt}`;
+            } else if verificationDate is time:Utc {
+                updateQuery = `UPDATE material_submissions 
+                    SET submission_status = ${payload.submission_status},
+                        agent_assigned = true,
+                        agent_id = ${agentId},
+                        verification_date = ${verificationDate},
+                        updated_at = CURRENT_TIMESTAMP
+                    WHERE id = ${submissionIdInt}`;
+            } else if additionalDetails is string {
+                updateQuery = `UPDATE material_submissions 
+                    SET submission_status = ${payload.submission_status},
+                        agent_assigned = true,
+                        agent_id = ${agentId},
+                        additional_details = ${additionalDetails}::jsonb,
+                        updated_at = CURRENT_TIMESTAMP
+                    WHERE id = ${submissionIdInt}`;
+            } else {
+                updateQuery = `UPDATE material_submissions 
+                    SET submission_status = ${payload.submission_status},
+                        agent_assigned = true,
+                        agent_id = ${agentId},
+                        updated_at = CURRENT_TIMESTAMP
+                    WHERE id = ${submissionIdInt}`;
+            }
+        } else {
+            // Update status only
+            if verificationDate is time:Utc && additionalDetails is string {
+                updateQuery = `UPDATE material_submissions 
+                    SET submission_status = ${payload.submission_status},
+                        verification_date = ${verificationDate},
+                        additional_details = ${additionalDetails}::jsonb,
+                        updated_at = CURRENT_TIMESTAMP
+                    WHERE id = ${submissionIdInt}`;
+            } else if verificationDate is time:Utc {
+                updateQuery = `UPDATE material_submissions 
+                    SET submission_status = ${payload.submission_status},
+                        verification_date = ${verificationDate},
+                        updated_at = CURRENT_TIMESTAMP
+                    WHERE id = ${submissionIdInt}`;
+            } else if additionalDetails is string {
+                updateQuery = `UPDATE material_submissions 
+                    SET submission_status = ${payload.submission_status},
+                        additional_details = ${additionalDetails}::jsonb,
+                        updated_at = CURRENT_TIMESTAMP
+                    WHERE id = ${submissionIdInt}`;
+            } else {
+                updateQuery = `UPDATE material_submissions 
+                    SET submission_status = ${payload.submission_status},
+                        updated_at = CURRENT_TIMESTAMP
+                    WHERE id = ${submissionIdInt}`;
+            }
+        }
+        
+        sql:ExecutionResult updateResult = check dbClientLocal->execute(updateQuery);
+        
+        if updateResult.affectedRowCount == 0 {
+            return <http:BadRequest>{
+                body: {
+                    message: "Failed to update submission"
+                }
+            };
+        }
+
+        // If agent is assigned, also update the agent_assignments table
+        if payload.submission_status == "assigned" && agentId is string && submission is record {|int id; string workflow_id;|} {
+            // Get supplier_id from the submission
+            sql:ParameterizedQuery supplierQuery = `
+                SELECT supplier_id FROM material_submissions 
+                WHERE id = ${submissionIdInt}
+            `;
+            string supplierId = check dbClientLocal->queryRow(supplierQuery);
+            
+            // Generate assignment ID
+            string assignmentId = uuid:createType1AsString();
+            
+            // First check if assignment already exists
+            sql:ParameterizedQuery checkExistingQuery = `
+                SELECT assignment_id FROM agent_assignments 
+                WHERE agent_id = ${agentId} 
+                AND supplier_id = ${supplierId} 
+                AND material_id = ${submissionIdInt}::text
+            `;
+            
+            stream<record {|string assignment_id;|}, sql:Error?> existingStream = dbClientLocal->query(checkExistingQuery);
+            record {|record {|string assignment_id;|} value;|}? existing = check existingStream.next();
+            check existingStream.close();
+            
+            if existing is () {
+                // No existing assignment, insert new one
+                sql:ParameterizedQuery assignmentQuery = `
+                    INSERT INTO agent_assignments (
+                        assignment_id,
+                        agent_id,
+                        supplier_id,
+                        material_id,
+                        status,
+                        created_at
+                    )
+                    VALUES (
+                        ${assignmentId},
+                        ${agentId},
+                        ${supplierId},
+                        ${submissionIdInt}::text,
+                        'pending',
+                        CURRENT_TIMESTAMP
+                    )
+                `;
+                
+                _ = check dbClientLocal->execute(assignmentQuery);
+            } else {
+                // Update existing assignment
+                sql:ParameterizedQuery updateAssignmentQuery = `
+                    UPDATE agent_assignments 
+                    SET status = 'pending',
+                        updated_at = CURRENT_TIMESTAMP
+                    WHERE agent_id = ${agentId} 
+                    AND supplier_id = ${supplierId} 
+                    AND material_id = ${submissionIdInt}::text
+                `;
+                
+                _ = check dbClientLocal->execute(updateAssignmentQuery);
+            }
+        }
+        
+        return <http:Ok>{
+            body: {
+                message: "Submission status updated successfully",
+                submission_id: submissionId,
+                status: payload.submission_status
+            }
         };
     }
 }
