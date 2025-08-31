@@ -18,16 +18,6 @@ name = "websocket"
 version = "2.9.0"
 
 [[dependency]]
-org = "ballerina"
-name = "socket"
-version = "1.5.0"
-
-[[dependency]]
-org = "ballerina"
-name = "random"
-version = "1.4.0"
-
-[[dependency]]
 org = "ballerinax"
 name = "googleapis.vision"
 version = "1.6.0"

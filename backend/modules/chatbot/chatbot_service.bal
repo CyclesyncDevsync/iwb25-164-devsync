@@ -19,11 +19,11 @@ type ChatbotConfig record {|
 |};
 
 # Main chatbot WebSocket service
-@websocket:ServiceConfig {
+@ws:ServiceConfig {
     idleTimeout: 300,
     maxFrameSize: 65536
 }
-service /chat on new websocket:Listener(websocketPort) {
+service /chat on new ws:Listener(websocketPort) {
     
     private final ChatbotConfig config;
     private final GeminiConnector aiConnector;
