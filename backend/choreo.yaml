@@ -62,15 +62,35 @@ env:
   - name: GOOGLE_VISION_API_KEY
     value: "${choreo:env:GOOGLE_VISION_API_KEY}"
   
-  # Service Ports
-  - name: MAIN_SERVICE_PORT
-    value: "9090"
-  - name: PRICING_SERVICE_PORT
-    value: "8088"
-  - name: AUTH_SERVICE_PORT
-    value: "8084"
-  - name: NOTIFICATION_SERVICE_PORT
-    value: "8087"
+  # Asgardeo OAuth Configuration
+  - name: ASGARDEO_BASE_URL
+    value: "${choreo:env:ASGARDEO_BASE_URL}"
+  - name: ASGARDEO_CLIENT_ID
+    value: "${choreo:env:ASGARDEO_CLIENT_ID}"
+  - name: ASGARDEO_CLIENT_SECRET
+    value: "${choreo:env:ASGARDEO_CLIENT_SECRET}"
+  - name: ASGARDEO_REDIRECT_URI
+    value: "${choreo:env:ASGARDEO_REDIRECT_URI}"
+  
+  # JWT and Session
+  - name: JWT_SECRET
+    value: "${choreo:env:JWT_SECRET}"
+  
+  # Redis Configuration (Optional)
+  - name: REDIS_HOST
+    value: "${choreo:env:REDIS_HOST}"
+  - name: REDIS_PORT
+    value: "${choreo:env:REDIS_PORT}"
+  - name: REDIS_PASSWORD
+    value: "${choreo:env:REDIS_PASSWORD}"
+  
+  # Application URLs
+  - name: FRONTEND_URL
+    value: "${choreo:env:FRONTEND_URL}"
+  - name: BACKEND_URL
+    value: "${choreo:env:BACKEND_URL}"
+  - name: ENVIRONMENT
+    value: "${choreo:env:ENVIRONMENT}"
 
 # Health check configuration
 healthCheck:
