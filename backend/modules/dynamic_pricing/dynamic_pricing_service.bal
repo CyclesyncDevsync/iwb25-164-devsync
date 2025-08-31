@@ -11,7 +11,7 @@ import ballerina/cache;
         allowHeaders: ["Content-Type", "Authorization"]
     }
 }
-service /pricing on new http:Listener(check int:fromString(PRICING_SERVICE_PORT)) {
+service /pricing on new http:Listener(PRICING_SERVICE_PORT) {
     
     private final PricingAlgorithms pricingEngine;
     private final MarketDataAnalyzer marketAnalyzer;
