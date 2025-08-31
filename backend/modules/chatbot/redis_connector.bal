@@ -5,7 +5,7 @@ import ballerina/tcp;
 import ballerina/log;
 
 # Redis connector for session management and caching
-public isolated class RedisConnector {
+public class RedisConnector {
     private final tcp:Client tcpClient;
     private final string host;
     private final int port;
@@ -17,7 +17,7 @@ public isolated class RedisConnector {
     # + port - Redis port  
     # + password - Redis password (optional)
     # + database - Redis database number
-    public isolated function init(string host = "localhost", int port = 6379, string? password = (), int database = 1) returns error? {
+    public function init(string host = "localhost", int port = 6379, string? password = (), int database = 1) returns error? {
         self.host = host;
         self.port = port;
         self.password = password;
@@ -44,7 +44,7 @@ public isolated class RedisConnector {
     # + value - Value to store
     # + ttl - Time to live in seconds (optional)
     # + return - OK if successful
-    public isolated function set(string key, string value, int? ttl = ()) returns string|error {
+    public function set(string key, string value, int? ttl = ()) returns string|error {
         string[] command = ["SET", key, value];
         
         if ttl is int {
@@ -58,7 +58,7 @@ public isolated class RedisConnector {
     # Get value by key
     # + key - Redis key
     # + return - Value or nil if not found
-    public isolated function get(string key) returns string?|error {
+    public function get(string key) returns string?|error {
         string|error result = check self.execute(["GET", key]);
         if result is error || result == "(nil)" {
             return ();
@@ -69,7 +69,7 @@ public isolated class RedisConnector {
     # Delete key(s)
     # + keys - Key(s) to delete
     # + return - Number of keys deleted
-    public isolated function del(string... keys) returns int|error {
+    public function del(string... keys) returns int|error {
         string[] command = ["DEL"];
         command.push(...keys);
         string result = check self.execute(command);
@@ -79,7 +79,7 @@ public isolated class RedisConnector {
     # Check if key exists
     # + key - Redis key
     # + return - True if exists
-    public isolated function exists(string key) returns boolean|error {
+    public function exists(string key) returns boolean|error {
         string result = check self.execute(["EXISTS", key]);
         int exists = check int:fromString(result);
         return exists == 1;
@@ -89,7 +89,7 @@ public isolated class RedisConnector {
     # + key - Redis key
     # + seconds - TTL in seconds
     # + return - True if expiration was set
-    public isolated function expire(string key, int seconds) returns boolean|error {
+    public function expire(string key, int seconds) returns boolean|error {
         string result = check self.execute(["EXPIRE", key, seconds.toString()]);
         int success = check int:fromString(result);
         return success == 1;
@@ -98,7 +98,7 @@ public isolated class RedisConnector {
     # Increment counter
     # + key - Redis key
     # + return - Value after increment
-    public isolated function incr(string key) returns int|error {
+    public function incr(string key) returns int|error {
         string result = check self.execute(["INCR", key]);
         return check int:fromString(result);
     }
@@ -107,7 +107,7 @@ public isolated class RedisConnector {
     # + key - Redis key
     # + field - Hash field
     # + return - Field value or nil
-    public isolated function hget(string key, string 'field) returns string?|error {
+    public function hget(string key, string 'field) returns string?|error {
         string|error result = check self.execute(["HGET", key, 'field]);
         if result is error || result == "(nil)" {
             return ();
@@ -120,7 +120,7 @@ public isolated class RedisConnector {
     # + field - Hash field
     # + value - Field value
     # + return - 1 if new field, 0 if updated
-    public isolated function hset(string key, string 'field, string value) returns int|error {
+    public function hset(string key, string 'field, string value) returns int|error {
         string result = check self.execute(["HSET", key, 'field, value]);
         return check int:fromString(result);
     }
@@ -128,7 +128,7 @@ public isolated class RedisConnector {
     # Get all hash fields
     # + key - Redis key
     # + return - Map of field-value pairs
-    public isolated function hgetall(string key) returns map<string>|error {
+    public function hgetall(string key) returns map<string>|error {
         string[] result = check self.executeArray(["HGETALL", key]);
         map<string> hashMap = {};
         
@@ -144,19 +144,13 @@ public isolated class RedisConnector {
     # Execute Redis command
     # + command - Command array
     # + return - Command result
-    isolated function execute(string[] command) returns string|error {
+    function execute(string[] command) returns string|error {
         // Build RESP protocol message
         string message = self.buildRespMessage(command);
         
         // Send command
         byte[] messageBytes = message.toBytes();
-        error? writeResult;
-        lock {
-            writeResult = self.tcpClient->writeBytes(messageBytes);
-        }
-        if writeResult is error {
-            return writeResult;
-        }
+        check self.tcpClient->writeBytes(messageBytes);
         
         // Read complete response
         string responseStr = check self.readCompleteResponse();
@@ -166,16 +160,9 @@ public isolated class RedisConnector {
     
     # Read complete Redis response
     # + return - Complete response string
-    isolated function readCompleteResponse() returns string|error {
+    function readCompleteResponse() returns string|error {
         // Read first part to determine response type and size
-        byte[]|error readResult;
-        lock {
-            readResult = self.tcpClient->readBytes();
-        }
-        if readResult is error {
-            return readResult;
-        }
-        byte[] initialBytes = readResult;
+        byte[] initialBytes = check self.tcpClient->readBytes();
         string response = check string:fromBytes(initialBytes);
         
         // If it's a bulk string, we might need to read more
@@ -192,14 +179,7 @@ public isolated class RedisConnector {
                     
                     // Read more if needed
                     while response.length() < totalExpected {
-                        byte[]|error moreResult;
-                        lock {
-                            moreResult = self.tcpClient->readBytes();
-                        }
-                        if moreResult is error {
-                            return moreResult;
-                        }
-                        byte[] moreBytes = moreResult;
+                        byte[] moreBytes = check self.tcpClient->readBytes();
                         string moreData = check string:fromBytes(moreBytes);
                         response = response + moreData;
                     }
@@ -213,16 +193,10 @@ public isolated class RedisConnector {
     # Execute command returning array
     # + command - Command array
     # + return - Array result
-    isolated function executeArray(string[] command) returns string[]|error {
+    function executeArray(string[] command) returns string[]|error {
         string message = self.buildRespMessage(command);
         byte[] messageBytes = message.toBytes();
-        error? writeResult;
-        lock {
-            writeResult = self.tcpClient->writeBytes(messageBytes);
-        }
-        if writeResult is error {
-            return writeResult;
-        }
+        check self.tcpClient->writeBytes(messageBytes);
         
         string responseStr = check self.readCompleteResponse();
         
@@ -319,13 +293,13 @@ public isolated class RedisConnector {
     
     # Check connection health
     # + return - True if connected
-    public isolated function ping() returns boolean|error {
+    public function ping() returns boolean|error {
         string response = check self.execute(["PING"]);
         return response == "PONG";
     }
     
     # Close connection
-    public isolated function close() returns error? {
+    public function close() returns error? {
         return self.tcpClient->close();
     }
 }
