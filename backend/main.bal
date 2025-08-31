@@ -38,7 +38,7 @@ listener http:Listener httpListener = new (port);
 
 public listener http:Listener server = httpListener;
 
-// Explicit service declaration for Choreo endpoint detection
+// Health check service for Choreo
 @http:ServiceConfig {
     cors: {
         allowOrigins: ["*"],
@@ -48,13 +48,15 @@ public listener http:Listener server = httpListener;
         maxAge: 86400
     }
 }
-service / on httpListener {
+service /healthcheck on httpListener {
     
-    resource function get health() returns json {
+    resource function get .() returns json {
+        boolean dbConnected = database_config:isDatabaseConnected();
         return {
             status: "healthy",
             message: "CycleSync Backend is running",
-            timestamp: time:utcNow().toString()
+            timestamp: time:utcNow().toString(),
+            database: dbConnected ? "connected" : "disconnected"
         };
     }
 }
@@ -141,8 +143,8 @@ function init() {
     log:printInfo("Chatbot Health Check initialized on http://localhost:8095/health");
 }
 
-// Health check endpoint
-service / on server {
+// Main API service
+service /api on server {
     resource function get health() returns json {
         boolean dbConnected = database_config:isDatabaseConnected();
         return {
