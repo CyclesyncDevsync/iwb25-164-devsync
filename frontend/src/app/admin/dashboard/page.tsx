@@ -3,6 +3,7 @@ import DashboardLayout from '../../../components/layout/DashboardLayout';
 import { SuperAdminDashboard } from '../../../components/admin/SuperAdminDashboard';
 import { AdminOperationsDashboard } from '../../../components/admin/AdminOperationsDashboard';
 import { AdminNotificationSystem } from '../../../components/admin/AdminNotificationSystem';
+import AdminChatBot from '../../../components/admin/AdminChatBot';
 
 export default function AdminDashboardPage() {
   return (
@@ -13,6 +14,7 @@ export default function AdminDashboardPage() {
         <AdminOperationsDashboard />
         <AdminNotificationSystem />
       </div>
+      <AdminChatBot />
     </DashboardLayout>
   );
 }

@@ -499,8 +499,11 @@ dependencies = [
 modules = [
 	{org = "hp", packageName = "Cyclesync", moduleName = "Cyclesync"},
 	{org = "hp", packageName = "Cyclesync", moduleName = "Cyclesync.agent_assignment"},
+	{org = "hp", packageName = "Cyclesync", moduleName = "Cyclesync.agent_assignment.disabled"},
 	{org = "hp", packageName = "Cyclesync", moduleName = "Cyclesync.agent_review"},
+	{org = "hp", packageName = "Cyclesync", moduleName = "Cyclesync.appointment_scheduling.disabled"},
 	{org = "hp", packageName = "Cyclesync", moduleName = "Cyclesync.auction"},
+	{org = "hp", packageName = "Cyclesync", moduleName = "Cyclesync.auction_integration.disabled"},
 	{org = "hp", packageName = "Cyclesync", moduleName = "Cyclesync.auth"},
 	{org = "hp", packageName = "Cyclesync", moduleName = "Cyclesync.chatbot"},
 	{org = "hp", packageName = "Cyclesync", moduleName = "Cyclesync.database"},

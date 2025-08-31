@@ -1,0 +1,45 @@
+# Choreo deployment configuration
+# Copy this to Config.toml when deploying to Choreo
+
+[database_config]
+host = "${env:DB_HOST}"
+port = ${env:DB_PORT}
+username = "${env:DB_USERNAME}"
+password = "${env:DB_PASSWORD}"
+dbName = "${env:DB_NAME}"
+connectionPool.maxOpenConnections = 10
+connectionPool.maxConnectionLifeTime = 30.0
+connectionPool.minIdleConnections = 2
+options.useSSL = true
+
+[api_keys]
+geminiApiKey = "${env:GEMINI_API_KEY}"
+googleVisionApiKey = "${env:GOOGLE_VISION_API_KEY}"
+
+[service_ports]
+MAIN_SERVICE_PORT = "${env:MAIN_SERVICE_PORT}"
+AUTH_SERVICE_PORT = "${env:AUTH_SERVICE_PORT}"
+AGENT_SERVICE_PORT = "8085"
+WORKFLOW_SERVICE_PORT = "8086"
+NOTIFICATION_SERVICE_PORT = "${env:NOTIFICATION_SERVICE_PORT}"
+PRICING_SERVICE_PORT = "${env:PRICING_SERVICE_PORT}"
+DEMAND_SERVICE_PORT = "8089"
+QUALITY_SERVICE_PORT = "8090"
+AUCTION_SERVICE_PORT = "8091"
+
+[redis_config]
+host = "${env:REDIS_HOST}"
+port = ${env:REDIS_PORT}
+password = "${env:REDIS_PASSWORD}"
+database = 0
+connectionPoolSize = 10
+isClusterConnection = false
+isSecureConnection = true
+
+[chatbot_config]
+geminiApiKey = "${env:GEMINI_API_KEY}"
+sessionTimeout = 1800
+maxConnections = 1000
+websocketPort = 9095
+enableCORS = true
+allowedOrigins = ["https://*.choreo.dev", "https://cyclesync.app"]

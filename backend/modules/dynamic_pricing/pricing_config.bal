@@ -43,14 +43,14 @@ public const map<map<float>> SEASONAL_FACTORS = {
     }
 };
 
-// Base Material Prices (per kg in currency units)
+// Base Material Prices (per kg in LKR)
 public const map<float> BASE_MATERIAL_PRICES = {
-    "plastic": 45.0,
-    "metal": 85.0,
-    "paper": 25.0,
-    "glass": 15.0,
-    "electronic": 120.0,
-    "textile": 30.0
+    "plastic": 500.0,    // Updated to match UI display
+    "metal": 850.0,
+    "paper": 250.0,
+    "glass": 150.0,
+    "electronic": 1200.0,
+    "textile": 300.0
 };
 
 // Quality Score Ranges
