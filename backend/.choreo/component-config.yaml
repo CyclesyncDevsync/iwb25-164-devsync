@@ -1,13 +1,21 @@
 # Choreo component configuration
 schemaVersion: 1.0
+apiVersion: core.choreo.dev/v1beta1
+kind: ComponentConfig
 
-# Disable cloud buildpack features
-buildConfig:
-  enableCloudBuildpack: false
-  buildpackVersion: "2201.8.4"
+metadata:
+  name: cyclesync-backend-config
+  description: Configuration for CycleSync backend component
+
+spec:
+  # Disable cloud buildpack features
+  buildConfig:
+    enableCloudBuildpack: false
+    buildpackVersion: "2201.8.4"
+    buildCommand: "bal build --skip-tests"
+    skipCloudExtension: true
   
-# Use standard Ballerina build
-buildCommand: "bal build --skip-tests"
-
-# Skip cloud extension
-skipCloudExtension: true
+  # Runtime configuration
+  runtime:
+    type: ballerina
+    version: "2201.8.5"
