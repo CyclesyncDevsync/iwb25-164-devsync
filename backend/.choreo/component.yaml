@@ -1,6 +1,6 @@
 # Choreo Component Configuration
-schemaVersion: 1.0
-apiVersion: core.choreo.dev/v1
+schemaVersion: 1.2
+apiVersion: core.choreo.dev/v1beta1
 kind: Component
 metadata:
   name: cyclesync-backend
