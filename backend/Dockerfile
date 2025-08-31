@@ -7,8 +7,10 @@ WORKDIR /app
 # Copy project files
 COPY . .
 
-# Build the project
-RUN bal build
+# Ensure proper permissions and build the project
+RUN chmod -R 755 /app && \
+    rm -rf /app/target && \
+    bal build
 
 # Runtime stage
 FROM ballerina/ballerina:2201.8.5-openjdk17
