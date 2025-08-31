@@ -1,394 +1,299 @@
-# CircularSync 🌍♻️
+# CircularSync
 
-**Transform Industrial Waste into Valuable Resources**
+**AI-Powered Circular Economy Platform**
 
-CircularSync is a comprehensive circular economy platform that connects industrial waste suppliers with potential buyers through an intelligent marketplace. Built with modern web technologies and featuring PWA capabilities for mobile-first experiences.
+CircularSync is an enterprise-grade platform that transforms industrial waste management through intelligent material matching, real-time auctions, and comprehensive workflow automation. Built with Ballerina microservices, Next.js 14+, and deployed on Choreo Platform.
 
 ![CircularSync Banner](./docs/images/banner.png)
 
-## 🚀 Overview
+## Overview
 
-CircularSync revolutionizes waste management by creating a marketplace where one industry's waste becomes another's treasure. Our platform features AI-powered matching, quality verification through field agents, and secure auction-based trading.
+CircularSync revolutionizes the circular economy by connecting industrial waste suppliers with buyers through an intelligent marketplace. Our platform combines real-time auctions, AI-powered quality assessment, field agent verification, and secure payment processing to create a seamless waste-to-resource transformation ecosystem.
 
-### 🎯 Core Value Proposition
-- **Environmental Impact:** Divert 70%+ industrial waste from landfills
-- **Economic Benefit:** Create new revenue streams for suppliers, cost savings for buyers
-- **Quality Assurance:** Professional field verification ensures material standards
-- **Fair Pricing:** Competitive auction system with escrow protection
+### Core Value Proposition
+- **Environmental Impact:** Divert industrial waste from landfills
+- **Economic Efficiency:** Transform waste into valuable resources with transparent pricing
+- **Quality Assurance:** Google Vision API-powered assessment with field agent verification
+- **Real-time Operations:** Live auctions, instant notifications, and real-time chat
 
-## ✨ Key Features
+##  System Architecture
 
-### 👥 Multi-Role Platform
-- **Super Admin:** Platform oversight and admin management
-- **Admin:** System monitoring, dispute resolution, agent management
-- **Field Agents:** On-site quality verification and inventory management
+<img width="1025" height="757" alt="image" src="https://github.com/user-attachments/assets/2fed5ddb-51a9-4625-9222-ef38ac17c885" />
+
+##  User Flow
+
+![User Flow Diagram](./docs/images/userflow-diagram.png)
+
+##  Features
+
+###  Multi-Role Platform
+- **Super Admin:** Complete platform oversight and admin management
+- **Admin:** System monitoring, dispute resolution, agent management  
+- **Field Agents:** Mobile verification app with offline capability
 - **Suppliers:** Individual & organizational waste material providers
-- **Buyers:** Material procurement through competitive auctions
+- **Buyers:** Advanced search, real-time bidding, order management
 
-### 🔧 Core Functionality
-- **Smart Material Matching:** AI-powered supplier-buyer connections
-- **Quality Verification:** Field agent photo documentation and assessment
-- **Real-time Auctions:** Live bidding with automatic payment processing
-- **Multi-Wallet System:** Secure payment management with escrow protection
-- **Communication Hub:** Integrated chat between all stakeholders
-- **Intelligent Notifications:** Multi-channel alerts (in-app, email, SMS, WhatsApp)
+###  Core Functionality
+- **Material Registration:** Multi-step submission with AI-powered categorization
+- **Quality Assessment:** Google Vision API integration for automated analysis
+- **Auction System:** Multiple auction types (Standard, Buy It Now, Reserve, Dutch, Bulk)
+- **Payment Processing:** Secure multi-wallet system with escrow protection
+- **Real-time Features:** WebSocket-powered chat and live auction updates
+- **Notification System:** Multi-channel delivery (In-app)
 
-### 📱 Progressive Web App (PWA)
-- **Offline Capability:** Field agents can work without internet connection
-- **Mobile Optimized:** Touch-friendly interface for all device types
-- **Push Notifications:** Real-time updates even when app is closed
-- **App-like Experience:** Home screen installation and native feel
-- **Fast Loading:** Optimized performance for mobile networks
+##  Technology Stack
 
-## 🏗️ Technology Stack
+### Frontend (Next.js 14+)
+- **Framework:** Next.js 14+ with App Router and React 19.1.0
+- **Language:** TypeScript with strict mode
+- **Styling:** Tailwind CSS with custom design system
+- **State Management:** Redux Toolkit with RTK Query
+- **Real-time:** Socket.io client for WebSocket
+- **Authentication:** Asgardeo React SDK
+- **PWA:** Next-PWA with service workers
+- **Forms:** React Hook Form with Zod validation
 
-### Frontend
-- **Framework:** Next.js 14+ (React 18+)
-- **Styling:** Tailwind CSS
-- **UI Components:** Custom components with MongoDB Atlas theme
-- **Notifications:** react-hot-toast
-- **PWA:** Next.js built-in PWA support
-- **Authentication:** Asgardio React SDK
-- **Real-time:** WebSocket integration
+### Backend (Ballerina)
+- **Runtime:** Ballerina Swan Lake 2201.12.7
+- **Architecture:** Microservices with central orchestration
+- **Database:** PostgreSQL (Neon Cloud)
+- **Cache:** Redis for session and data caching
+- **Authentication:** Asgardeo Identity Server (WSO2)
+- **External APIs:** Google Vision API, OpenStreetmaps
+- **WebSocket:** Real-time bidding 
+- **Deployment:** Choreo Platform (WSO2)
 
-### Backend
-- **Runtime:** Ballerina Swan Lake
-- **Database:** PostgreSQL (Choreo managed)
-- **Authentication:** Asgardio Identity Server
-- **Payment Processing:** Choreo Payment Service
-- **File Storage:** Choreo Object Storage
-- **Deployment:** Choreo Platform
+### Infrastructure & Security
+- **Cloud:** Choreo Platform with auto-scaling
+- **Database:** Neon PostgreSQL with connection pooling
+- **Authentication:** OAuth2/OIDC with JWT tokens
+- **Security:** Role-based access control, input validation
+- **Monitoring:** Built-in Choreo observability
 
-### Infrastructure
-- **Cloud Platform:** Choreo (WSO2)
-- **CDN:** Choreo integrated CDN
-- **Monitoring:** Choreo analytics and logging
-- **Security:** OAuth2/OIDC with role-based access
-
-## 🚦 Getting Started
+##  Quick Start Guide
 
 ### Prerequisites
-- Node.js 18+ and npm/yarn
-- Ballerina Swan Lake 2201.8.0+
-- PostgreSQL 14+ (or Choreo database)
-- Asgardio tenant account
-- Choreo platform account
+- **Node.js 18+** and npm
+- **Ballerina Swan Lake 2201.12.7+** 
+- **PostgreSQL 13+** 
+- **Asgardeo tenant** account
+- **Google Cloud Platform** account (for Vision API)
 
-### Installation
+###  Installation Steps
 
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/your-org/circularsync.git
-   cd circularsync
-   ```
-
-2. **Frontend Setup**
-   ```bash
-   cd frontend
-   npm install
-   cp .env.example .env.local
-   # Configure environment variables (see below)
-   npm run dev
-   ```
-
-3. **Backend Setup**
-   ```bash
-   cd backend
-   bal build
-   cp Config.toml.example Config.toml
-   # Configure database and service settings
-   bal run
-   ```
-
-4. **Database Setup**
-   ```bash
-   # Run migrations
-   psql -h your-db-host -U username -d circularsync -f database/migrations/init.sql
-   ```
-
-### Environment Variables
-
-**Frontend (.env.local)**
+#### 1. Clone the Repository
 ```bash
-# Asgardio Configuration
-NEXT_PUBLIC_ASGARDIO_CLIENT_ID=your_client_id
-NEXT_PUBLIC_ASGARDIO_BASE_URL=https://asgardio.io/t/your-org
-NEXT_PUBLIC_ASGARDIO_REDIRECT_URL=http://localhost:3000/callback
-
-# API Configuration
-NEXT_PUBLIC_API_BASE_URL=http://localhost:8080
-NEXT_PUBLIC_WS_URL=ws://localhost:9001
-
-# PWA Configuration
-NEXT_PUBLIC_APP_NAME=CircularSync
-NEXT_PUBLIC_APP_DESCRIPTION=Circular Economy Marketplace
+git clone https://github.com/CyclesyncDevsync/Cyclesync.git
+cd Cyclesync
 ```
 
-**Backend (Config.toml)**
+#### 2. Backend Configuration
+```bash
+cd backend
+
+# Copy configuration template
+cp Config.toml.template Config.toml
+
+# Edit Config.toml with your credentials
+nano Config.toml
+```
+
+**Required Config.toml Settings:**
 ```toml
-[database]
-host = "localhost"
+# Database Configuration
+[circularsyncdb.database]
+host = "your-neon-host.neon.tech"
 port = 5432
 name = "circularsync"
-username = "postgres"
-password = "your_password"
+username = "your-username"
+password = "your-password"
 
-[asgardio]
-client_id = "your_client_id"
-client_secret = "your_client_secret"
-introspection_url = "https://asgardio.io/t/your-org/oauth2/introspect"
+# Asgardeo Authentication
+ASGARDEO_CLIENT_ID = "your-client-id"
+ASGARDEO_CLIENT_SECRET = "your-client-secret"
+ASGARDEO_TOKEN_ENDPOINT = "https://api.asgardeo.io/t/your-org/oauth2/token"
 
-[choreo]
-payment_api_key = "your_payment_key"
-storage_api_key = "your_storage_key"
-base_url = "https://api.choreo.dev"
-
-[server]
-host = "localhost"
-port = 8080
-cors_allowed_origins = ["http://localhost:3000"]
+# External Services
+GOOGLE_APPLICATION_CREDENTIALS = "path/to/service-account.json"
+REDIS_HOST = "localhost"
+REDIS_PORT = 6379
 ```
 
-### Development Workflow
+#### 3. Start Backend Services
+```bash
+# Install Ballerina dependencies
+bal build
 
-1. **Start Development Servers**
+# Start all microservices
+bal run
+
+# Services will start on:
+# Main API: http://localhost:8080
+# Quality Assessment: http://localhost:8082
+# Chatbot WebSocket: ws://localhost:8083
+# Demand Prediction: http://localhost:8084
+# Dynamic Pricing: http://localhost:8085
+# Material Workflow: http://localhost:8086
+# Agent Assignment: http://localhost:8087
+```
+
+#### 4. Frontend Configuration
+```bash
+cd frontend
+
+# Install dependencies
+npm install
+
+# Create environment file
+cp .env.example .env.local
+
+# Edit .env.local
+nano .env.local
+```
+
+**Required .env.local Settings:**
+```bash
+# Backend APIs
+NEXT_PUBLIC_API_URL=http://localhost:8080
+NEXT_PUBLIC_CHATBOT_WS_URL=ws://localhost:8083
+NEXT_PUBLIC_AUCTION_API_URL=http://localhost:8096
+
+# Asgardeo Configuration
+NEXT_PUBLIC_ASGARDEO_BASE_URL=https://api.asgardeo.io/t/your-org
+NEXT_PUBLIC_ASGARDEO_CLIENT_ID=your-client-id
+ASGARDEO_CLIENT_SECRET=your-client-secret
+NEXT_PUBLIC_ASGARDEO_REDIRECT_URI=http://localhost:3000/api/auth/callback
+
+# Session
+NEXTAUTH_URL=http://localhost:3000
+NEXTAUTH_SECRET=your-secure-secret
+```
+
+#### 5. Start Frontend
+```bash
+npm run dev
+
+# Application available at:
+# http://localhost:3000
+```
+
+###  Verification
+1. **Check Backend Health:**
    ```bash
-   # Terminal 1 - Frontend
-   cd frontend && npm run dev
-
-   # Terminal 2 - Backend
-   cd backend && bal run
-
-   # Terminal 3 - Database (if local)
-   pg_ctl -D /usr/local/var/postgres start
+   curl http://localhost:8080/health
    ```
 
-2. **Access the Application**
-   - Frontend: http://localhost:3000
-   - Backend API: http://localhost:8080
-   - API Documentation: http://localhost:8080/docs
+2. **Access Application:**
+   - Open http://localhost:3000
+   - Click "Get Started" to begin authentication
 
-3. **Testing**
-   ```bash
-   # Frontend tests
-   cd frontend && npm test
+3. **Test Features:**
+   - Register as supplier and submit material
+   - View live auctions
+   - Test real-time chat
 
-   # Backend tests
-   cd backend && bal test
-
-   # E2E tests
-   npm run test:e2e
-   ```
-
-## 📱 PWA Features
-
-### Installation
-- Users can install CircularSync as a mobile app
-- Works offline for field agents in remote locations
-- Automatic updates when new versions are available
-
-### Offline Functionality
-- **Field Agents:** Complete verification forms offline
-- **Cached Data:** Recently viewed materials and auctions
-- **Sync on Connect:** Automatic data synchronization when online
-- **Offline Indicators:** Clear UI feedback for connection status
-
-### Push Notifications
-- **Auction Alerts:** Bid notifications and auction endings
-- **Assignment Notifications:** New verification tasks for agents
-- **Payment Updates:** Transaction confirmations and receipts
-- **Chat Messages:** Real-time communication alerts
-
-## 🔌 API Documentation
+##  API Documentation
 
 ### Authentication
-All API endpoints require Asgardio authentication tokens:
+All API endpoints require Bearer token:
 ```bash
-Authorization: Bearer <asgardio_access_token>
+Authorization: Bearer <asgardeo_access_token>
 ```
 
 ### Core Endpoints
 
-**User Management**
+**Materials**
 ```
-GET    /api/users/profile      # Get user profile
-PUT    /api/users/profile      # Update user profile
-POST   /api/admin/agents       # Add field agent (admin only)
-```
-
-**Material Management**
-```
-GET    /api/materials          # List materials with filters
-POST   /api/materials          # Register new material
-GET    /api/materials/{id}     # Get material details
-PUT    /api/materials/{id}     # Update material
+POST   /materials/submit          # Submit new material
+GET    /materials                 # List materials
+GET    /materials/{id}            # Get material details
+PUT    /materials/{id}/verify     # Agent verification
 ```
 
-**Auction System**
+**Auctions**
 ```
-GET    /api/auctions           # List active auctions
-POST   /api/auctions/{id}/bid  # Place bid
-GET    /api/auctions/{id}/bids # Get auction bids
-```
-
-**Wallet & Payments**
-```
-GET    /api/wallet/balance     # Get wallet balance
-POST   /api/wallet/topup       # Add funds to wallet
-GET    /api/transactions       # Transaction history
-POST   /api/payments/process   # Process payment
+GET    /auctions                  # List active auctions
+POST   /auctions/{id}/bid         # Place bid
+GET    /auctions/{id}/bids        # Get bid history
+POST   /auctions/create           # Create auction (admin)
 ```
 
-**Chat & Notifications**
+**Agent Operations**
 ```
-GET    /api/conversations      # Get user conversations
-POST   /api/conversations/{id}/messages  # Send message
-GET    /api/notifications      # Get notifications
-PUT    /api/notifications/read # Mark as read
+GET    /agents/assignments        # Get assignments
+POST   /agents/reports/{id}       # Submit verification
+GET    /agents/locations          # Get nearby tasks
+```
+
+**Notifications**
+```
+GET    /notifications             # Get notifications
+PUT    /notifications/{id}/read   # Mark as read
+POST   /notifications/preferences # Update preferences
 ```
 
 ### WebSocket Events
 ```javascript
-// Connect to real-time services
-const notificationWS = new WebSocket('ws://localhost:9001/notifications');
-const chatWS = new WebSocket('ws://localhost:9002/chat');
+// Auction WebSocket
+const ws = new WebSocket('ws://localhost:8083/auctions/{auctionId}');
 
-// Listen for events
-notificationWS.onmessage = (event) => {
-  const notification = JSON.parse(event.data);
-  // Handle real-time notification
-};
+// Events
+ws.on('bid_placed', (data) => { /* New bid */ });
+ws.on('auction_ended', (data) => { /* Auction complete */ });
+ws.on('price_update', (data) => { /* Price change */ });
 ```
 
-## 🚀 Deployment
+##  Deployment
 
 ### Choreo Platform Deployment
 
-1. **Build Application**
+1. **Build Applications**
    ```bash
-   # Frontend build
-   cd frontend && npm run build
+   # Backend
+   cd backend && bal build --cloud=choreo
 
-   # Backend build  
-   cd backend && bal build
+   # Frontend  
+   cd frontend && npm run build
    ```
 
 2. **Deploy to Choreo**
-   ```bash
-   # Upload backend service to Choreo
-   # Configure environment variables in Choreo console
-   # Set up database connection strings
-   # Configure custom domains and SSL
-   ```
+   - Push to GitHub repository
+   - Connect repository in Choreo Console
+   - Configure environment variables
+   - Deploy services
 
-3. **Environment Configuration**
-   - Set production environment variables
-   - Configure Asgardio production tenant
-   - Set up Choreo payment and storage services
-   - Configure monitoring and alerts
+3. **Production Configuration**
+   - Set production database credentials
+   - Configure Asgardeo production tenant
+   - Set up custom domains
+   - Enable monitoring and alerts
 
-### Production Checklist
-- [ ] Environment variables configured
-- [ ] Database migrations applied
-- [ ] SSL certificates installed
-- [ ] Monitoring and logging enabled
-- [ ] Backup strategy implemented
-- [ ] Performance optimization complete
-- [ ] Security audit passed
+##  Contributing
 
-## 📊 Monitoring & Analytics
-
-### Performance Metrics
-- Page load times and Core Web Vitals
-- API response times and error rates
-- Database query performance
-- WebSocket connection stability
-
-### Business Metrics
-- User registration and engagement
-- Material posting and verification rates
-- Auction completion percentages
-- Revenue and transaction volumes
-
-### Monitoring Tools
-- Choreo built-in monitoring dashboard
-- Google Analytics for user behavior
-- Sentry for error tracking
-- Custom business intelligence dashboards
-
-## 🤝 Contributing
-
-### Development Guidelines
-1. **Code Style:** Follow ESLint and Prettier configurations
-2. **Git Workflow:** Feature branches with pull request reviews
-3. **Testing:** Write unit tests for new features
-4. **Documentation:** Update README and API docs for changes
-
-### Pull Request Process
+### Development Setup
 1. Fork the repository
-2. Create feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit changes (`git commit -m 'Add amazing feature'`)
-4. Push to branch (`git push origin feature/amazing-feature`)
-5. Open pull request with detailed description
+2. Create feature branch
+3. Follow code style guidelines
+4. Write tests for new features
+5. Submit pull request
 
-### Issue Reporting
-- Use GitHub Issues for bug reports and feature requests
-- Include steps to reproduce for bugs
-- Provide clear acceptance criteria for features
-- Label issues appropriately (bug, enhancement, documentation)
+### Code Standards
+- TypeScript strict mode
+- ESLint configuration
+- Prettier formatting
+- Conventional commits
 
-## 📄 License
+##  License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 🆘 Support
-
-### Documentation
-- [API Documentation](./docs/api.md)
-- [Deployment Guide](./docs/deployment.md)
-- [User Manual](./docs/user-guide.md)
-- [Troubleshooting](./docs/troubleshooting.md)
 
 ### Contact
+- **GitHub Issues:** [Report bugs or request features](https://github.com/CyclesyncDevsync/Cyclesync/issues)
 - **Technical Support:** tech@circularsync.com
 - **Business Inquiries:** business@circularsync.com
-- **Documentation Issues:** [GitHub Issues](https://github.com/your-org/circularsync/issues)
 
-### Community
-- [Discord Server](https://discord.gg/circularsync)
-- [Developer Forum](https://forum.circularsync.com)
-- [LinkedIn Page](https://linkedin.com/company/circularsync)
-
-## 🗺️ Roadmap
-
-### Phase 1 (Current) - Core Platform
-- [x] User authentication and role management
-- [x] Material registration and verification
-- [x] Auction system with payment integration
-- [x] Chat and notification systems
-- [x] PWA implementation
-
-### Phase 2 - Advanced Features
-- [ ] AI-powered recommendation engine
-- [ ] Mobile apps (iOS/Android)
-- [ ] Advanced analytics dashboard
-- [ ] Multi-language support (Sinhala/Tamil)
-
-### Phase 3 - Enterprise Features
-- [ ] API marketplace for third-party integrations
-- [ ] Blockchain supply chain tracking
-- [ ] IoT sensor integration
-- [ ] International expansion tools
-
-## 📈 Project Stats
-
-![GitHub stars](https://img.shields.io/github/stars/your-org/circularsync)
-![GitHub forks](https://img.shields.io/github/forks/your-org/circularsync)
-![GitHub issues](https://img.shields.io/github/issues/your-org/circularsync)
-![GitHub license](https://img.shields.io/github/license/your-org/circularsync)
-
----
 
 **Built with ❤️ by the CircularSync Team**
 
-*Transforming waste into resources, one transaction at a time.*
+*Transforming waste into resources, powering the circular economy.*
