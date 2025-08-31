@@ -89,7 +89,7 @@ service /api/material/workflow on workflowListener {
     # Process material submission
     # + submission - The submission data
     # + return - Response JSON or error
-    isolated function processSubmission(json submission) returns json|error {
+    function processSubmission(json submission) returns json|error {
         // Generate IDs
         string workflowId = uuid:createType1AsString();
         string transactionId = "TXN_" + uuid:createType1AsString();
@@ -99,8 +99,11 @@ service /api/material/workflow on workflowListener {
         json materialData = check submission.materialData;
         json[] photos = check submission.photos.ensureType();
         
+        // Get database client
+        postgresql:Client dbClientLocal = check dbClient.ensureType();
+        
         // Process and save submission
-        check self.saveSubmission(workflowId, transactionId, supplierId, materialData, photos);
+        check self.saveSubmission(dbClientLocal, workflowId, transactionId, supplierId, materialData, photos);
         
         // Return response
         return {
@@ -114,15 +117,15 @@ service /api/material/workflow on workflowListener {
     }
     
     # Save material submission to database
+    # + dbClientLocal - Database client
     # + workflowId - Workflow ID
     # + transactionId - Transaction ID
     # + supplierId - Supplier ID
     # + materialData - Material data JSON
     # + photos - Photos array
     # + return - Success or error
-    isolated function saveSubmission(string workflowId, string transactionId, string supplierId, 
+    isolated function saveSubmission(postgresql:Client dbClientLocal, string workflowId, string transactionId, string supplierId, 
                                    json materialData, json[] photos) returns error? {
-        postgresql:Client dbClientLocal = check dbClient.ensureType();
         
         // Extract all required fields
         string deliveryMethod = check materialData.deliveryMethod.ensureType(string);
