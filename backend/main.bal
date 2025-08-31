@@ -19,7 +19,7 @@ import Cyclesync.auction as _;
 import Cyclesync.wallet as _;
 
 // The agent_assignment module will auto-register its services
-import Cyclesync.agent_assignment as _;
+// import Cyclesync.agent_assignment as _;
 // The notifications module will auto-register its services
 import Cyclesync.notifications as _;
 

@@ -10,7 +10,8 @@
       "Bash(curl:*)",
       "Bash(sudo lsof:*)",
       "Bash(grep:*)",
-      "Bash(powershell:*)"
+      "Bash(powershell:*)",
+      "Bash(find:*)"
     ],
     "deny": []
   }
