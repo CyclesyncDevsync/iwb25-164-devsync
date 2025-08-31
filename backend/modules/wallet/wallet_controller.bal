@@ -39,6 +39,35 @@ service /api/wallet on new http:Listener(8097) {
         return authResult.userId;
     }
 
+    # Get authenticated user context for admin operations
+    private function getAuthContext(http:Request request) returns auth:AuthContext|http:Response {
+        auth:AuthContext|http:Unauthorized authResult = self.authMiddleware.authenticate(request);
+
+        if authResult is http:Unauthorized {
+            http:Response response = new;
+            response.statusCode = 401;
+            response.setJsonPayload({
+                "error": "Unauthorized", 
+                "message": "Please login to access wallet features"
+            });
+            return response;
+        }
+
+        return authResult;
+    }
+
+    # Get user ID for wallet operations (all authenticated users)
+    private function getUserIdForOperations(http:Request request) returns int|http:Response {
+        auth:AuthContext|http:Response contextResult = self.getAuthContext(request);
+        if contextResult is http:Response {
+            return contextResult;
+        }
+
+        auth:AuthContext context = contextResult;
+        return context.userId;
+    }
+
+
     # Get user wallet balance
     resource function get balance(http:Request request) returns http:Response {
         http:Response response = new;
@@ -153,8 +182,8 @@ service /api/wallet on new http:Listener(8097) {
     resource function post recharge(http:Request request, @http:Payload json payload) returns http:Response {
         http:Response response = new;
 
-        // Authenticate user
-        int|http:Response userResult = self.getAuthenticatedUserId(request);
+        // Get user ID for operations (all authenticated users allowed)
+        int|http:Response userResult = self.getUserIdForOperations(request);
         if userResult is http:Response {
             return userResult;
         }
@@ -260,8 +289,8 @@ service /api/wallet on new http:Listener(8097) {
     resource function post withdraw(http:Request request, @http:Payload json payload) returns http:Response {
         http:Response response = new;
 
-        // Authenticate user
-        int|http:Response userResult = self.getAuthenticatedUserId(request);
+        // Get user ID for operations (all authenticated users allowed)
+        int|http:Response userResult = self.getUserIdForOperations(request);
         if userResult is http:Response {
             return userResult;
         }

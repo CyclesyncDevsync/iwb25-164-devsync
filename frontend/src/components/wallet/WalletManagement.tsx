@@ -51,6 +51,9 @@ const WalletManagement: React.FC = () => {
 
   // Check if user has wallet access (all authenticated users)
   const hasWalletAccess = ['buyer', 'supplier', 'agent', 'admin', 'super_admin'].includes(userRole);
+  
+  // Check if user is admin (different wallet handling)
+  const isAdmin = ['admin', 'super_admin'].includes(userRole);
 
   useEffect(() => {
     if (hasWalletAccess) {
@@ -233,7 +236,7 @@ const WalletManagement: React.FC = () => {
           <ExclamationTriangleIcon className="mx-auto h-12 w-12 text-yellow-500" />
           <h3 className="mt-4 text-lg font-medium text-gray-900">Access Restricted</h3>
           <p className="mt-2 text-sm text-gray-600">
-            Wallet access is available for all authenticated users.
+            Please login to access wallet features.
           </p>
         </div>
       </div>
@@ -266,6 +269,20 @@ const WalletManagement: React.FC = () => {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        {/* Admin Notice */}
+        {isAdmin && (
+          <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div className="flex">
+              <ExclamationTriangleIcon className="h-5 w-5 text-blue-400" />
+              <div className="ml-3">
+                <p className="text-blue-700">
+                  <strong>Admin Wallet Access:</strong> You are using the wallet system in admin mode. All wallet operations are available.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Error Display */}
         {error && (
           <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">

@@ -16,7 +16,8 @@ import {
   ExclamationTriangleIcon,
   StarIcon,
   MapPinIcon,
-  CalendarIcon
+  CalendarIcon,
+  WalletIcon
 } from '@heroicons/react/24/outline';
 import {
   LineChart,
@@ -33,6 +34,7 @@ import {
 } from 'recharts';
 import { useAppDispatch, useAppSelector } from '../../hooks/redux';
 import { useAuth } from '../../hooks/useAuth';
+import WalletBalance from '../shared/WalletBalance';
 import {
   fetchSupplierProfile,
   fetchSupplierMaterials,
@@ -48,6 +50,7 @@ export default function SupplierDashboard() {
   const dispatch = useAppDispatch();
   const { user } = useAuth();
   const { profile, materials, analytics, loading } = useAppSelector(state => state.supplier);
+  const [walletBalance, setWalletBalance] = useState<number | null>(null);
 
   useEffect(() => {
     if (!profile) {
@@ -55,7 +58,35 @@ export default function SupplierDashboard() {
     }
     dispatch(fetchSupplierMaterials({ page: 1, limit: 5 }));
     dispatch(fetchSupplierAnalytics('month'));
+    fetchWalletBalance();
   }, [dispatch, profile]);
+
+  // Fetch wallet balance
+  const fetchWalletBalance = async () => {
+    try {
+      const response = await fetch('/api/wallet/balance', {
+        method: 'GET',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data.status === 'success' && data.data && data.data.available_balance !== undefined) {
+          setWalletBalance(data.data.available_balance);
+        } else {
+          setWalletBalance(null);
+        }
+      } else {
+        setWalletBalance(null);
+      }
+    } catch (error) {
+      console.log('Failed to fetch wallet balance:', error);
+      setWalletBalance(null);
+    }
+  };
 
   if (loading.profile) {
     return <DashboardSkeleton />;
@@ -102,11 +133,11 @@ export default function SupplierDashboard() {
       {/* Quick Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <QuickStatCard
-          title="Total Earnings"
-          value={`LKR ${analytics?.totalEarnings?.toLocaleString() || '0'}`}
-          change={12.5}
-          changeLabel="vs last month"
-          icon={CurrencyDollarIcon}
+          title="Wallet Balance"
+          value={walletBalance !== null ? `LKR ${walletBalance.toLocaleString()}` : 'Loading...'}
+          change={0}
+          changeLabel="Available balance"
+          icon={WalletIcon}
           color="emerald"
         />
         
@@ -151,6 +182,9 @@ export default function SupplierDashboard() {
 
         {/* Sidebar */}
         <div className="space-y-6">
+          {/* Wallet Balance */}
+          <WalletBalance />
+          
           {/* Quick Actions */}
           <QuickActions />
           
@@ -305,6 +339,13 @@ function QuickActions() {
       href: '/supplier/materials/new',
       icon: PlusIcon,
       color: 'bg-emerald-600 hover:bg-emerald-700'
+    },
+    {
+      title: 'My Wallet',
+      description: 'Manage balance & transactions',
+      href: '/wallet',
+      icon: WalletIcon,
+      color: 'bg-indigo-600 hover:bg-indigo-700'
     },
     {
       title: 'View Analytics',
