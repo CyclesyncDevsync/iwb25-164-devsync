@@ -194,7 +194,7 @@ service /api/ai/demand on demandListener {
     
     // Get batch predictions for multiple waste types/locations
     resource function post 'batch\-forecast(@http:Payload BatchPredictionRequest request) 
-                                        returns record {DemandForecast[] forecasts; int totalProcessed; string[] errors;}|http:BadRequest {
+                                        returns @http:Payload {mediaType: "application/json"} record {json forecasts; int totalProcessed; json errors;}|http:BadRequest {
         log:printInfo(string `Processing batch prediction request for ${request.wasteTypes.length()} waste types`);
         
         DemandForecast[] forecasts = [];
@@ -221,9 +221,9 @@ service /api/ai/demand on demandListener {
         }
         
         return {
-            forecasts: forecasts,
+            forecasts: forecasts.toJson(),
             totalProcessed: totalProcessed,
-            errors: errors
+            errors: errors.toJson()
         };
     }
     
@@ -297,11 +297,11 @@ service /api/ai/demand on demandListener {
     }
     
     // Health check endpoint
-    resource function get health() returns record {string status; string message; time:Utc timestamp;} {
+    resource function get health() returns @http:Payload {mediaType: "application/json"} record {string status; string message; string timestamp;} {
         return {
             status: "healthy",
             message: "Demand Prediction Service is operational",
-            timestamp: time:utcNow()
+            timestamp: time:utcNow().toString()
         };
     }
 }
