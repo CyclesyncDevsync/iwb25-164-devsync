@@ -1,0 +1,10 @@
+# Build configuration to skip cloud extension
+[build-options]
+cloud = false
+observabilityIncluded = true
+offline = false
+skipTests = false
+testReport = true
+codeCoverage = false
+graalvm = false
+sticky = true

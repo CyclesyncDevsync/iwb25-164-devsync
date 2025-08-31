@@ -1,0 +1,13 @@
+# Choreo component configuration
+schemaVersion: 1.0
+
+# Disable cloud buildpack features
+buildConfig:
+  enableCloudBuildpack: false
+  buildpackVersion: "2201.8.4"
+  
+# Use standard Ballerina build
+buildCommand: "bal build --skip-tests"
+
+# Skip cloud extension
+skipCloudExtension: true
