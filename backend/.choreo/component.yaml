@@ -25,44 +25,50 @@ spec:
   # Service endpoints
   endpoints:
     - name: main-api
-      port: 9090
+      port: 8080
       type: REST
-      basePath: /api
+      context: /api
+      networkVisibility: Public
       displayName: Main API
       description: Core platform API endpoints
       
     - name: auth-service
       port: 8084
       type: REST
-      basePath: /auth
+      context: /auth
+      networkVisibility: Public
       displayName: Authentication Service
       description: OAuth2 and JWT authentication
       
     - name: pricing-service
       port: 8088
       type: REST
-      basePath: /pricing
+      context: /pricing
+      networkVisibility: Organization
       displayName: Dynamic Pricing Service
       description: AI-powered pricing calculations
       
     - name: notification-service
       port: 8087
       type: REST
-      basePath: /notifications
+      context: /notifications
+      networkVisibility: Organization
       displayName: Notification Service
       description: Real-time notifications
       
-    - name: auction-service
-      port: 8091
+    - name: wallet-service
+      port: 8097
       type: REST
-      basePath: /auctions
-      displayName: Auction Service
-      description: Material auction management
+      context: /wallet
+      networkVisibility: Public
+      displayName: Wallet Service
+      description: Wallet management
       
     - name: chatbot-websocket
-      port: 9095
+      port: 8094
       type: WebSocket
-      basePath: /chat/ws
+      context: /chat
+      networkVisibility: Public
       displayName: Chatbot WebSocket
       description: Real-time chat communication
   
