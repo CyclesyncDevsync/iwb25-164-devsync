@@ -10,15 +10,20 @@ import {
   AutoBidSettings
 } from '@/types/auction';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api';
+const AUCTION_API_URL = 'http://localhost:8096/api/auction';
 
 // Create axios instance with interceptors
 const auctionApi = axios.create({
-  baseURL: `${API_BASE_URL}/auctions`,
+  baseURL: AUCTION_API_URL,
   timeout: 10000,
+  withCredentials: false,
+  headers: {
+    'Content-Type': 'application/json',
+    'Accept': 'application/json',
+  }
 });
 
-// Add auth token to requests
+// Add auth token and CORS handling to requests
 auctionApi.interceptors.request.use((config) => {
   if (typeof window !== 'undefined') {
     const token = localStorage.getItem('auth_token');
@@ -28,6 +33,18 @@ auctionApi.interceptors.request.use((config) => {
   }
   return config;
 });
+
+// Add response interceptor for better error handling
+auctionApi.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    console.error('Auction API Error:', error);
+    if (error.code === 'ERR_NETWORK') {
+      console.error('Network error - check if backend is running on:', AUCTION_API_URL);
+    }
+    return Promise.reject(error);
+  }
+);
 
 export class AuctionApiService {
   // Get auction list with filters
@@ -68,8 +85,82 @@ export class AuctionApiService {
       }
     }
 
-    const response = await auctionApi.get(`?${params.toString()}`);
-    return response.data;
+    try {
+      console.log('Fetching auctions from URL:', `${AUCTION_API_URL}/auctions`);
+      
+      // Use axios instance with CORS configuration
+      const response = await auctionApi.get('/auctions');
+      
+      // Transform backend response to match expected format
+      const backendData = response.data;
+      
+      if (backendData.status === 'success' && backendData.data) {
+        // Convert backend auctions to frontend format
+        const auctions: Auction[] = backendData.data.map((backendAuction: any) => ({
+          id: backendAuction.auction_id,
+          title: backendAuction.title,
+          description: backendAuction.description,
+          type: 'standard' as const,
+          status: AuctionApiService.mapBackendStatus(backendAuction.status),
+          materialId: backendAuction.auction_id,
+          materialName: backendAuction.title,
+          materialCategory: backendAuction.category || 'Materials',
+          quantity: backendAuction.quantity,
+          unit: backendAuction.unit,
+          location: backendAuction.location || 'Unknown',
+          images: backendAuction.photos || ['/api/placeholder/400/300'],
+          
+          // Pricing
+          startingPrice: backendAuction.starting_price,
+          currentPrice: backendAuction.current_price,
+          reservePrice: backendAuction.reserve_price,
+          incrementAmount: 500,
+          
+          // Timing
+          startTime: new Date(backendAuction.start_time),
+          endTime: new Date(backendAuction.end_time),
+          timeExtension: 10,
+          
+          // Participation
+          totalBids: backendAuction.bid_count || 0,
+          totalBidders: 0,
+          isUserWatching: false,
+          isUserBidding: false,
+          
+          // Additional data
+          sellerId: backendAuction.supplier_id?.toString() || '1',
+          sellerName: 'Supplier',
+          sellerRating: 4.5,
+          
+          createdAt: new Date(backendAuction.start_time),
+          updatedAt: new Date()
+        }));
+        
+        return {
+          auctions,
+          total: backendData.count || auctions.length,
+          page,
+          hasMore: false
+        };
+      }
+      
+      return { auctions: [], total: 0, page, hasMore: false };
+    } catch (error) {
+      console.error('Error fetching auctions:', error);
+      throw error;
+    }
+  }
+  
+  // Map backend status to frontend status
+  static mapBackendStatus(backendStatus: string): 'upcoming' | 'active' | 'paused' | 'ended' | 'cancelled' {
+    switch (backendStatus?.toLowerCase()) {
+      case 'active': return 'active';
+      case 'upcoming': return 'upcoming';  
+      case 'ended': return 'ended';
+      case 'paused': return 'paused';
+      case 'cancelled': return 'cancelled';
+      default: return 'active';
+    }
   }
 
   // Get auction by ID

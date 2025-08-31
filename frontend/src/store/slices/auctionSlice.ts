@@ -1,4 +1,4 @@
-import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk, PayloadAction, createSelector } from '@reduxjs/toolkit';
 import { 
   Auction, 
   AuctionListResponse, 
@@ -14,7 +14,12 @@ import { AuctionApiService } from '@/services/auctionApi';
 export const fetchAuctions = createAsyncThunk(
   'auctions/fetchAuctions',
   async ({ page, limit, filters }: { page: number; limit: number; filters?: AuctionFilters }) => {
-    return await AuctionApiService.getAuctions(page, limit, filters);
+    const result = await AuctionApiService.getAuctions(page, limit, filters);
+    // Convert Date objects to strings for Redux serialization
+    return {
+      ...result,
+      auctions: result.auctions.map(toSerializableAuction)
+    };
   }
 );
 
@@ -52,7 +57,11 @@ export const unwatchAuction = createAsyncThunk(
 export const fetchWatchedAuctions = createAsyncThunk(
   'auctions/fetchWatchedAuctions',
   async ({ page, limit }: { page: number; limit: number }) => {
-    return await AuctionApiService.getWatchedAuctions(page, limit);
+    const result = await AuctionApiService.getWatchedAuctions(page, limit);
+    return {
+      ...result,
+      auctions: result.auctions.map(toSerializableAuction)
+    };
   }
 );
 
@@ -208,10 +217,10 @@ const dummyAuctions: SerializableAuction[] = [
 ];
 
 const initialState: AuctionState = {
-  auctions: dummyAuctions,
-  watchedAuctions: [dummyAuctions[0]], // First auction is watched
-  featuredAuctions: dummyAuctions,
-  trendingAuctions: dummyAuctions,
+  auctions: [],
+  watchedAuctions: [],
+  featuredAuctions: [],
+  trendingAuctions: [],
   currentAuction: null,
   realTimeData: {},
   autoBidSettings: {},
@@ -390,9 +399,9 @@ const auctionSlice = createSlice({
         const { auctions, total, page, hasMore } = action.payload;
         
         if (page === 1) {
-          state.auctions = auctions.map(toSerializableAuction);
+          state.auctions = auctions; // Already serialized in thunk
         } else {
-          state.auctions.push(...auctions.map(toSerializableAuction));
+          state.auctions.push(...auctions); // Already serialized in thunk
         }
         
         state.currentPage = page;
@@ -494,7 +503,7 @@ const auctionSlice = createSlice({
     // Fetch watched auctions
     builder
       .addCase(fetchWatchedAuctions.fulfilled, (state, action) => {
-        state.watchedAuctions = action.payload.auctions.map(toSerializableAuction);
+        state.watchedAuctions = action.payload.auctions; // Already serialized in thunk
       });
     
     // Set auto-bid
@@ -532,17 +541,32 @@ export const {
   clearErrors,
 } = auctionSlice.actions;
 
-// Selectors that convert serializable auctions back to proper format
-export const selectAuctions = (state: any): Auction[] => 
-  state.auctions.auctions.map(fromSerializableAuction);
+// Base selectors for raw state
+const selectAuctionState = (state: any) => state.auctions;
+const selectRawAuctions = (state: any) => state.auctions.auctions;
+const selectRawWatchedAuctions = (state: any) => state.auctions.watchedAuctions;
+const selectRawFeaturedAuctions = (state: any) => state.auctions.featuredAuctions;
+const selectRawTrendingAuctions = (state: any) => state.auctions.trendingAuctions;
 
-export const selectWatchedAuctions = (state: any): Auction[] => 
-  state.auctions.watchedAuctions.map(fromSerializableAuction);
+// Memoized selectors that convert serializable auctions back to proper format
+export const selectAuctions = createSelector(
+  [selectRawAuctions],
+  (auctions) => auctions.map(fromSerializableAuction)
+);
 
-export const selectFeaturedAuctions = (state: any): Auction[] => 
-  state.auctions.featuredAuctions.map(fromSerializableAuction);
+export const selectWatchedAuctions = createSelector(
+  [selectRawWatchedAuctions],
+  (auctions) => auctions.map(fromSerializableAuction)
+);
 
-export const selectTrendingAuctions = (state: any): Auction[] => 
-  state.auctions.trendingAuctions.map(fromSerializableAuction);
+export const selectFeaturedAuctions = createSelector(
+  [selectRawFeaturedAuctions],
+  (auctions) => auctions.map(fromSerializableAuction)
+);
+
+export const selectTrendingAuctions = createSelector(
+  [selectRawTrendingAuctions],
+  (auctions) => auctions.map(fromSerializableAuction)
+);
 
 export default auctionSlice.reducer;

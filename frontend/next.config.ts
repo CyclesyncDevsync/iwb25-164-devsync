@@ -9,9 +9,14 @@ const nextConfig: NextConfig = {
     domains: ['images.unsplash.com', 'cloudinary.com'],
   },
   reactStrictMode: true,
+
   // No experimental settings for now
   async rewrites() {
     return [
+      {
+        source: '/api/auction/:path*',
+        destination: 'http://localhost:8096/api/auction/:path*',
+      },
       {
         source: '/backend/agent/:path*',
         destination: 'http://localhost:8080/api/agent/:path*',

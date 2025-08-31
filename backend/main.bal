@@ -12,6 +12,8 @@ import Cyclesync.quality_assessment as _;
 import Cyclesync.dynamic_pricing as _;
 // The material_workflow module will auto-register its services
 import Cyclesync.material_workflow as _;
+// The auction module will auto-register its services
+import Cyclesync.auction as _;
 // The agent_assignment module will auto-register its services
 import Cyclesync.agent_assignment as _;
 // The notifications module will auto-register its services
