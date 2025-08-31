@@ -1,0 +1,33 @@
+schemaVersion: 1.2
+apiVersion: core.choreo.dev/v1beta1
+kind: ComponentConfig
+metadata:
+  name: cyclesync-backend
+  displayName: CycleSync Backend
+  description: Backend services for CycleSync
+  version: 1.0.0
+spec:
+  service:
+    name: cyclesync-backend
+    port: 8080
+  endpoints:
+    - name: main
+      port: 8080
+      type: REST
+      networkVisibility: Public
+      context: /
+    - name: auth
+      port: 8084
+      type: REST
+      networkVisibility: Public
+      context: /auth
+    - name: wallet
+      port: 8097
+      type: REST
+      networkVisibility: Public
+      context: /wallet
+    - name: chat
+      port: 8094
+      type: WebSocket
+      networkVisibility: Public
+      context: /chat
