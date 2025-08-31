@@ -1,0 +1,27 @@
+# Exclude build artifacts
+target/
+*.jar
+
+# Exclude development files
+*.md
+*.sql
+docs/
+tests/
+.git/
+.gitignore
+
+# Exclude cloud config to avoid conflicts
+Cloud.toml
+choreo.yaml
+
+# Exclude local config
+Config.toml.local
+.env
+
+# Exclude frontend
+../frontend/
+
+# Exclude IDE files
+.vscode/
+.idea/
+*.iml

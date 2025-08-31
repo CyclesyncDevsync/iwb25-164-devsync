@@ -7,11 +7,14 @@ WORKDIR /home/ballerina
 # Copy project files
 COPY . .
 
-# Build the Ballerina project
-RUN bal build --skip-tests
+# Remove cloud.toml if exists to avoid cloud extension issues
+RUN rm -f Cloud.toml
+
+# Build the Ballerina project without cloud extension
+RUN bal build --skip-tests --offline || bal build --skip-tests
 
 # Expose all service ports
-EXPOSE 9090 8084 8085 8086 8087 8088 9095
+EXPOSE 9090 8084 8085 8086 8087 8088 8091 8097 9095
 
 # Run the application
-CMD ["bal", "run", "target/bin/Cyclesync.jar"]
+CMD ["java", "-jar", "target/bin/Cyclesync.jar"]
