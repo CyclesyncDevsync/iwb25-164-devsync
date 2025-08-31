@@ -1,0 +1,15 @@
+# Choreo endpoint detection helper
+apiVersion: core.choreo.dev/v1
+kind: EndpointConfiguration
+metadata:
+  name: cyclesync-endpoints
+spec:
+  endpoints:
+    - name: main
+      port: 9090
+      type: HTTP
+      path: /api
+    - name: auth
+      port: 8084
+      type: HTTP
+      path: /auth

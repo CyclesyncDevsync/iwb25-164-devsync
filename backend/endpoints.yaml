@@ -1,0 +1,55 @@
+# Choreo Endpoints Configuration
+# This file tells Choreo about your service endpoints
+
+version: 1.0
+
+endpoints:
+  - name: main-api
+    port: 9090
+    type: REST
+    context: /api
+    
+  - name: auth-service  
+    port: 8084
+    type: REST
+    context: /auth
+    
+  - name: pricing-service
+    port: 8088
+    type: REST
+    context: /pricing
+    
+  - name: notification-service
+    port: 8087
+    type: REST
+    context: /notifications
+    
+  - name: auction-service
+    port: 8091
+    type: REST
+    context: /auctions
+    
+  - name: wallet-service
+    port: 8097
+    type: REST
+    context: /wallet
+    
+  - name: demand-prediction
+    port: 8089
+    type: REST
+    context: /demand
+    
+  - name: quality-assessment
+    port: 8090
+    type: REST
+    context: /quality
+    
+  - name: workflow-service
+    port: 8086
+    type: REST
+    context: /workflow
+    
+  - name: chatbot-websocket
+    port: 8094
+    type: WebSocket
+    context: /chat

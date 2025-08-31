@@ -1,0 +1,25 @@
+# Example of how to mark secrets and configs in Choreo
+# This file shows which values should be secrets vs plain configs
+
+## SECRETS (sensitive data - add these as secrets in Choreo):
+# - DB_PASSWORD
+# - GEMINI_API_KEY  
+# - GOOGLE_VISION_API_KEY
+# - ASGARDEO_CLIENT_SECRET
+# - JWT_SECRET
+# - REDIS_PASSWORD (if using Redis)
+
+## CONFIGS (non-sensitive - add as plain environment variables):
+# - DB_HOST
+# - DB_PORT
+# - DB_USERNAME
+# - DB_NAME
+# - ASGARDEO_BASE_URL
+# - ASGARDEO_CLIENT_ID
+# - ASGARDEO_REDIRECT_URI
+# - FRONTEND_URL
+# - BACKEND_URL
+# - ENVIRONMENT
+
+# The Config.toml.choreo file already uses ${env:VARIABLE_NAME} syntax
+# which will automatically pull from Choreo's environment variables
