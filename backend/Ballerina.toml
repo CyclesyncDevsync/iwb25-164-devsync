@@ -6,7 +6,6 @@ distribution = "2201.8.5"
 
 [build-options]
 observabilityIncluded = true
-cloud = "choreo"
 
 [[dependency]]
 org = "ballerinax"
