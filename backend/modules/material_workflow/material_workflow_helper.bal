@@ -91,7 +91,7 @@ public isolated function insertMaterialSubmission(postgresql:Client dbClient, st
             specifications, status, ai_quality_score, ai_quality_analysis, created_at, updated_at
         ) VALUES (
             ${workflowId}, ${transactionId}, ${supplierIdStr}, 
-            ${userData.name.toString()}, ${userData.email.toString()}, ${userData.phone.toString()},
+            ${check userData.name.ensureType(string)}, ${check userData.email.ensureType(string)}, ${check userData.phone.ensureType(string)},
             ${categoryValue}, ${descriptionValue}, ${conditionValue}, ${quantityValue}, 'kg',
             ${deliveryMethod}, ${deliveryMethod == "agent_visit"}, ${deliveryMethod == "drop_off"},
             ${locationAddress}, ${locationCity}, ${locationDistrict}, ${locationProvince}, ${locationPostalCode},

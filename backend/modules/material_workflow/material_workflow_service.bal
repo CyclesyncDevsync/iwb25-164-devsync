@@ -139,11 +139,14 @@ service /api/material/workflow on workflowListener {
         
         // Extract pricing
         json pricingData = check materialData.pricing;
-        decimal expectedPriceValue = check decimal:fromString(pricingData.expectedPrice.toString());
-        decimal minimumPriceValue = check decimal:fromString(pricingData.minimumPrice.toString());
+        json expectedPriceJson = check pricingData.expectedPrice;
+        decimal expectedPriceValue = check decimal:fromString(expectedPriceJson.toString());
+        json minimumPriceJson = check pricingData.minimumPrice;
+        decimal minimumPriceValue = check decimal:fromString(minimumPriceJson.toString());
         
         // Extract quantity
-        decimal quantityValue = check decimal:fromString(materialData.quantity.toString());
+        json quantityJson = check materialData.quantity;
+        decimal quantityValue = check decimal:fromString(quantityJson.toString());
         
         // Insert submission
         sql:ParameterizedQuery insertQuery = `
@@ -179,7 +182,7 @@ service /api/material/workflow on workflowListener {
                 ${selectedWarehouseName}, ${selectedWarehouseAddress}, 
                 ${selectedWarehousePhone},
                 ${specMaterial},
-                ${materialData.tags.toJsonString()}::jsonb,
+                ${(check materialData.tags).toJsonString()}::jsonb,
                 ${photos.toJsonString()}::jsonb,
                 ${"submitted"}
             )`;
