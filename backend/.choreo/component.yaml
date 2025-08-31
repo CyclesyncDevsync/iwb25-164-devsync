@@ -1,0 +1,134 @@
+# Choreo Component Configuration
+apiVersion: core.choreo.dev/v1
+kind: Component
+metadata:
+  name: cyclesync-backend
+  displayName: CycleSync Backend Services
+  description: Circular economy platform backend with multiple microservices
+  version: 0.1.0
+  tags:
+    - circular-economy
+    - recycling
+    - sri-lanka
+    - ballerina
+
+spec:
+  type: service
+  buildPreset: dockerfile
+  
+  # Dockerfile configuration
+  dockerfile:
+    path: Dockerfile
+    context: .
+  
+  # Service endpoints
+  endpoints:
+    - name: main-api
+      port: 9090
+      type: REST
+      basePath: /api
+      displayName: Main API
+      description: Core platform API endpoints
+      
+    - name: auth-service
+      port: 8084
+      type: REST
+      basePath: /auth
+      displayName: Authentication Service
+      description: OAuth2 and JWT authentication
+      
+    - name: pricing-service
+      port: 8088
+      type: REST
+      basePath: /pricing
+      displayName: Dynamic Pricing Service
+      description: AI-powered pricing calculations
+      
+    - name: notification-service
+      port: 8087
+      type: REST
+      basePath: /notifications
+      displayName: Notification Service
+      description: Real-time notifications
+      
+    - name: auction-service
+      port: 8091
+      type: REST
+      basePath: /auctions
+      displayName: Auction Service
+      description: Material auction management
+      
+    - name: chatbot-websocket
+      port: 9095
+      type: WebSocket
+      basePath: /chat/ws
+      displayName: Chatbot WebSocket
+      description: Real-time chat communication
+  
+  # Environment variables
+  envVars:
+    - name: DB_HOST
+      type: secret
+      description: PostgreSQL database host
+      
+    - name: DB_PASSWORD
+      type: secret
+      description: PostgreSQL database password
+      
+    - name: GEMINI_API_KEY
+      type: secret
+      description: Google Gemini API key
+      
+    - name: GOOGLE_VISION_API_KEY
+      type: secret
+      description: Google Vision API key
+      
+    - name: ASGARDEO_CLIENT_SECRET
+      type: secret
+      description: Asgardeo OAuth client secret
+      
+    - name: JWT_SECRET
+      type: secret
+      description: JWT signing secret
+      
+    - name: DB_PORT
+      type: plain
+      defaultValue: "5432"
+      
+    - name: DB_USERNAME
+      type: plain
+      description: Database username
+      
+    - name: DB_NAME
+      type: plain
+      defaultValue: "cyclesync_db"
+      
+    - name: ENVIRONMENT
+      type: plain
+      defaultValue: "production"
+  
+  # Health check
+  healthCheck:
+    path: /health
+    port: 9090
+    intervalSeconds: 30
+    timeoutSeconds: 10
+  
+  # Resource requirements
+  resources:
+    requests:
+      memory: 512Mi
+      cpu: 0.5
+    limits:
+      memory: 2Gi
+      cpu: 2.0
+  
+  # Scaling
+  scaling:
+    minReplicas: 1
+    maxReplicas: 5
+    metrics:
+      - type: cpu
+        targetAverageUtilization: 70
+      - type: memory
+        targetAverageUtilization: 80
