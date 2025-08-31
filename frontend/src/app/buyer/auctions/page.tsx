@@ -9,7 +9,6 @@ import {
   FireIcon,
   TrophyIcon,
   BoltIcon,
-  CurrencyRupeeIcon,
   PlayIcon,
   StopIcon,
   ArrowUpIcon,
@@ -68,6 +67,10 @@ const AuctionsPage = () => {
     return auction.status;
   };
 
+  const getAuctionTimeLeft = (auction: Auction): number => {
+    return getTimeLeft(auction.endTime);
+  };
+
   const formatTimeLeft = (seconds: number) => {
     if (seconds <= 0) return 'Ended';
     
@@ -76,7 +79,7 @@ const AuctionsPage = () => {
     const secs = seconds % 60;
 
     if (hours > 0) {
-      return `${hours}h ${minutes}m`;
+      return `${hours}h ${minutes}m ${secs}s`;
     } else if (minutes > 0) {
       return `${minutes}m ${secs}s`;
     } else {
@@ -156,8 +159,25 @@ const AuctionsPage = () => {
     dispatch(fetchAuctions({ page: 1, limit: 20 }));
   }, [dispatch]);
 
-  // Note: Real-time updates should be handled via WebSocket and Redux actions
-  // This simulation is removed since we're using Redux state
+  // Real-time timer updates
+  useEffect(() => {
+    const interval = setInterval(() => {
+      // Force a re-render every second to update time displays
+      // This is a simple approach; in production, consider more efficient state management
+      const event = new CustomEvent('timeUpdate');
+      window.dispatchEvent(event);
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  // Force re-render when time updates
+  const [currentTime, setCurrentTime] = useState(Date.now());
+  useEffect(() => {
+    const handleTimeUpdate = () => setCurrentTime(Date.now());
+    window.addEventListener('timeUpdate', handleTimeUpdate);
+    return () => window.removeEventListener('timeUpdate', handleTimeUpdate);
+  }, []);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -285,10 +305,10 @@ const AuctionsPage = () => {
               {/* Image and Status */}
               <div className="relative h-48 bg-gray-200 rounded-t-lg overflow-hidden">
                 <div className="absolute top-3 left-3">
-                  <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(auction.status)}`}>
-                    {auction.status === 'ending_soon' ? 'Ending Soon!' : 
-                     auction.status === 'live' ? 'Live' :
-                     auction.status === 'upcoming' ? 'Upcoming' : 'Ended'}
+                  <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(getAuctionDisplayStatus(auction))}`}>
+                    {getAuctionDisplayStatus(auction) === 'ending_soon' ? 'Ending Soon!' : 
+                     getAuctionDisplayStatus(auction) === 'live' ? 'Live' :
+                     getAuctionDisplayStatus(auction) === 'upcoming' ? 'Upcoming' : 'Ended'}
                   </span>
                 </div>
                 <div className="absolute top-3 right-3 flex gap-2">
@@ -313,11 +333,11 @@ const AuctionsPage = () => {
                     <div className="flex items-center justify-between">
                       <span className="flex items-center gap-1">
                         <ClockIcon className="h-4 w-4" />
-                        {formatTimeLeft(auction.timeLeft)}
+                        {formatTimeLeft(getAuctionTimeLeft(auction))}
                       </span>
                       <span className="flex items-center gap-1">
                         <UserGroupIcon className="h-4 w-4" />
-                        {auction.participants}
+                        {auction.totalBidders || 0}
                       </span>
                     </div>
                   </div>
@@ -334,7 +354,7 @@ const AuctionsPage = () => {
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-gray-500">Current Bid:</span>
                     <span className="text-lg font-bold text-purple-600">
-                      ₹{auction.currentPrice.toLocaleString()}
+                      Rs.{auction.currentPrice.toLocaleString()}
                     </span>
                   </div>
                   
@@ -342,7 +362,7 @@ const AuctionsPage = () => {
                     <div className="flex items-center justify-between">
                       <span className="text-xs text-gray-500">Reserve:</span>
                       <span className={`text-xs ${auction.currentPrice >= auction.reservePrice ? 'text-green-600' : 'text-red-600'}`}>
-                        ₹{auction.reservePrice.toLocaleString()}
+                        Rs.{auction.reservePrice.toLocaleString()}
                         {auction.currentPrice >= auction.reservePrice && (
                           <CheckCircleIcon className="h-4 w-4 inline ml-1" />
                         )}
@@ -374,7 +394,7 @@ const AuctionsPage = () => {
                 </div>
 
                 {/* Action Buttons */}
-                {auction.status === 'live' || auction.status === 'ending_soon' ? (
+                {getAuctionDisplayStatus(auction) === 'live' || getAuctionDisplayStatus(auction) === 'ending_soon' ? (
                   <div className="space-y-2">
                     <button
                       onClick={() => setSelectedAuction(auction)}
@@ -386,7 +406,7 @@ const AuctionsPage = () => {
                     {auction.autoBidEnabled ? (
                       <div className="flex items-center justify-center gap-2 text-sm text-green-600">
                         <BoltIcon className="h-4 w-4" />
-                        Auto-bid active (max: ₹{auction.autoBidMax?.toLocaleString()})
+                        Auto-bid active (max: Rs.{auction.autoBidMax?.toLocaleString()})
                       </div>
                     ) : (
                       <button
@@ -397,7 +417,7 @@ const AuctionsPage = () => {
                       </button>
                     )}
                   </div>
-                ) : auction.status === 'upcoming' ? (
+                ) : getAuctionDisplayStatus(auction) === 'upcoming' ? (
                   <button
                     onClick={() => toggleWatchlist(auction.id)}
                     className={`w-full px-4 py-2 rounded-lg font-medium ${
@@ -450,11 +470,11 @@ const AuctionsPage = () => {
                   <div className="mb-4">
                     <h4 className="font-medium text-gray-900 mb-2">{selectedAuction.title}</h4>
                     <div className="text-sm text-gray-600 space-y-1">
-                      <p>Current bid: ₹{selectedAuction.currentPrice.toLocaleString()}</p>
-                      <p>Minimum next bid: ₹{(selectedAuction.currentPrice + 50).toLocaleString()}</p>
+                      <p>Current bid: Rs.{selectedAuction.currentPrice.toLocaleString()}</p>
+                      <p>Minimum next bid: Rs.{(selectedAuction.currentPrice + 50).toLocaleString()}</p>
                       <p className="flex items-center gap-1">
                         <ClockIcon className="h-4 w-4" />
-                        Time left: {formatTimeLeft(selectedAuction.timeLeft)}
+                        Time left: {formatTimeLeft(getAuctionTimeLeft(selectedAuction))}
                       </p>
                     </div>
                   </div>
@@ -467,7 +487,7 @@ const AuctionsPage = () => {
                         onClick={() => setBidAmount((selectedAuction.currentPrice + increment).toString())}
                         className="px-3 py-2 border border-gray-300 rounded text-sm hover:bg-gray-50"
                       >
-                        +₹{increment}
+                        +Rs.{increment}
                       </button>
                     ))}
                   </div>
@@ -478,7 +498,7 @@ const AuctionsPage = () => {
                       Your Bid Amount
                     </label>
                     <div className="relative">
-                      <CurrencyRupeeIcon className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+                      <span className="absolute left-3 top-3 text-gray-400 font-medium">Rs.</span>
                       <input
                         type="number"
                         value={bidAmount}
@@ -550,7 +570,7 @@ const AuctionsPage = () => {
                               {bid.bidder}
                             </span>
                             <div className="text-right">
-                              <div className="font-medium">₹{bid.amount.toLocaleString()}</div>
+                              <div className="font-medium">Rs.{bid.amount.toLocaleString()}</div>
                               <div className="text-xs text-gray-500">{bid.timestamp}</div>
                             </div>
                           </div>

@@ -10,7 +10,7 @@ import {
   AutoBidSettings
 } from '@/types/auction';
 
-const AUCTION_API_URL = '/api/auction';
+const AUCTION_API_URL = 'http://localhost:8096/api/auction';
 
 // Create axios instance with interceptors
 const auctionApi = axios.create({
