@@ -88,7 +88,7 @@ CircularSync revolutionizes the circular economy by connecting industrial waste 
 
 #### 1. Clone the Repository
 ```bash
-git clone https://github.com/CyclesyncDevsync/Cyclesync.git
+git clone [https://github.com/CyclesyncDevsync/Cyclesync.git](https://github.com/CyclesyncDevsync/iwb25-164-devsync.git)
 cd Cyclesync
 ```
 
