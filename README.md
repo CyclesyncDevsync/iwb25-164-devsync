@@ -22,7 +22,7 @@ CircularSync revolutionizes the circular economy by connecting industrial waste 
 
 ##  User Flow
 
-![User Flow Diagram](./docs/images/userflow-diagram.png)
+![User Flow Diagram](https://excalidraw.com/#room=c8bba46eb02fa126b6d4,ma9FHyp1Q_Tp2ZAKwg6zYQ)
 
 ##  Features
 
