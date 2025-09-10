@@ -4,8 +4,6 @@
 
 CircularSync is an enterprise-grade platform that transforms industrial waste management through intelligent material matching, real-time auctions, and comprehensive workflow automation. Built with Ballerina microservices, Next.js 14+, and deployed on Choreo Platform.
 
-![CircularSync Banner](./docs/images/banner.png)
-
 ## Overview
 
 CircularSync revolutionizes the circular economy by connecting industrial waste suppliers with buyers through an intelligent marketplace. Our platform combines real-time auctions, AI-powered quality assessment, field agent verification, and secure payment processing to create a seamless waste-to-resource transformation ecosystem.
@@ -19,10 +17,6 @@ CircularSync revolutionizes the circular economy by connecting industrial waste 
 ##  System Architecture
 
 <img width="1025" height="757" alt="image" src="https://github.com/user-attachments/assets/2fed5ddb-51a9-4625-9222-ef38ac17c885" />
-
-##  User Flow
-
-![User Flow Diagram](https://excalidraw.com/#room=c8bba46eb02fa126b6d4,ma9FHyp1Q_Tp2ZAKwg6zYQ)
 
 ##  Features
 
