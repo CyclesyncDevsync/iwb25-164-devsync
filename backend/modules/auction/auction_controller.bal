@@ -332,6 +332,7 @@ service /api/auction on new http:Listener(8096) {
 
             decimal currentPrice = auctionResult.current_price;
             decimal minBidAmount = currentPrice + auctionResult.bid_increment;
+            int? previousHighestBidderId = auctionResult.highest_bidder_id;
 
             // Validate bid amount
             if bidAmount < minBidAmount {
@@ -377,8 +378,8 @@ service /api/auction on new http:Listener(8096) {
                 log:printError("Failed to start transaction", txResult);
             }
 
-            // 1. Release previous bid freeze for this user in this auction (if any)
-            var unfreezeResult = dbClient->execute(`
+            // 1. Release previous bid freeze for current user in this auction (if any)
+            var unfreezeCurrentUserResult = dbClient->execute(`
                 UPDATE user_wallets
                 SET available_balance = available_balance + bf.frozen_amount,
                     frozen_balance = frozen_balance - bf.frozen_amount
@@ -389,12 +390,12 @@ service /api/auction on new http:Listener(8096) {
                 AND bf.is_active = true
             `);
 
-            if unfreezeResult is error {
-                log:printWarn("Failed to unfreeze previous bid", unfreezeResult);
+            if unfreezeCurrentUserResult is error {
+                log:printWarn("Failed to unfreeze current user's previous bid", unfreezeCurrentUserResult);
             }
 
-            // Mark previous freezes as inactive
-            var deactivateResult = dbClient->execute(`
+            // Mark current user's previous freezes as inactive
+            var deactivateCurrentUserResult = dbClient->execute(`
                 UPDATE bid_freezes
                 SET is_active = false, released_at = CURRENT_TIMESTAMP
                 WHERE user_id = ${bidderId}
@@ -402,11 +403,72 @@ service /api/auction on new http:Listener(8096) {
                 AND is_active = true
             `);
 
-            if deactivateResult is error {
-                log:printWarn("Failed to deactivate previous freezes", deactivateResult);
+            if deactivateCurrentUserResult is error {
+                log:printWarn("Failed to deactivate current user's previous freezes", deactivateCurrentUserResult);
             }
 
-            // 2. Freeze new bid amount
+            // 2. Release previous highest bidder's frozen funds (if different from current bidder)
+            if previousHighestBidderId is int && previousHighestBidderId != bidderId {
+                log:printInfo(string `Unfreezing previous highest bidder ${previousHighestBidderId} funds`);
+
+                var unfreezePreviousResult = dbClient->execute(`
+                    UPDATE user_wallets
+                    SET available_balance = available_balance + bf.frozen_amount,
+                        frozen_balance = frozen_balance - bf.frozen_amount
+                    FROM bid_freezes bf
+                    WHERE user_wallets.user_id = ${previousHighestBidderId}
+                    AND bf.user_id = ${previousHighestBidderId}
+                    AND bf.auction_id = ${auctionId}::uuid
+                    AND bf.is_active = true
+                `);
+
+                if unfreezePreviousResult is error {
+                    log:printError(string `Failed to unfreeze previous highest bidder ${previousHighestBidderId}`, unfreezePreviousResult);
+                } else {
+                    log:printInfo(string `Successfully unfroze funds for previous bidder ${previousHighestBidderId}`);
+                }
+
+                // Mark previous highest bidder's freezes as inactive
+                var deactivatePreviousResult = dbClient->execute(`
+                    UPDATE bid_freezes
+                    SET is_active = false, released_at = CURRENT_TIMESTAMP
+                    WHERE user_id = ${previousHighestBidderId}
+                    AND auction_id = ${auctionId}::uuid
+                    AND is_active = true
+                `);
+
+                if deactivatePreviousResult is error {
+                    log:printWarn(string `Failed to deactivate previous bidder ${previousHighestBidderId} freezes`, deactivatePreviousResult);
+                }
+
+                // Create refund transaction for previous highest bidder
+                record {
+                    string wallet_id;
+                }|error prevWalletResult = dbClient->queryRow(`
+                    SELECT wallet_id::text as wallet_id
+                    FROM user_wallets
+                    WHERE user_id = ${previousHighestBidderId}
+                `);
+
+                if prevWalletResult is record {} {
+                    var refundTransactionResult = dbClient->execute(`
+                        INSERT INTO wallet_transactions (
+                            wallet_id, user_id, type, amount, status, description,
+                            auction_id, balance_before, balance_after
+                        ) VALUES (
+                            ${prevWalletResult.wallet_id}::uuid, ${previousHighestBidderId}, 'bid_refund', ${currentPrice}, 'completed',
+                            'Bid refund - outbid by higher bidder', ${auctionId}::uuid,
+                            0, 0
+                        )
+                    `);
+
+                    if refundTransactionResult is error {
+                        log:printWarn(string `Failed to create refund transaction for previous bidder ${previousHighestBidderId}`, refundTransactionResult);
+                    }
+                }
+            }
+
+            // 3. Freeze new bid amount
             var freezeResult = dbClient->execute(`
                 UPDATE user_wallets
                 SET available_balance = available_balance - ${bidAmount},
@@ -428,7 +490,7 @@ service /api/auction on new http:Listener(8096) {
                 return response;
             }
 
-            // 3. Create bid record
+            // 4. Create bid record
             var bidResult = dbClient->execute(`
                 INSERT INTO bids (auction_id, bidder_id, bid_amount, status, created_at)
                 VALUES (${auctionId}::uuid, ${bidderId}, ${bidAmount}, 'active', CURRENT_TIMESTAMP)
@@ -448,7 +510,7 @@ service /api/auction on new http:Listener(8096) {
                 return response;
             }
 
-            // 4. Update auction current price and highest bidder
+            // 5. Update auction current price and highest bidder
             var updateAuctionResult = dbClient->execute(`
                 UPDATE auctions
                 SET current_price = ${bidAmount},
@@ -472,7 +534,7 @@ service /api/auction on new http:Listener(8096) {
                 return response;
             }
 
-            // 5. Create bid freeze record
+            // 6. Create bid freeze record
             var freezeRecordResult = dbClient->execute(`
                 INSERT INTO bid_freezes (auction_id, user_id, frozen_amount, is_active, created_at)
                 VALUES (${auctionId}::uuid, ${bidderId}, ${bidAmount}, true, CURRENT_TIMESTAMP)
@@ -482,7 +544,7 @@ service /api/auction on new http:Listener(8096) {
                 log:printWarn("Failed to create freeze record", freezeRecordResult);
             }
 
-            // 6. Create wallet transaction for freeze
+            // 7. Create wallet transaction for freeze
             var transactionResult = dbClient->execute(`
                 INSERT INTO wallet_transactions (
                     wallet_id, user_id, type, amount, status, description,
