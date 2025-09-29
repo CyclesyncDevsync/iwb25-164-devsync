@@ -355,7 +355,7 @@ modules = [
 [[package]]
 org = "ballerina"
 name = "websocket"
-version = "2.14.2"
+version = "2.14.1"
 dependencies = [
 	{org = "ballerina", name = "auth"},
 	{org = "ballerina", name = "constraint"},
@@ -422,7 +422,7 @@ dependencies = [
 [[package]]
 org = "ballerinax"
 name = "googleapis.vision"
-version = "1.6.1"
+version = "1.6.0"
 dependencies = [
 	{org = "ballerina", name = "http"},
 	{org = "ballerina", name = "url"},
