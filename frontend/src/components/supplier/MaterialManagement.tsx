@@ -6,17 +6,17 @@ import Link from 'next/link';
 import {
   PlusIcon,
   EyeIcon,
-  PencilIcon,
-  TrashIcon,
   FunnelIcon,
   MagnifyingGlassIcon,
   PhotoIcon,
-  MapPinIcon,
+  TruckIcon,
   CurrencyDollarIcon,
   ClockIcon,
   CheckCircleIcon,
   XCircleIcon,
-  ExclamationTriangleIcon
+  ExclamationTriangleIcon,
+  ArrowPathIcon,
+  PauseCircleIcon
 } from '@heroicons/react/24/outline';
 import { useAppDispatch, useAppSelector } from '../../hooks/redux';
 import {
@@ -31,13 +31,13 @@ import {
   MaterialCategory,
   QualityGrade
 } from '../../types/supplier';
+import ViewMaterialModal from './ViewMaterialModal';
 
 export default function MaterialManagement() {
   const [searchTerm, setSearchTerm] = useState('');
   const [showFilters, setShowFilters] = useState(false);
-  const [selectedItems, setSelectedItems] = useState<string[]>([]);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [materialToDelete, setMaterialToDelete] = useState<string | null>(null);
+  const [showViewModal, setShowViewModal] = useState(false);
+  const [viewingMaterial, setViewingMaterial] = useState<Material | null>(null);
 
   const dispatch = useAppDispatch();
   const { materials, loading, pagination, filters } = useAppSelector(state => state.supplier);
@@ -59,19 +59,9 @@ export default function MaterialManagement() {
     dispatch(setFilters(newFilters));
   };
 
-  const handleDelete = async (materialId: string) => {
-    try {
-      await dispatch(deleteMaterial(materialId)).unwrap();
-      setShowDeleteModal(false);
-      setMaterialToDelete(null);
-    } catch (error) {
-      console.error('Failed to delete material:', error);
-    }
-  };
-
-  const handleBulkDelete = async () => {
-    // Implement bulk delete logic
-    console.log('Bulk delete:', selectedItems);
+  const handleView = (material: Material) => {
+    setViewingMaterial(material);
+    setShowViewModal(true);
   };
 
   const filteredMaterials = materials.filter(material =>
@@ -143,25 +133,6 @@ export default function MaterialManagement() {
         </div>
       </div>
 
-      {/* Bulk Actions */}
-      {selectedItems.length > 0 && (
-        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-blue-700 dark:text-blue-400">
-              {selectedItems.length} item(s) selected
-            </span>
-            <div className="space-x-2">
-              <button
-                onClick={handleBulkDelete}
-                className="inline-flex items-center px-3 py-1 border border-red-300 text-sm font-medium rounded text-red-700 bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800"
-              >
-                <TrashIcon className="h-4 w-4 mr-1" />
-                Delete
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Materials Grid */}
       {loading.materials ? (
@@ -176,23 +147,7 @@ export default function MaterialManagement() {
             <MaterialCard
               key={material.id}
               material={material}
-              isSelected={selectedItems.includes(material.id)}
-              onSelect={(selected) => {
-                if (selected) {
-                  setSelectedItems([...selectedItems, material.id]);
-                } else {
-                  setSelectedItems(selectedItems.filter(id => id !== material.id));
-                }
-              }}
-              onView={() => dispatch(setSelectedMaterial(material))}
-              onEdit={() => {
-                // Navigate to edit page
-                window.location.href = `/supplier/materials/${material.id}/edit`;
-              }}
-              onDelete={() => {
-                setMaterialToDelete(material.id);
-                setShowDeleteModal(true);
-              }}
+              onView={() => handleView(material)}
             />
           ))}
         </div>
@@ -211,54 +166,87 @@ export default function MaterialManagement() {
         />
       )}
 
-      {/* Delete Confirmation Modal */}
-      <DeleteConfirmationModal
-        isOpen={showDeleteModal}
-        onClose={() => setShowDeleteModal(false)}
-        onConfirm={() => materialToDelete && handleDelete(materialToDelete)}
-        materialTitle={materials.find(m => m.id === materialToDelete)?.title || ''}
-      />
+      {/* View Material Modal */}
+      {showViewModal && viewingMaterial && (
+        <ViewMaterialModal
+          isOpen={showViewModal}
+          onClose={() => {
+            setShowViewModal(false);
+            setViewingMaterial(null);
+          }}
+          material={viewingMaterial}
+        />
+      )}
     </div>
   );
 }
 
 interface MaterialCardProps {
   material: Material;
-  isSelected: boolean;
-  onSelect: (selected: boolean) => void;
   onView: () => void;
-  onEdit: () => void;
-  onDelete: () => void;
 }
 
-function MaterialCard({ material, isSelected, onSelect, onView, onEdit, onDelete }: MaterialCardProps) {
-  const getStatusColor = (status: MaterialStatus) => {
+function MaterialCard({ material, onView }: MaterialCardProps) {
+  const getStatusColor = (status: string) => {
     switch (status) {
+      case 'approved':
       case MaterialStatus.APPROVED:
         return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400';
+      case 'submitted':
+      case 'pending_review':
       case MaterialStatus.PENDING_REVIEW:
         return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400';
+      case 'assigned':
+        return 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400';
+      case 'in_auction':
       case MaterialStatus.IN_AUCTION:
         return 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400';
+      case 'sold':
       case MaterialStatus.SOLD:
-        return 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400';
+        return 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/20 dark:text-indigo-400';
+      case 'rejected':
       case MaterialStatus.REJECTED:
         return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400';
+      case 'confirmed':
+        return 'bg-teal-100 text-teal-800 dark:bg-teal-900/20 dark:text-teal-400';
       default:
         return 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400';
     }
   };
 
-  const getStatusIcon = (status: MaterialStatus) => {
+  const getStatusIcon = (status: string) => {
     switch (status) {
+      case 'approved':
       case MaterialStatus.APPROVED:
         return <CheckCircleIcon className="h-4 w-4" />;
+      case 'submitted':
+      case 'pending_review':
       case MaterialStatus.PENDING_REVIEW:
         return <ClockIcon className="h-4 w-4" />;
+      case 'assigned':
+        return <ArrowPathIcon className="h-4 w-4" />;
+      case 'rejected':
       case MaterialStatus.REJECTED:
         return <XCircleIcon className="h-4 w-4" />;
+      case 'confirmed':
+        return <PauseCircleIcon className="h-4 w-4" />;
       default:
         return <ExclamationTriangleIcon className="h-4 w-4" />;
+    }
+  };
+
+  const getConditionColor = (condition: string) => {
+    switch (condition?.toLowerCase()) {
+      case 'excellent':
+        return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400';
+      case 'good':
+        return 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400';
+      case 'fair':
+        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400';
+      case 'poor':
+        return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400';
+      default:
+        return 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400';
     }
   };
 
@@ -268,19 +256,10 @@ function MaterialCard({ material, isSelected, onSelect, onView, onEdit, onDelete
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className={`bg-white dark:bg-gray-800 rounded-lg shadow-md hover:shadow-lg transition-shadow overflow-hidden ${
-        isSelected ? 'ring-2 ring-emerald-500' : ''
-      }`}
+      className="bg-white dark:bg-gray-800 rounded-lg shadow-md hover:shadow-lg transition-shadow overflow-hidden"
     >
-      {/* Header with selection checkbox */}
-      <div className="p-4 flex items-center justify-between">
-        <input
-          type="checkbox"
-          checked={isSelected}
-          onChange={(e) => onSelect(e.target.checked)}
-          className="rounded border-gray-300 text-emerald-600 shadow-sm focus:border-emerald-300 focus:ring focus:ring-emerald-200 focus:ring-opacity-50"
-        />
-        
+      {/* Header with status */}
+      <div className="p-4 flex items-center justify-end">
         <div className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(material.status)}`}>
           {getStatusIcon(material.status)}
           <span className="ml-1 capitalize">{material.status.replace('_', ' ')}</span>
@@ -331,81 +310,30 @@ function MaterialCard({ material, isSelected, onSelect, onView, onEdit, onDelete
           </div>
           
           <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
-            <MapPinIcon className="h-4 w-4 mr-1" />
-            <span className="truncate">{material.location.city}, {material.location.district}</span>
+            <TruckIcon className="h-4 w-4 mr-1" />
+            <span className="truncate">{material.deliveryMethod || 'Not specified'}</span>
           </div>
         </div>
 
-        {/* Quality Grade */}
+        {/* Condition */}
         <div className="mt-3">
-          <QualityBadge grade={material.condition} />
+          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getConditionColor(material.condition)}`}>
+            {material.condition ? material.condition.charAt(0).toUpperCase() + material.condition.slice(1) : 'Unknown'}
+          </span>
         </div>
       </div>
 
       {/* Actions */}
       <div className="px-4 py-3 bg-gray-50 dark:bg-gray-700 border-t border-gray-200 dark:border-gray-600">
-        <div className="flex items-center justify-between">
-          <div className="flex space-x-2">
-            <button
-              onClick={onView}
-              className="inline-flex items-center px-3 py-1 border border-gray-300 text-sm font-medium rounded text-gray-700 bg-white hover:bg-gray-50 dark:bg-gray-600 dark:text-gray-300 dark:border-gray-500 dark:hover:bg-gray-500"
-            >
-              <EyeIcon className="h-4 w-4 mr-1" />
-              View
-            </button>
-            
-            <button
-              onClick={onEdit}
-              className="inline-flex items-center px-3 py-1 border border-gray-300 text-sm font-medium rounded text-gray-700 bg-white hover:bg-gray-50 dark:bg-gray-600 dark:text-gray-300 dark:border-gray-500 dark:hover:bg-gray-500"
-            >
-              <PencilIcon className="h-4 w-4 mr-1" />
-              Edit
-            </button>
-          </div>
-          
-          <button
-            onClick={onDelete}
-            className="inline-flex items-center px-3 py-1 border border-red-300 text-sm font-medium rounded text-red-700 bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800"
-          >
-            <TrashIcon className="h-4 w-4 mr-1" />
-            Delete
-          </button>
-        </div>
+        <button
+          onClick={onView}
+          className="w-full inline-flex items-center justify-center px-3 py-2 border border-gray-300 text-sm font-medium rounded text-gray-700 bg-white hover:bg-gray-50 dark:bg-gray-600 dark:text-gray-300 dark:border-gray-500 dark:hover:bg-gray-500"
+        >
+          <EyeIcon className="h-4 w-4 mr-1" />
+          View Details
+        </button>
       </div>
     </motion.div>
-  );
-}
-
-interface QualityBadgeProps {
-  grade: QualityGrade;
-}
-
-function QualityBadge({ grade }: QualityBadgeProps) {
-  const gradeConfig = {
-    [QualityGrade.EXCELLENT]: {
-      color: 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400',
-      label: 'Excellent'
-    },
-    [QualityGrade.GOOD]: {
-      color: 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400',
-      label: 'Good'
-    },
-    [QualityGrade.FAIR]: {
-      color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400',
-      label: 'Fair'
-    },
-    [QualityGrade.POOR]: {
-      color: 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400',
-      label: 'Poor'
-    }
-  };
-
-  const config = gradeConfig[grade];
-
-  return (
-    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${config.color}`}>
-      {config.label}
-    </span>
   );
 }
 
@@ -593,57 +521,3 @@ function Pagination({ currentPage, totalPages, onPageChange }: PaginationProps) 
   );
 }
 
-interface DeleteConfirmationModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onConfirm: () => void;
-  materialTitle: string;
-}
-
-function DeleteConfirmationModal({ isOpen, onClose, onConfirm, materialTitle }: DeleteConfirmationModalProps) {
-  if (!isOpen) return null;
-
-  return (
-    <div className="fixed inset-0 z-50 overflow-y-auto">
-      <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-        <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" onClick={onClose}></div>
-        
-        <div className="inline-block align-bottom bg-white dark:bg-gray-800 rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-          <div className="bg-white dark:bg-gray-800 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-            <div className="sm:flex sm:items-start">
-              <div className="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 dark:bg-red-900/20 sm:mx-0 sm:h-10 sm:w-10">
-                <ExclamationTriangleIcon className="h-6 w-6 text-red-600 dark:text-red-400" />
-              </div>
-              <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
-                <h3 className="text-lg leading-6 font-medium text-gray-900 dark:text-white">
-                  Delete Material
-                </h3>
-                <div className="mt-2">
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    Are you sure you want to delete "{materialTitle}"? This action cannot be undone.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div className="bg-gray-50 dark:bg-gray-700 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-            <button
-              type="button"
-              onClick={onConfirm}
-              className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm"
-            >
-              Delete
-            </button>
-            <button
-              type="button"
-              onClick={onClose}
-              className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm dark:bg-gray-600 dark:text-gray-300 dark:border-gray-500 dark:hover:bg-gray-500"
-            >
-              Cancel
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}

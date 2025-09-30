@@ -24,6 +24,7 @@ export interface Material {
   tags: string[];
   estimatedPickupDate?: Date;
   availability: AvailabilityStatus;
+  deliveryMethod?: string;
   
   // Enhanced fields
   aiAnalysis?: AIAnalysisResult;
