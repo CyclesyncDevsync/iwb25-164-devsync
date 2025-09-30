@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { StatCard } from '../dashboard/StatCard';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/Card';
 import { ROUTES } from '../../constants';
-
+import WalletBalance from '../shared/WalletBalance';
 export function AdminOverview() {
   // Normally, these would be fetched from an API
   const stats = {

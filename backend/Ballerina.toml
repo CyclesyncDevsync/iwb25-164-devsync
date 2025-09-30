@@ -8,6 +8,16 @@ distribution = "2201.12.7"
 observabilityIncluded = true
 
 [[dependency]]
+org = "ballerina"
+name = "sql"
+version = "1.17.0"
+
+[[dependency]]
+org = "ballerina"
+name = "websocket"
+version = "2.14.1"
+
+[[dependency]]
 org = "ballerinax"
 name = "googleapis.vision"
 version = "1.6.0"

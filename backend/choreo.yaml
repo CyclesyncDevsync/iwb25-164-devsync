@@ -1,0 +1,143 @@
+# Choreo component configuration
+version: 1.0
+
+# Component metadata
+metadata:
+  name: cyclesync-backend
+  displayName: CycleSync Backend API
+  description: Circular economy platform for material recycling in Sri Lanka
+  version: 0.1.0
+  tags:
+    - circular-economy
+    - recycling
+    - sri-lanka
+    - wso2
+
+# Build configuration
+build:
+  # Build pack for Ballerina
+  buildPack: ballerina
+  # Ballerina project directory
+  projectPath: .
+  # Build command (optional, Choreo will auto-detect)
+  buildCommand: bal build
+
+# Runtime configuration
+runtime:
+  # Port configuration
+  ports:
+    - name: http
+      containerPort: 9090
+      protocol: HTTP
+    - name: pricing
+      containerPort: 8088
+      protocol: HTTP
+    - name: auth
+      containerPort: 8084
+      protocol: HTTP
+    - name: notifications
+      containerPort: 8087
+      protocol: HTTP
+    - name: chatbot-ws
+      containerPort: 9095
+      protocol: WS
+
+# Environment variables
+env:
+  # Database configuration
+  - name: DB_HOST
+    value: "${choreo:env:DB_HOST}"
+  - name: DB_PORT
+    value: "${choreo:env:DB_PORT}"
+  - name: DB_USERNAME
+    value: "${choreo:env:DB_USERNAME}"
+  - name: DB_PASSWORD
+    value: "${choreo:env:DB_PASSWORD}"
+  - name: DB_NAME
+    value: "${choreo:env:DB_NAME}"
+  
+  # API Keys
+  - name: GEMINI_API_KEY
+    value: "${choreo:env:GEMINI_API_KEY}"
+  - name: GOOGLE_VISION_API_KEY
+    value: "${choreo:env:GOOGLE_VISION_API_KEY}"
+  
+  # Asgardeo OAuth Configuration
+  - name: ASGARDEO_BASE_URL
+    value: "${choreo:env:ASGARDEO_BASE_URL}"
+  - name: ASGARDEO_CLIENT_ID
+    value: "${choreo:env:ASGARDEO_CLIENT_ID}"
+  - name: ASGARDEO_CLIENT_SECRET
+    value: "${choreo:env:ASGARDEO_CLIENT_SECRET}"
+  - name: ASGARDEO_REDIRECT_URI
+    value: "${choreo:env:ASGARDEO_REDIRECT_URI}"
+  
+  # JWT and Session
+  - name: JWT_SECRET
+    value: "${choreo:env:JWT_SECRET}"
+  
+  # Redis Configuration (Optional)
+  - name: REDIS_HOST
+    value: "${choreo:env:REDIS_HOST}"
+  - name: REDIS_PORT
+    value: "${choreo:env:REDIS_PORT}"
+  - name: REDIS_PASSWORD
+    value: "${choreo:env:REDIS_PASSWORD}"
+  
+  # Application URLs
+  - name: FRONTEND_URL
+    value: "${choreo:env:FRONTEND_URL}"
+  - name: BACKEND_URL
+    value: "${choreo:env:BACKEND_URL}"
+  - name: ENVIRONMENT
+    value: "${choreo:env:ENVIRONMENT}"
+
+# Health check configuration
+healthCheck:
+  path: /health
+  port: 9090
+  intervalSeconds: 30
+  timeoutSeconds: 10
+  successThreshold: 1
+  failureThreshold: 3
+
+# Resource requirements
+resources:
+  requests:
+    memory: "512Mi"
+    cpu: "500m"
+  limits:
+    memory: "2Gi"
+    cpu: "2000m"
+
+# Scaling configuration
+scaling:
+  minReplicas: 1
+  maxReplicas: 5
+  targetCPUUtilizationPercentage: 70
+
+# API definitions
+apis:
+  - name: main-api
+    displayName: CycleSync Main API
+    basePath: /api
+    port: 9090
+    schema:
+      type: openapi
+      version: "3.0.0"
+  
+  - name: pricing-api
+    displayName: Dynamic Pricing API
+    basePath: /pricing
+    port: 8088
+    schema:
+      type: openapi
+      version: "3.0.0"
+  
+  - name: auth-api
+    displayName: Authentication API
+    basePath: /auth
+    port: 8084
+    schema:
+      type: openapi
+      version: "3.0.0"

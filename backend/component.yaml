@@ -1,0 +1,38 @@
+# Choreo Component Configuration
+apiVersion: core.choreo.dev/v1beta1
+kind: ComponentConfig
+metadata:
+  name: cyclesync-backend
+  displayName: CycleSync Backend
+  description: Circular economy platform backend services
+  
+spec:
+  # Use Ballerina build preset
+  build:
+    preset: ballerina
+    
+  # Ports configuration
+  ports:
+    - name: main-api
+      port: 9090
+      protocol: http
+      
+    - name: pricing-service
+      port: 8088
+      protocol: http
+      
+    - name: auth-service
+      port: 8084
+      protocol: http
+      
+    - name: notification-service
+      port: 8087
+      protocol: http
+      
+    - name: auction-service
+      port: 8091
+      protocol: http
+      
+    - name: chatbot-websocket
+      port: 9095
+      protocol: ws

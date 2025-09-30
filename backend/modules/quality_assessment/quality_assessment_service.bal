@@ -211,11 +211,11 @@ service /api/ai/quality on qualityListener {
     }
     
     // Health check endpoint
-    resource function get health() returns record {string status; string message; time:Utc timestamp;} {
+    resource function get health() returns @http:Payload {mediaType: "application/json"} record {string status; string message; string timestamp;} {
         return {
             status: "healthy",
             message: "Quality Assessment Service is operational",
-            timestamp: time:utcNow()
+            timestamp: time:utcNow().toString()
         };
     }
     

@@ -50,6 +50,8 @@ export const ROUTES = {
     TRANSACTIONS: '/admin/transactions',
     DISPUTES: '/admin/disputes',
     REPORTS: '/admin/reports',
+    VERIFICATION: '/admin/verification',
+    PRICING: '/admin/pricing',
   },
   AGENT: {
     HOME: '/agent',

@@ -55,6 +55,16 @@ export function AdminSidebar() {
       ),
     },
     {
+      href: ROUTES.ADMIN.VERIFICATION,
+      label: 'Material Verification',
+      icon: (
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" />
+          <path d="M10 17l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8z" />
+        </svg>
+      ),
+    },
+    {
       href: ROUTES.ADMIN.AUCTIONS,
       label: 'Auctions',
       icon: (
@@ -101,6 +111,17 @@ export function AdminSidebar() {
           <line x1="16" y1="13" x2="8" y2="13" />
           <line x1="16" y1="17" x2="8" y2="17" />
           <polyline points="10 9 9 9 8 9" />
+        </svg>
+      ),
+    },
+    {
+      href: ROUTES.ADMIN.PRICING,
+      label: 'Pricing',
+      icon: (
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <line x1="12" y1="1" x2="12" y2="23" />
+          <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+          <circle cx="12" cy="12" r="3" />
         </svg>
       ),
     },

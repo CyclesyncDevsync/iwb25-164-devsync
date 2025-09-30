@@ -8,6 +8,7 @@ import QuickActionCard from '@/components/agent/QuickActionCard';
 import AssignmentCard from '@/components/agent/AssignmentCard';
 import GPSTaskList from '@/components/agent/GPSTaskList';
 import { useAuth } from '@/hooks/useAuth';
+import WalletBalance from '@/components/shared/WalletBalance';
 
 interface Assignment {
   id: string;
@@ -44,6 +45,91 @@ const AgentDashboard = () => {
     rating: 4.8
   });
 
+  // Fetch assignments from backend
+  const fetchAssignments = async () => {
+    const userId = user?.asgardeoId || user?.asgardeo_id;
+    if (!userId) {
+      console.log('No user ID available, skipping assignment fetch');
+      return;
+    }
+
+    try {
+      const response = await fetch(`/backend/agent/${userId}/assignments`, {
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.assignments) {
+          // Transform backend assignment data to match frontend interface
+          const transformedAssignments = data.assignments.map((assignment: any) => ({
+            id: assignment.assignmentId || assignment.id,
+            type: 'verification' as const,
+            title: assignment.materialDetails?.title || 'Material Verification',
+            location: {
+              address: assignment.location?.address || 'Address not specified',
+              coordinates: { 
+                lat: assignment.materialLocation?.latitude || 6.9271, 
+                lng: assignment.materialLocation?.longitude || 79.8612 
+              }
+            },
+            priority: assignment.urgency || 'medium',
+            status: assignment.status || 'pending',
+            estimatedTime: Math.ceil(assignment.agent?.costBreakdown?.estimatedDuration * 60) || 45,
+            supplier: {
+              name: assignment.supplierName || 'Unknown Supplier',
+              contact: assignment.agent?.agentPhone || 'Contact not available'
+            },
+            materials: assignment.materialDetails ? [{
+              type: assignment.materialDetails.type || 'Material',
+              quantity: parseFloat(assignment.materialDetails.quantity) || 1,
+              unit: 'kg'
+            }] : [],
+            deadline: assignment.createdAt ? new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() : new Date().toISOString()
+          }));
+          
+          setAssignments(transformedAssignments);
+          console.log('Assignments loaded:', transformedAssignments);
+          
+          // Calculate real stats from assignments
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          
+          const todayAssignments = transformedAssignments.filter((assignment: Assignment) => {
+            const assignmentDate = new Date(assignment.deadline);
+            assignmentDate.setHours(0, 0, 0, 0);
+            return assignmentDate.getTime() === today.getTime();
+          });
+          
+          const weekStart = new Date(today);
+          weekStart.setDate(today.getDate() - today.getDay());
+          
+          const weeklyAssignments = transformedAssignments.filter((assignment: Assignment) => {
+            const assignmentDate = new Date(assignment.deadline);
+            return assignmentDate >= weekStart;
+          });
+          
+          setStats({
+            todayCompleted: todayAssignments.filter((a: Assignment) => a.status === 'completed').length,
+            todayPending: todayAssignments.filter((a: Assignment) => a.status === 'pending').length,
+            weeklyTotal: weeklyAssignments.length,
+            rating: 4.8 // TODO: Get real rating from backend
+          });
+        }
+      } else {
+        console.log('Failed to fetch assignments:', response.status);
+        // Fall back to empty assignments on error
+        setAssignments([]);
+      }
+    } catch (error) {
+      console.error('Error fetching assignments:', error);
+      // Fall back to empty assignments on error
+      setAssignments([]);
+    }
+  };
+
   useEffect(() => {
     // Get current location
     if (navigator.geolocation) {
@@ -72,63 +158,14 @@ const AgentDashboard = () => {
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
 
-    // Mock data - Replace with actual API calls
-    setAssignments([
-      {
-        id: '1',
-        type: 'verification',
-        title: 'Verify Plastic Bottles Collection',
-        location: {
-          address: 'Colombo 07, Western Province',
-          coordinates: { lat: 6.9271, lng: 79.8612 }
-        },
-        priority: 'high',
-        status: 'pending',
-        estimatedTime: 45,
-        supplier: {
-          name: 'Green Recyclers Pvt Ltd',
-          contact: '+94 77 123 4567'
-        },
-        materials: [
-          { type: 'PET Bottles', quantity: 500, unit: 'kg' }
-        ],
-        deadline: '2025-08-20T14:00:00Z'
-      },
-      {
-        id: '2',
-        type: 'collection',
-        title: 'Metal Scrap Collection',
-        location: {
-          address: 'Kandy, Central Province',
-          coordinates: { lat: 7.2906, lng: 80.6337 }
-        },
-        priority: 'medium',
-        status: 'in-progress',
-        estimatedTime: 60,
-        supplier: {
-          name: 'Metal Works Lanka',
-          contact: '+94 81 223 4567'
-        },
-        materials: [
-          { type: 'Aluminum', quantity: 200, unit: 'kg' },
-          { type: 'Steel', quantity: 150, unit: 'kg' }
-        ],
-        deadline: '2025-08-20T16:30:00Z'
-      }
-    ]);
-
-    setStats({
-      todayCompleted: 3,
-      todayPending: 2,
-      weeklyTotal: 18,
-      rating: 4.8
-    });
+    // Fetch real assignments from backend API
+    fetchAssignments();
 
     return () => {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
     };
-  }, []);
+  }, [user]);
 
   const quickActions = [
     {
@@ -233,6 +270,11 @@ const AgentDashboard = () => {
               </div>
               <div className="text-sm text-gray-600 dark:text-gray-300">Rating</div>
             </motion.div>
+          </div>
+
+          {/* Wallet Balance */}
+          <div className="mb-6">
+            <WalletBalance />
           </div>
 
           {/* Quick Actions */}

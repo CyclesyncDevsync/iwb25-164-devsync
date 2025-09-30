@@ -1,7 +1,7 @@
 // Copyright (c) 2025 CircularSync
 // Chatbot Module - Main WebSocket Service
 
-import ballerina/websocket;
+import ballerina/websocket as ws;
 import ballerina/http;
 import ballerina/log;
 import ballerina/time;
@@ -19,18 +19,18 @@ type ChatbotConfig record {|
 |};
 
 # Main chatbot WebSocket service
-@websocket:ServiceConfig {
+@ws:ServiceConfig {
     idleTimeout: 300,
     maxFrameSize: 65536
 }
-service /chat on new websocket:Listener(websocketPort) {
+service /chat on new ws:Listener(websocketPort) {
     
     private final ChatbotConfig config;
     private final GeminiConnector aiConnector;
     private final ConversationManager conversationManager;
     private final IntentProcessor intentProcessor;
     private final ResponseGenerator responseGenerator;
-    private final map<websocket:Caller> activeConnections;
+    private final map<ws:Caller> activeConnections;
     private final RedisConnector redis;
     
     # HTTP clients for business APIs
@@ -79,7 +79,7 @@ service /chat on new websocket:Listener(websocketPort) {
     }
     
     # Handle new WebSocket connection
-    resource function get .() returns websocket:Service|websocket:Error {
+    resource function get .() returns ws:Service|ws:Error {
         return new ChatbotWebSocketService(
             self.aiConnector,
             self.conversationManager,
@@ -96,13 +96,13 @@ service /chat on new websocket:Listener(websocketPort) {
 
 # WebSocket service implementation
 service class ChatbotWebSocketService {
-    *websocket:Service;
+    *ws:Service;
     
     private final GeminiConnector aiConnector;
     private final ConversationManager conversationManager;
     private final IntentProcessor intentProcessor;
     private final ResponseGenerator responseGenerator;
-    private final map<websocket:Caller> activeConnections;
+    private final map<ws:Caller> activeConnections;
     private final RedisConnector redis;
     private final http:Client qualityClient;
     private final http:Client demandClient;
@@ -113,7 +113,7 @@ service class ChatbotWebSocketService {
         ConversationManager conversationManager,
         IntentProcessor intentProcessor,
         ResponseGenerator responseGenerator,
-        map<websocket:Caller> activeConnections,
+        map<ws:Caller> activeConnections,
         RedisConnector redis,
         http:Client qualityClient,
         http:Client demandClient,
@@ -131,7 +131,7 @@ service class ChatbotWebSocketService {
     }
     
     # Handle WebSocket connection open
-    remote function onOpen(websocket:Caller caller) returns error? {
+    remote function onOpen(ws:Caller caller) returns error? {
         string connectionId = caller.getConnectionId();
         
         // Store connection
@@ -153,7 +153,7 @@ service class ChatbotWebSocketService {
     }
     
     # Handle incoming messages
-    remote function onMessage(websocket:Caller caller, json message) returns error? {
+    remote function onMessage(ws:Caller caller, json message) returns error? {
         string connectionId = caller.getConnectionId();
         
         // Handle timestamp conversion
@@ -353,7 +353,7 @@ service class ChatbotWebSocketService {
     }
     
     # Handle WebSocket errors
-    remote function onError(websocket:Caller caller, error err) returns error? {
+    remote function onError(ws:Caller caller, error err) returns error? {
         string connectionId = caller.getConnectionId();
         log:printError(string `WebSocket error for ${connectionId}: ${err.message()}`);
         
@@ -365,7 +365,7 @@ service class ChatbotWebSocketService {
     }
     
     # Handle WebSocket close
-    remote function onClose(websocket:Caller caller, int statusCode, string reason) returns error? {
+    remote function onClose(ws:Caller caller, int statusCode, string reason) returns error? {
         string connectionId = caller.getConnectionId();
         _ = self.activeConnections.remove(connectionId);
         

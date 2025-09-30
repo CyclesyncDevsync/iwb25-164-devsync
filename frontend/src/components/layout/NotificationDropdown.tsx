@@ -10,19 +10,11 @@ import {
   XMarkIcon
 } from '@heroicons/react/24/outline';
 import { format } from 'date-fns';
-
-interface Notification {
-  id: string;
-  type: 'success' | 'warning' | 'info' | 'error';
-  title: string;
-  message: string;
-  timestamp: Date;
-  read: boolean;
-  actionUrl?: string;
-}
+import { Notification } from '../../store/slices/notificationSlice';
 
 interface NotificationDropdownProps {
   notifications: Notification[];
+  unreadCount: number;
   onMarkAsRead: (id: string) => void;
   onMarkAllAsRead: () => void;
   onClearAll: () => void;
@@ -30,21 +22,28 @@ interface NotificationDropdownProps {
 
 export function NotificationDropdown({ 
   notifications, 
+  unreadCount,
   onMarkAsRead, 
   onMarkAllAsRead, 
   onClearAll 
 }: NotificationDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const unreadCount = notifications.filter(n => !n.read).length;
 
   const getNotificationIcon = (type: string) => {
     switch (type) {
-      case 'success':
+      case 'verification_required':
+      case 'material_verified':
         return <CheckCircleIcon className="w-5 h-5 text-green-500" />;
-      case 'warning':
-        return <ExclamationTriangleIcon className="w-5 h-5 text-yellow-500" />;
-      case 'error':
+      case 'material_rejected':
         return <ExclamationTriangleIcon className="w-5 h-5 text-red-500" />;
+      case 'auction_bid':
+      case 'auction_won':
+        return <CheckCircleIcon className="w-5 h-5 text-blue-500" />;
+      case 'payment_failed':
+        return <ExclamationTriangleIcon className="w-5 h-5 text-red-500" />;
+      case 'system_update':
+      case 'maintenance':
+        return <ExclamationTriangleIcon className="w-5 h-5 text-yellow-500" />;
       default:
         return <InformationCircleIcon className="w-5 h-5 text-blue-500" />;
     }
@@ -52,11 +51,15 @@ export function NotificationDropdown({
 
   const getNotificationBgColor = (type: string) => {
     switch (type) {
-      case 'success':
+      case 'verification_required':
+      case 'material_verified':
+      case 'auction_won':
         return 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-700';
-      case 'warning':
+      case 'system_update':
+      case 'maintenance':
         return 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-700';
-      case 'error':
+      case 'material_rejected':
+      case 'payment_failed':
         return 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-700';
       default:
         return 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-700';
@@ -158,11 +161,11 @@ export function NotificationDropdown({
                             <div className="flex items-center justify-between">
                               <p className={`
                                 text-sm font-medium truncate
-                                ${!notification.read ? 'text-gray-900 dark:text-white' : 'text-gray-700 dark:text-gray-300'}
+                                ${!notification.isRead ? 'text-gray-900 dark:text-white' : 'text-gray-700 dark:text-gray-300'}
                               `}>
                                 {notification.title}
                               </p>
-                              {!notification.read && (
+                              {!notification.isRead && (
                                 <div className="w-2 h-2 bg-blue-500 rounded-full ml-2 flex-shrink-0" />
                               )}
                             </div>
@@ -170,7 +173,7 @@ export function NotificationDropdown({
                               {notification.message}
                             </p>
                             <p className="text-xs text-gray-500 dark:text-gray-500 mt-2">
-                              {format(notification.timestamp, 'MMM d, yyyy - h:mm a')}
+                              {format(new Date(notification.createdAt), 'MMM d, yyyy - h:mm a')}
                             </p>
                           </div>
                         </div>
@@ -206,77 +209,4 @@ export function NotificationDropdown({
       </AnimatePresence>
     </div>
   );
-}
-
-// Hook for managing notifications
-export function useNotifications() {
-  const [notifications, setNotifications] = useState<Notification[]>([
-    {
-      id: '1',
-      type: 'success',
-      title: 'Auction Won!',
-      message: 'You have successfully won the auction for Premium Plastic Materials.',
-      timestamp: new Date(Date.now() - 1000 * 60 * 30), // 30 minutes ago
-      read: false,
-      actionUrl: '/buyer/auctions'
-    },
-    {
-      id: '2',
-      type: 'warning',
-      title: 'Payment Reminder',
-      message: 'Payment for order #12345 is due tomorrow.',
-      timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2), // 2 hours ago
-      read: false,
-      actionUrl: '/wallet'
-    },
-    {
-      id: '3',
-      type: 'info',
-      title: 'New Feature Available',
-      message: 'Check out our enhanced search functionality.',
-      timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24), // 1 day ago
-      read: true,
-      actionUrl: '/search'
-    }
-  ]);
-
-  const markAsRead = (id: string) => {
-    setNotifications(prev => 
-      prev.map(notification => 
-        notification.id === id 
-          ? { ...notification, read: true }
-          : notification
-      )
-    );
-  };
-
-  const markAllAsRead = () => {
-    setNotifications(prev => 
-      prev.map(notification => ({ ...notification, read: true }))
-    );
-  };
-
-  const clearAll = () => {
-    setNotifications([]);
-  };
-
-  const addNotification = (notification: Omit<Notification, 'id' | 'timestamp'>) => {
-    setNotifications(prev => [
-      {
-        ...notification,
-        id: Date.now().toString(),
-        timestamp: new Date()
-      },
-      ...prev
-    ]);
-  };
-
-  return {
-    notifications,
-    markAsRead,
-    markAllAsRead,
-    clearAll,
-    addNotification,
-    unreadCount: notifications.filter(n => !n.read).length
-  };
 }

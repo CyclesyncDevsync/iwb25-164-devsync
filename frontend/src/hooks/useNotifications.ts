@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useAppDispatch, useAppSelector } from './redux';
 import {
-  addNotification,
+  addNotification as addNotificationAction,
   addBatchNotifications,
   updateNotification,
   removeNotification,
@@ -76,6 +76,31 @@ export const useNotifications = () => {
     }
   }, [bulkUpdateNotifications, dispatch]);
 
+  // Mark all notifications as read
+  const markAllNotificationsAsRead = useCallback(async () => {
+    const allNotificationIds = notificationsData?.notifications.map(n => n.id) || [];
+    if (allNotificationIds.length > 0) {
+      await markNotificationsAsRead(allNotificationIds);
+    }
+  }, [markNotificationsAsRead, notificationsData]);
+
+  // Clear all notifications
+  const clearAllNotifications = useCallback(async () => {
+    try {
+      const allNotificationIds = notificationsData?.notifications.map(n => n.id) || [];
+      if (allNotificationIds.length > 0) {
+        await bulkUpdateNotifications({
+          notificationIds: allNotificationIds,
+          action: 'delete',
+        }).unwrap();
+        // Refetch to update the local state
+        refetch();
+      }
+    } catch (error) {
+      console.error('Failed to clear all notifications:', error);
+    }
+  }, [bulkUpdateNotifications, notificationsData, refetch]);
+
   // Execute notification action
   const executeNotificationAction = useCallback(async (
     notificationId: string, 
@@ -116,10 +141,17 @@ export const useNotifications = () => {
     isNotificationCenterOpen,
     preferences,
     refetch,
+    // Individual functions
     markNotificationAsRead,
     markNotificationsAsRead,
     executeNotificationAction,
     toggleNotificationCenter,
+    // Aliases for NotificationDropdown component compatibility
+    markAsRead: markNotificationAsRead,
+    markAllAsRead: markAllNotificationsAsRead,
+    clearAll: clearAllNotifications,
+    // Add a function to add notifications
+    addNotification: (notification: any) => dispatch(addNotificationAction(notification)),
   };
 };
 
@@ -260,7 +292,7 @@ export const useRealtimeNotifications = () => {
         switch (data.type) {
           case 'NEW_NOTIFICATION':
             const notification: Notification = data.notification;
-            dispatch(addNotification(notification));
+            dispatch(addNotificationAction(notification));
             
             // Show browser notification if enabled
             showNotification(notification);

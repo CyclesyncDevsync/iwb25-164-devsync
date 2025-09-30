@@ -21,11 +21,12 @@ interface PriceCalculatorProps {
 
 export const PriceCalculator: React.FC<PriceCalculatorProps> = ({
   onPriceCalculated,
-  defaultLocation = { latitude: 19.0760, longitude: 72.8777 } // Mumbai default
+  defaultLocation = { latitude: 6.9271, longitude: 79.8612 } // Colombo default
 }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pricingResponse, setPricingResponse] = useState<PricingResponse | null>(null);
+  const [showResults, setShowResults] = useState(false);
   
   const [formData, setFormData] = useState<PricingRequest>({
     materialType: 'plastic',
@@ -44,9 +45,11 @@ export const PriceCalculator: React.FC<PriceCalculatorProps> = ({
     try {
       const response = await pricingApi.calculatePrice(formData);
       setPricingResponse(response);
+      setShowResults(true);
       onPriceCalculated?.(response);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to calculate price');
+      setShowResults(false);
     } finally {
       setLoading(false);
     }
@@ -66,14 +69,12 @@ export const PriceCalculator: React.FC<PriceCalculatorProps> = ({
           <Select
             value={formData.materialType}
             onChange={(value) => handleInputChange('materialType', value)}
+            options={MATERIAL_TYPES.map(type => ({
+              value: type,
+              label: type.charAt(0).toUpperCase() + type.slice(1)
+            }))}
             className="w-full"
-          >
-            {MATERIAL_TYPES.map(type => (
-              <option key={type} value={type}>
-                {type.charAt(0).toUpperCase() + type.slice(1)}
-              </option>
-            ))}
-          </Select>
+          />
         </div>
 
         <div>
@@ -105,14 +106,12 @@ export const PriceCalculator: React.FC<PriceCalculatorProps> = ({
           <Select
             value={formData.urgency}
             onChange={(value) => handleInputChange('urgency', value)}
+            options={URGENCY_LEVELS.map(level => ({
+              value: level.value,
+              label: level.label
+            }))}
             className="w-full"
-          >
-            {URGENCY_LEVELS.map(level => (
-              <option key={level.value} value={level.value}>
-                {level.label}
-              </option>
-            ))}
-          </Select>
+          />
         </div>
 
         <div className="grid grid-cols-2 gap-4">
@@ -178,7 +177,7 @@ export const PriceCalculator: React.FC<PriceCalculatorProps> = ({
         </div>
       )}
 
-      {pricingResponse && (
+      {showResults && pricingResponse && (
         <div className="mt-6 space-y-4">
           <h3 className="text-lg font-semibold">Price Calculation Results</h3>
           
@@ -186,14 +185,14 @@ export const PriceCalculator: React.FC<PriceCalculatorProps> = ({
             <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded">
               <p className="text-sm text-gray-600 dark:text-gray-400">Recommended Price</p>
               <p className="text-2xl font-bold text-green-600 dark:text-green-400">
-                ₹{pricingResponse.recommendedPrice.toFixed(2)}/kg
+                LKR {pricingResponse.recommendedPrice.toFixed(2)}/kg
               </p>
             </div>
             
             <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded">
               <p className="text-sm text-gray-600 dark:text-gray-400">Price Range</p>
               <p className="text-lg font-semibold text-blue-600 dark:text-blue-400">
-                ₹{pricingResponse.minPrice.toFixed(2)} - ₹{pricingResponse.maxPrice.toFixed(2)}
+                LKR {pricingResponse.minPrice.toFixed(2)} - LKR {pricingResponse.maxPrice.toFixed(2)}
               </p>
             </div>
           </div>
@@ -201,11 +200,11 @@ export const PriceCalculator: React.FC<PriceCalculatorProps> = ({
           <div className="space-y-2 text-sm">
             <div className="flex justify-between">
               <span>Base Price:</span>
-              <span>₹{pricingResponse.basePrice.toFixed(2)}</span>
+              <span>LKR {pricingResponse.basePrice.toFixed(2)}</span>
             </div>
             <div className="flex justify-between">
               <span>Transport Cost:</span>
-              <span>₹{pricingResponse.transportCost.toFixed(2)}</span>
+              <span>LKR {pricingResponse.transportCost.toFixed(2)}</span>
             </div>
             <div className="flex justify-between">
               <span>Profit Margin:</span>

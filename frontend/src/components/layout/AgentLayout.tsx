@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
+import { useNotifications } from '@/hooks/useNotifications';
 import {
   HomeIcon,
   DocumentCheckIcon,
@@ -15,6 +16,7 @@ import {
   UserCircleIcon
 } from '@heroicons/react/24/outline';
 import { motion, AnimatePresence } from 'framer-motion';
+import { NotificationCenter } from '@/components/notifications';
 
 interface AgentLayoutProps {
   children: React.ReactNode;
@@ -23,6 +25,7 @@ interface AgentLayoutProps {
 const AgentLayout: React.FC<AgentLayoutProps> = ({ children }) => {
   const pathname = usePathname();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const { unreadCount, isNotificationCenterOpen, toggleNotificationCenter } = useNotifications();
 
   // Clean pathname by removing query parameters
   const cleanPathname = pathname.split('?')[0];
@@ -189,9 +192,16 @@ const AgentLayout: React.FC<AgentLayoutProps> = ({ children }) => {
             </div>
             
             <div className="flex items-center space-x-3">
-              <button className="p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 relative">
+              <button 
+                onClick={toggleNotificationCenter}
+                className="p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 relative"
+              >
                 <BellIcon className="w-6 h-6" />
-                <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></span>
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </span>
+                )}
               </button>
               <button className="p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700">
                 <UserCircleIcon className="w-6 h-6" />
@@ -215,9 +225,16 @@ const AgentLayout: React.FC<AgentLayoutProps> = ({ children }) => {
             </h1>
             
             <div className="flex items-center space-x-2">
-              <button className="p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 relative">
+              <button 
+                onClick={toggleNotificationCenter}
+                className="p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 relative"
+              >
                 <BellIcon className="w-6 h-6" />
-                <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></span>
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </span>
+                )}
               </button>
               <button className="p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700">
                 <UserCircleIcon className="w-6 h-6" />
@@ -230,6 +247,9 @@ const AgentLayout: React.FC<AgentLayoutProps> = ({ children }) => {
         <main className="flex-1">
           {children}
         </main>
+
+        {/* Notification Center */}
+        <NotificationCenter />
 
         {/* Mobile bottom navigation */}
         <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-dark-surface border-t border-gray-200 dark:border-gray-700 safe-area-pb">

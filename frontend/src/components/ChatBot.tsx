@@ -53,7 +53,7 @@ export default function ChatBot({ className = '' }: ChatBotProps) {
 
   const connectWebSocket = () => {
     try {
-      wsRef.current = new WebSocket('ws://localhost:8083/chat');
+      wsRef.current = new WebSocket('ws://localhost:8094/chat');
       
       wsRef.current.onopen = () => {
         console.log('Connected to chatbot');

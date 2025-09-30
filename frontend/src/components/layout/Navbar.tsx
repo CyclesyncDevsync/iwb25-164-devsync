@@ -21,7 +21,8 @@ import { useAuth } from '../../hooks/useAuth';
 import { USER_ROLES } from '../../constants';
 import { Button } from '../../components/ui/Button';
 import { NavDarkModeToggle } from '../../components/ui/DarkModeToggle';
-import { NotificationDropdown, useNotifications } from './NotificationDropdown';
+import { NotificationDropdown } from './NotificationDropdown';
+import { useNotifications } from '../../hooks/useNotifications';
 import { NavbarSearch } from './NavbarSearch';
 import { UserAvatar } from '../ui/UserAvatar';
 import { Breadcrumb, useBreadcrumbs } from './Breadcrumb';
@@ -228,6 +229,7 @@ export function Navbar() {
               <div className="bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm rounded-full p-1 shadow-lg shadow-green-100/30 dark:shadow-slate-900/30 border border-green-100/50 dark:border-slate-700/50">
                 <NotificationDropdown
                   notifications={notifications}
+                  unreadCount={unreadCount}
                   onMarkAsRead={markAsRead}
                   onMarkAllAsRead={markAllAsRead}
                   onClearAll={clearAll}

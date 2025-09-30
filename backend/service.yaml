@@ -1,0 +1,105 @@
+# Choreo Service Definition
+openapi: 3.0.0
+info:
+  title: CycleSync Backend API
+  version: 1.0.0
+  description: Circular economy platform for material recycling
+
+servers:
+  - url: http://localhost:9090
+    description: Local server
+
+paths:
+  /health:
+    get:
+      summary: Health check endpoint
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+  
+  /api/materials:
+    get:
+      summary: Get all materials
+      tags:
+        - Materials
+      responses:
+        '200':
+          description: List of materials
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+    
+    post:
+      summary: Create new material
+      tags:
+        - Materials
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '201':
+          description: Material created
+  
+  /auth/login:
+    post:
+      summary: User login
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                password:
+                  type: string
+      responses:
+        '200':
+          description: Login successful
+  
+  /pricing/calculate:
+    post:
+      summary: Calculate dynamic pricing
+      tags:
+        - Pricing
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Pricing calculated
+  
+  /notifications:
+    get:
+      summary: Get notifications
+      tags:
+        - Notifications
+      responses:
+        '200':
+          description: List of notifications
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
