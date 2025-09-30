@@ -3,12 +3,14 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
+import { useAuth } from '../../hooks/useAuth';
 import {
   PlusIcon,
   EyeIcon,
   FunnelIcon,
   MagnifyingGlassIcon,
   PhotoIcon,
+  MapPinIcon,
   TruckIcon,
   CurrencyDollarIcon,
   ClockIcon,
@@ -16,12 +18,15 @@ import {
   XCircleIcon,
   ExclamationTriangleIcon,
   ArrowPathIcon,
-  PauseCircleIcon
+  PauseCircleIcon,
+  PencilIcon,
+  ArchiveBoxIcon,
+  UserIcon,
+  ShieldCheckIcon
 } from '@heroicons/react/24/outline';
 import { useAppDispatch, useAppSelector } from '../../hooks/redux';
 import {
   fetchSupplierMaterials,
-  deleteMaterial,
   setFilters,
   setSelectedMaterial
 } from '../../store/slices/supplierSlice';
@@ -31,24 +36,140 @@ import {
   MaterialCategory,
   QualityGrade
 } from '../../types/supplier';
-import ViewMaterialModal from './ViewMaterialModal';
+import { ViewMaterialModal } from './ViewMaterialModal';
 
 export default function MaterialManagement() {
+  const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [showFilters, setShowFilters] = useState(false);
+  const [backendMaterials, setBackendMaterials] = useState<any[]>([]);
+  const [isLoadingBackend, setIsLoadingBackend] = useState(true);
   const [showViewModal, setShowViewModal] = useState(false);
-  const [viewingMaterial, setViewingMaterial] = useState<Material | null>(null);
+  const [materialToView, setMaterialToView] = useState<Material | null>(null);
 
   const dispatch = useAppDispatch();
   const { materials, loading, pagination, filters } = useAppSelector(state => state.supplier);
 
   useEffect(() => {
-    dispatch(fetchSupplierMaterials({
-      page: pagination.currentPage,
-      limit: pagination.limit,
-      status: filters.status !== 'all' ? filters.status : undefined
-    }));
-  }, [dispatch, pagination.currentPage, pagination.limit, filters.status]);
+    // Fetch materials from the backend API
+    const fetchMaterials = async () => {
+      try {
+        // Don't fetch if user is not loaded yet
+        if (!user) {
+          console.log('Waiting for user authentication...');
+          return;
+        }
+        
+        setIsLoadingBackend(true);
+        // Get supplier ID from auth context or localStorage as fallback
+        // Using the same test ID that's in the submission form
+        const supplierId = user.asgardeoId || user.id || localStorage.getItem('supplierId') || '103ad4f1-8def-43e5-b72f-aa4c6d306bf4';
+        
+        console.log('User object:', user);
+        console.log('Attempting to fetch with supplierId:', supplierId);
+        
+        if (!supplierId) {
+          console.warn('No supplier ID found. User may need to log in again.');
+          setIsLoadingBackend(false);
+          return;
+        }
+
+        const response = await fetch(`http://localhost:8086/api/material/workflow/submissions/${supplierId}`);
+        
+        if (response.ok) {
+          const data = await response.json();
+          
+          // The backend returns {supplierId, submissions, count}
+          const materialsArray = data.submissions || [];
+          
+          // Transform the backend data to match the frontend Material type structure
+          const transformedMaterials = materialsArray.map((submission: any) => ({
+            id: submission.id || submission.transaction_id,
+            title: submission.title,
+            description: submission.description,
+            category: submission.category,
+            subCategory: submission.sub_category,
+            quantity: submission.quantity,
+            unit: submission.unit,
+            condition: submission.condition ? submission.condition.toLowerCase() as QualityGrade : QualityGrade.GOOD,
+            pricing: {
+              expectedPrice: submission.expected_price || 150,
+              minimumPrice: submission.minimum_price || 150,
+              pricePerUnit: 0,
+              currency: 'LKR',
+              negotiable: submission.negotiable || true
+            },
+            status: (submission.submission_status || 'pending_review') as MaterialStatus,
+            location: {
+              address: submission.location_address,
+              city: submission.location_city,
+              district: submission.location_district,
+              coordinates: {
+                latitude: submission.location_latitude,
+                longitude: submission.location_longitude
+              }
+            },
+            photos: (() => {
+              let photosArray = [];
+              if (submission.photos) {
+                // Handle case where photos might be a JSON string
+                if (typeof submission.photos === 'string') {
+                  try {
+                    photosArray = JSON.parse(submission.photos);
+                  } catch (e) {
+                    console.error('Failed to parse photos JSON:', e);
+                    photosArray = [];
+                  }
+                } else if (Array.isArray(submission.photos)) {
+                  photosArray = submission.photos;
+                } else {
+                  console.warn('Unexpected photos format:', submission.photos);
+                  photosArray = [];
+                }
+              }
+              
+              return photosArray.map((photo: any, index: number) => ({
+                id: `${submission.id || submission.transaction_id}_photo_${index}`,
+                url: photo.data, // This already contains the data:image format
+                filename: photo.filename || 'photo.jpg',
+                size: 0, // Not provided by backend
+                mimeType: photo.type || 'image/jpeg',
+                isMain: index === 0, // First photo is main
+                uploadedAt: new Date().toISOString() // Convert to string for Redux serialization
+              }));
+            })(),
+            createdAt: submission.created_at,
+            updatedAt: submission.updated_at,
+            deliveryMethod: submission.delivery_method,
+            tags: submission.tags || []
+          }));
+          
+          setBackendMaterials(transformedMaterials);
+        } else {
+          console.error('Failed to fetch materials. Status:', response.status);
+          try {
+            const errorData = await response.json();
+            console.error('Error response:', errorData);
+          } catch (e) {
+            console.error('Could not parse error response');
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch materials:', error);
+      } finally {
+        setIsLoadingBackend(false);
+      }
+    };
+
+    fetchMaterials();
+    
+    // Comment out Redux fetch for now since we're using backend directly
+    // dispatch(fetchSupplierMaterials({
+    //   page: pagination.currentPage,
+    //   limit: pagination.limit,
+    //   status: filters.status !== 'all' ? filters.status : undefined
+    // }));
+  }, [dispatch, pagination.currentPage, pagination.limit, filters.status, user]);
 
   const handleSearch = (term: string) => {
     setSearchTerm(term);
@@ -59,12 +180,8 @@ export default function MaterialManagement() {
     dispatch(setFilters(newFilters));
   };
 
-  const handleView = (material: Material) => {
-    setViewingMaterial(material);
-    setShowViewModal(true);
-  };
-
-  const filteredMaterials = materials.filter(material =>
+  // Use backend materials instead of Redux materials
+  const filteredMaterials = backendMaterials.filter(material =>
     material.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
     material.description.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -133,9 +250,8 @@ export default function MaterialManagement() {
         </div>
       </div>
 
-
       {/* Materials Grid */}
-      {loading.materials ? (
+      {isLoadingBackend ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {[...Array(6)].map((_, index) => (
             <MaterialCardSkeleton key={index} />
@@ -147,7 +263,10 @@ export default function MaterialManagement() {
             <MaterialCard
               key={material.id}
               material={material}
-              onView={() => handleView(material)}
+              onView={() => {
+                setMaterialToView(material);
+                setShowViewModal(true);
+              }}
             />
           ))}
         </div>
@@ -167,16 +286,14 @@ export default function MaterialManagement() {
       )}
 
       {/* View Material Modal */}
-      {showViewModal && viewingMaterial && (
-        <ViewMaterialModal
-          isOpen={showViewModal}
-          onClose={() => {
-            setShowViewModal(false);
-            setViewingMaterial(null);
-          }}
-          material={viewingMaterial}
-        />
-      )}
+      <ViewMaterialModal
+        isOpen={showViewModal}
+        onClose={() => {
+          setShowViewModal(false);
+          setMaterialToView(null);
+        }}
+        material={materialToView}
+      />
     </div>
   );
 }
@@ -188,27 +305,36 @@ interface MaterialCardProps {
 
 function MaterialCard({ material, onView }: MaterialCardProps) {
   const getStatusColor = (status: string) => {
+    // Map backend statuses to colors
     switch (status) {
-      case 'approved':
-      case MaterialStatus.APPROVED:
-        return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400';
       case 'submitted':
+        return 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400';
+      case 'pending_verification':
       case 'pending_review':
       case MaterialStatus.PENDING_REVIEW:
-        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400';
+        return 'bg-amber-100 text-amber-800 dark:bg-amber-900/20 dark:text-amber-400';
       case 'assigned':
-        return 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400';
-      case 'in_auction':
-      case MaterialStatus.IN_AUCTION:
         return 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400';
-      case 'sold':
-      case MaterialStatus.SOLD:
-        return 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/20 dark:text-indigo-400';
+      case 'confirmed':
+      case 'approved':
+      case MaterialStatus.APPROVED:
+        return 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/20 dark:text-emerald-400';
+      case 'verified':
+        return 'bg-teal-100 text-teal-800 dark:bg-teal-900/20 dark:text-teal-400';
       case 'rejected':
       case MaterialStatus.REJECTED:
-        return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400';
-      case 'confirmed':
-        return 'bg-teal-100 text-teal-800 dark:bg-teal-900/20 dark:text-teal-400';
+        return 'bg-rose-100 text-rose-800 dark:bg-rose-900/20 dark:text-rose-400';
+      case 'in_auction':
+      case MaterialStatus.IN_AUCTION:
+        return 'bg-violet-100 text-violet-800 dark:bg-violet-900/20 dark:text-violet-400';
+      case 'sold':
+      case MaterialStatus.SOLD:
+        return 'bg-sky-100 text-sky-800 dark:bg-sky-900/20 dark:text-sky-400';
+      case 'archived':
+      case MaterialStatus.ARCHIVED:
+        return 'bg-slate-100 text-slate-800 dark:bg-slate-900/20 dark:text-slate-400';
+      case MaterialStatus.DRAFT:
+        return 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400';
       default:
         return 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400';
     }
@@ -216,20 +342,34 @@ function MaterialCard({ material, onView }: MaterialCardProps) {
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'approved':
-      case MaterialStatus.APPROVED:
-        return <CheckCircleIcon className="h-4 w-4" />;
       case 'submitted':
+        return <CheckCircleIcon className="h-4 w-4" />;
+      case 'pending_verification':
       case 'pending_review':
       case MaterialStatus.PENDING_REVIEW:
         return <ClockIcon className="h-4 w-4" />;
       case 'assigned':
-        return <ArrowPathIcon className="h-4 w-4" />;
+        return <UserIcon className="h-4 w-4" />;
+      case 'confirmed':
+      case 'approved':
+      case MaterialStatus.APPROVED:
+        return <CheckCircleIcon className="h-4 w-4" />;
+      case 'verified':
+        return <ShieldCheckIcon className="h-4 w-4" />;
       case 'rejected':
       case MaterialStatus.REJECTED:
         return <XCircleIcon className="h-4 w-4" />;
-      case 'confirmed':
-        return <PauseCircleIcon className="h-4 w-4" />;
+      case 'in_auction':
+      case MaterialStatus.IN_AUCTION:
+        return <CurrencyDollarIcon className="h-4 w-4" />;
+      case 'sold':
+      case MaterialStatus.SOLD:
+        return <CheckCircleIcon className="h-4 w-4" />;
+      case 'archived':
+      case MaterialStatus.ARCHIVED:
+        return <ArchiveBoxIcon className="h-4 w-4" />;
+      case MaterialStatus.DRAFT:
+        return <PencilIcon className="h-4 w-4" />;
       default:
         return <ExclamationTriangleIcon className="h-4 w-4" />;
     }
@@ -311,7 +451,7 @@ function MaterialCard({ material, onView }: MaterialCardProps) {
           
           <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
             <TruckIcon className="h-4 w-4 mr-1" />
-            <span className="truncate">{material.deliveryMethod || 'Not specified'}</span>
+            <span className="capitalize">{material.deliveryMethod?.replace('_', ' ') || 'Not specified'}</span>
           </div>
         </div>
 
@@ -327,13 +467,55 @@ function MaterialCard({ material, onView }: MaterialCardProps) {
       <div className="px-4 py-3 bg-gray-50 dark:bg-gray-700 border-t border-gray-200 dark:border-gray-600">
         <button
           onClick={onView}
-          className="w-full inline-flex items-center justify-center px-3 py-2 border border-gray-300 text-sm font-medium rounded text-gray-700 bg-white hover:bg-gray-50 dark:bg-gray-600 dark:text-gray-300 dark:border-gray-500 dark:hover:bg-gray-500"
+          className="w-full inline-flex justify-center items-center px-3 py-1 border border-gray-300 text-sm font-medium rounded text-gray-700 bg-white hover:bg-gray-50 dark:bg-gray-600 dark:text-gray-300 dark:border-gray-500 dark:hover:bg-gray-500"
         >
           <EyeIcon className="h-4 w-4 mr-1" />
           View Details
         </button>
       </div>
     </motion.div>
+  );
+}
+
+interface QualityBadgeProps {
+  grade: QualityGrade;
+}
+
+export function QualityBadge({ grade }: QualityBadgeProps) {
+  const gradeConfig = {
+    [QualityGrade.EXCELLENT]: {
+      color: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/20 dark:text-emerald-400 ring-1 ring-emerald-600/20',
+      icon: '⭐',
+      label: 'Excellent'
+    },
+    [QualityGrade.GOOD]: {
+      color: 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400 ring-1 ring-blue-600/20',
+      icon: '✅',
+      label: 'Good'
+    },
+    [QualityGrade.FAIR]: {
+      color: 'bg-amber-100 text-amber-800 dark:bg-amber-900/20 dark:text-amber-400 ring-1 ring-amber-600/20',
+      icon: '⚠️',
+      label: 'Fair'
+    },
+    [QualityGrade.POOR]: {
+      color: 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400 ring-1 ring-red-600/20',
+      icon: '❌',
+      label: 'Poor'
+    }
+  };
+
+  const config = gradeConfig[grade] || {
+    color: 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400 ring-1 ring-gray-600/20',
+    icon: '❓',
+    label: grade || 'Unknown'
+  };
+
+  return (
+    <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium ${config.color}`}>
+      <span className="text-sm">{config.icon}</span>
+      {config.label}
+    </span>
   );
 }
 
@@ -520,4 +702,3 @@ function Pagination({ currentPage, totalPages, onPageChange }: PaginationProps) 
     </div>
   );
 }
-
