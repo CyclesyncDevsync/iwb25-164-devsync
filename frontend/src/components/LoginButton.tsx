@@ -1,13 +1,10 @@
 'use client';
 
 import { useAuth } from '../hooks/useAuth';
-import { useRouter } from 'next/navigation';
 import { Button } from './ui/Button';
-import Link from 'next/link';
 
 export default function LoginButton() {
-  const { logout, user, loading, isAuthenticated } = useAuth();
-  const router = useRouter();
+  const { logout, user, loading, isAuthenticated, login, register } = useAuth();
 
   if (loading) {
     return <div>Loading...</div>;
@@ -17,7 +14,7 @@ export default function LoginButton() {
     <div>
       {isAuthenticated ? (
         <div className="flex items-center space-x-4">
-          <span>Welcome, {user?.name}!</span>
+          <span>Welcome, {user?.email?.split('@')[0] || 'User'}!</span>
           <button
             onClick={() => logout()}
             className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
@@ -27,16 +24,21 @@ export default function LoginButton() {
         </div>
       ) : (
         <div className="flex flex-col sm:flex-row gap-2">
-          <Link href="/auth/login">
-            <Button className="w-full sm:w-auto bg-primary hover:bg-primary-dark text-white">
-              Login
-            </Button>
-          </Link>
-          <Link href="/auth/register">
-            <Button variant="outline" className="w-full sm:w-auto">
-              Sign Up
-            </Button>
-          </Link>
+          <Button 
+            onClick={login}
+            disabled={loading}
+            className="w-full sm:w-auto bg-primary hover:bg-primary-dark text-white disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {loading ? 'Signing In...' : 'Login'}
+          </Button>
+          <Button 
+            variant="outline" 
+            onClick={register}
+            disabled={loading}
+            className="w-full sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {loading ? 'Loading...' : 'Sign Up'}
+          </Button>
         </div>
       )}
     </div>

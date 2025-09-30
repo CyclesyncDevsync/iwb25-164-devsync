@@ -2,6 +2,8 @@
 // Database Operations and Utilities
 
 import ballerinax/postgresql;
+import ballerina/uuid;
+import ballerina/sql;
 
 # Execute database test operations
 #
@@ -137,5 +139,129 @@ public function executeTestOperations() returns json|error {
         "timestamp": "",
         "results": results,
         "total_tests": results.length()
+    };
+}
+
+# Newsletter Subscriber record type
+public type NewsletterSubscriber record {|
+    # Unique subscriber ID
+    string id;
+    # Subscriber email address
+    string email;
+    # Optional subscriber name
+    string? name;
+    # Subscription timestamp
+    string subscribed_at;
+    # Whether subscription is active
+    boolean is_active;
+    # Subscriber preferences (JSON)
+    json preferences;
+    # Last newsletter sent timestamp
+    string? last_sent_at;
+    # Token for unsubscribing
+    string? unsubscribe_token;
+|};
+
+# Add newsletter subscriber
+#
+# + email - Subscriber email address
+# + name - Optional subscriber name
+# + return - Success status or error
+public function addNewsletterSubscriber(string email, string? name = ()) returns json|error {
+    postgresql:Client dbClient = check getDatabaseClient();
+    
+    string unsubscribeToken = uuid:createType4AsString();
+    
+    sql:ParameterizedQuery query = `INSERT INTO newsletter_subscribers (email, name, unsubscribe_token) 
+        VALUES (${email}, ${name ?: ""}, ${unsubscribeToken})
+        ON CONFLICT (email) DO NOTHING`;
+    
+    var result = dbClient->execute(query);
+    
+    if (result is error) {
+        return error("Failed to add subscriber: " + result.message());
+    }
+    
+    return {
+        "success": true,
+        "message": "Successfully subscribed to newsletter",
+        "email": email
+    };
+}
+
+# Get all active newsletter subscribers
+#
+# + return - List of active subscribers or error
+public function getActiveSubscribers() returns NewsletterSubscriber[]|error {
+    postgresql:Client dbClient = check getDatabaseClient();
+    
+    stream<NewsletterSubscriber, error?> subscriberStream = dbClient->query(`
+        SELECT id, email, name, subscribed_at, is_active, preferences, last_sent_at, unsubscribe_token
+        FROM newsletter_subscribers 
+        WHERE is_active = true
+        ORDER BY subscribed_at DESC
+    `);
+    
+    NewsletterSubscriber[] subscribers = [];
+    check from NewsletterSubscriber subscriber in subscriberStream
+        do {
+            subscribers.push(subscriber);
+        };
+    
+    check subscriberStream.close();
+    return subscribers;
+}
+
+# Update last sent timestamp for subscribers
+#
+# + subscriberIds - List of subscriber IDs to update
+# + return - Success status or error
+public function updateLastSentTimestamp(string[] subscriberIds) returns json|error {
+    postgresql:Client dbClient = check getDatabaseClient();
+    
+    if (subscriberIds.length() == 0) {
+        return { "success": true, "message": "No subscribers to update" };
+    }
+    
+    int updatedCount = 0;
+    
+    foreach string subscriberId in subscriberIds {
+        sql:ParameterizedQuery query = `UPDATE newsletter_subscribers 
+            SET last_sent_at = CURRENT_TIMESTAMP 
+            WHERE id = ${subscriberId}`;
+        
+        var result = dbClient->execute(query);
+        if !(result is error) {
+            updatedCount += 1;
+        }
+    }
+    
+    return {
+        "success": true,
+        "message": string `Updated ${updatedCount} subscribers`,
+        "updated_count": updatedCount
+    };
+}
+
+# Unsubscribe user by token
+#
+# + token - Unsubscribe token
+# + return - Success status or error
+public function unsubscribeByToken(string token) returns json|error {
+    postgresql:Client dbClient = check getDatabaseClient();
+    
+    sql:ParameterizedQuery query = `UPDATE newsletter_subscribers 
+        SET is_active = false 
+        WHERE unsubscribe_token = ${token}`;
+    
+    var result = dbClient->execute(query);
+    
+    if (result is error) {
+        return error("Failed to unsubscribe: " + result.message());
+    }
+    
+    return {
+        "success": true,
+        "message": "Successfully unsubscribed from newsletter"
     };
 }

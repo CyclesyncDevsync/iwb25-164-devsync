@@ -2,7 +2,6 @@ import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
-import { DarkModeToggle } from '../ui/DarkModeToggle';
 
 export function Footer() {
   const currentYear = new Date().getFullYear();
@@ -47,9 +46,9 @@ export function Footer() {
   ];
 
   return (
-    <footer className="bg-gray-50 dark:bg-dark-surface border-t border-gray-200 dark:border-gray-700">
-      <div className="container mx-auto px-4 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-6 gap-8">
+    <footer className="bg-gradient-to-br from-green-50 via-white to-emerald-50 dark:from-slate-900 dark:via-slate-800 dark:to-blue-900 border-t border-green-100 dark:border-slate-700 shadow-2xl shadow-green-100/20 dark:shadow-slate-900/50">
+      <div className="container mx-auto px-6 py-16">
+        <div className="grid grid-cols-1 md:grid-cols-6 gap-12">
           {/* Brand Section */}
           <div className="col-span-1 md:col-span-2">
             <motion.div
@@ -58,43 +57,38 @@ export function Footer() {
               transition={{ duration: 0.5 }}
             >
               <Link href="/" className="flex items-center group">
-                <Image
-                  src="/globe.svg"
-                  alt="CircularSync Logo"
-                  width={32}
-                  height={32}
-                  className="h-8 w-auto group-hover:animate-pulse"
-                />
-                <span className="ml-2 text-xl font-bold heading-gradient">
+                <div className="relative">
+                  <Image
+                    src="/globe.svg"
+                    alt="CircularSync Logo"
+                    width={36}
+                    height={36}
+                    className="h-9 w-auto transition-transform duration-300 group-hover:scale-110"
+                  />
+                  <div className="absolute -top-1 -right-1 w-3 h-3 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full animate-pulse shadow-lg shadow-green-400/50"></div>
+                </div>
+                <span className="ml-3 text-xl font-bold bg-gradient-to-r from-green-600 via-emerald-600 to-teal-600 dark:from-green-400 dark:via-emerald-400 dark:to-teal-400 bg-clip-text text-transparent">
                   CircularSync
                 </span>
               </Link>
-              <p className="mt-4 text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
+              <p className="mt-6 text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
                 Revolutionizing sustainable material management through AI-powered transparency, 
                 connecting recyclers, field agents, suppliers, and buyers in a circular economy ecosystem.
               </p>
-              
-              {/* Theme Toggle */}
-              <div className="mt-6 flex items-center space-x-4">
-                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Theme:
-                </span>
-                <DarkModeToggle size="sm" showLabel />
-              </div>
 
               {/* Stats */}
-              <div className="mt-6 grid grid-cols-3 gap-4">
-                <div className="text-center">
-                  <div className="text-lg font-bold text-primary dark:text-primary-light">1.2K+</div>
-                  <div className="text-xs text-gray-600 dark:text-gray-400">Active Users</div>
+              <div className="mt-8 grid grid-cols-3 gap-6">
+                <div className="text-center bg-white/60 dark:bg-slate-800/60 backdrop-blur-sm rounded-xl p-4 shadow-lg shadow-green-100/20 dark:shadow-slate-900/30 border border-green-100/50 dark:border-slate-700/50">
+                  <div className="text-xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 dark:from-green-400 dark:to-emerald-400 bg-clip-text text-transparent">1.2K+</div>
+                  <div className="text-xs text-gray-600 dark:text-gray-400 mt-1">Active Users</div>
                 </div>
-                <div className="text-center">
-                  <div className="text-lg font-bold text-supplier dark:text-supplier-dark">850+</div>
-                  <div className="text-xs text-gray-600 dark:text-gray-400">Materials</div>
+                <div className="text-center bg-white/60 dark:bg-slate-800/60 backdrop-blur-sm rounded-xl p-4 shadow-lg shadow-green-100/20 dark:shadow-slate-900/30 border border-green-100/50 dark:border-slate-700/50">
+                  <div className="text-xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 dark:from-emerald-400 dark:to-teal-400 bg-clip-text text-transparent">850+</div>
+                  <div className="text-xs text-gray-600 dark:text-gray-400 mt-1">Materials</div>
                 </div>
-                <div className="text-center">
-                  <div className="text-lg font-bold text-buyer dark:text-buyer-dark">95%</div>
-                  <div className="text-xs text-gray-600 dark:text-gray-400">Satisfaction</div>
+                <div className="text-center bg-white/60 dark:bg-slate-800/60 backdrop-blur-sm rounded-xl p-4 shadow-lg shadow-green-100/20 dark:shadow-slate-900/30 border border-green-100/50 dark:border-slate-700/50">
+                  <div className="text-xl font-bold bg-gradient-to-r from-teal-600 to-cyan-600 dark:from-teal-400 dark:to-cyan-400 bg-clip-text text-transparent">95%</div>
+                  <div className="text-xs text-gray-600 dark:text-gray-400 mt-1">Satisfaction</div>
                 </div>
               </div>
             </motion.div>
@@ -109,16 +103,18 @@ export function Footer() {
               transition={{ duration: 0.5, delay: (sectionIndex + 1) * 0.1 }}
               className="col-span-1"
             >
-              <h3 className="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider mb-4">
+              <h3 className="text-sm font-bold text-gray-900 dark:text-white uppercase tracking-wider mb-6 relative">
                 {section.title}
+                <div className="absolute -bottom-2 left-0 w-8 h-0.5 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full"></div>
               </h3>
-              <ul className="space-y-3">
+              <ul className="space-y-4">
                 {section.links.map((link) => (
                   <li key={link.name}>
                     <Link 
                       href={link.href} 
-                      className="text-sm text-gray-600 hover:text-primary dark:text-gray-400 dark:hover:text-primary-light transition-colors duration-200 hover:underline"
+                      className="text-sm text-gray-700 dark:text-gray-300 hover:text-green-600 dark:hover:text-green-400 transition-all duration-200 hover:translate-x-1 flex items-center group"
                     >
+                      <div className="w-1 h-1 bg-green-400 rounded-full mr-3 opacity-0 group-hover:opacity-100 transition-opacity duration-200"></div>
                       {link.name}
                     </Link>
                   </li>
@@ -133,28 +129,28 @@ export function Footer() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.5, delay: 0.6 }}
-          className="mt-12 pt-8 border-t border-gray-200 dark:border-gray-700"
+          className="mt-16 pt-8 border-t border-green-100 dark:border-slate-700"
         >
-          <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
-            <div className="flex items-center space-x-6">
-              <p className="text-sm text-gray-600 dark:text-gray-400">
+          <div className="flex flex-col md:flex-row justify-between items-center space-y-6 md:space-y-0">
+            <div className="flex flex-col md:flex-row items-center space-y-2 md:space-y-0 md:space-x-8">
+              <p className="text-sm text-gray-700 dark:text-gray-300 font-medium">
                 © {currentYear} CircularSync. All rights reserved.
               </p>
-              <div className="flex items-center space-x-1 text-xs text-gray-500 dark:text-gray-500">
+              <div className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400 bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm rounded-full px-4 py-2 shadow-lg shadow-green-100/20 dark:shadow-slate-900/30 border border-green-100/50 dark:border-slate-700/50">
                 <span>Made with</span>
-                <span className="text-red-500 animate-pulse">♥</span>
+                <span className="text-red-500 animate-pulse text-lg">♥</span>
                 <span>for sustainability</span>
               </div>
             </div>
             
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2 text-xs text-gray-500 dark:text-gray-500">
-                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+            <div className="flex items-center space-x-6">
+              <div className="flex items-center space-x-3 text-sm text-gray-600 dark:text-gray-400 bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm rounded-full px-4 py-2 shadow-lg shadow-green-100/20 dark:shadow-slate-900/30 border border-green-100/50 dark:border-slate-700/50">
+                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse shadow-lg shadow-green-500/50"></div>
                 <span>All systems operational</span>
               </div>
               <Link 
                 href="/status" 
-                className="text-xs text-gray-500 hover:text-primary dark:text-gray-500 dark:hover:text-primary-light transition-colors"
+                className="text-sm text-gray-600 hover:text-green-600 dark:text-gray-400 dark:hover:text-green-400 transition-all duration-200 hover:scale-105 bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm rounded-full px-4 py-2 shadow-lg shadow-green-100/20 dark:shadow-slate-900/30 border border-green-100/50 dark:border-slate-700/50"
               >
                 System Status
               </Link>

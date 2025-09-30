@@ -17,6 +17,8 @@ import {
   CheckCircleIcon,
   XCircleIcon,
   ExclamationTriangleIcon,
+  ArrowPathIcon,
+  PauseCircleIcon,
   PencilIcon,
   ArchiveBoxIcon,
   UserIcon,
@@ -178,7 +180,6 @@ export default function MaterialManagement() {
     dispatch(setFilters(newFilters));
   };
 
-
   // Use backend materials instead of Redux materials
   const filteredMaterials = backendMaterials.filter(material =>
     material.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -249,7 +250,6 @@ export default function MaterialManagement() {
         </div>
       </div>
 
-
       {/* Materials Grid */}
       {isLoadingBackend ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -285,7 +285,6 @@ export default function MaterialManagement() {
         />
       )}
 
-
       {/* View Material Modal */}
       <ViewMaterialModal
         isOpen={showViewModal}
@@ -311,6 +310,7 @@ function MaterialCard({ material, onView }: MaterialCardProps) {
       case 'submitted':
         return 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400';
       case 'pending_verification':
+      case 'pending_review':
       case MaterialStatus.PENDING_REVIEW:
         return 'bg-amber-100 text-amber-800 dark:bg-amber-900/20 dark:text-amber-400';
       case 'assigned':
@@ -345,6 +345,7 @@ function MaterialCard({ material, onView }: MaterialCardProps) {
       case 'submitted':
         return <CheckCircleIcon className="h-4 w-4" />;
       case 'pending_verification':
+      case 'pending_review':
       case MaterialStatus.PENDING_REVIEW:
         return <ClockIcon className="h-4 w-4" />;
       case 'assigned':
@@ -371,6 +372,21 @@ function MaterialCard({ material, onView }: MaterialCardProps) {
         return <PencilIcon className="h-4 w-4" />;
       default:
         return <ExclamationTriangleIcon className="h-4 w-4" />;
+    }
+  };
+
+  const getConditionColor = (condition: string) => {
+    switch (condition?.toLowerCase()) {
+      case 'excellent':
+        return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400';
+      case 'good':
+        return 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400';
+      case 'fair':
+        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400';
+      case 'poor':
+        return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400';
+      default:
+        return 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400';
     }
   };
 
@@ -429,14 +445,21 @@ function MaterialCard({ material, onView }: MaterialCardProps) {
           </div>
           
           <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
+            <CurrencyDollarIcon className="h-4 w-4 mr-1" />
+            <span>LKR {material.pricing.expectedPrice.toLocaleString()}</span>
+          </div>
+          
+          <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
             <TruckIcon className="h-4 w-4 mr-1" />
             <span className="capitalize">{material.deliveryMethod?.replace('_', ' ') || 'Not specified'}</span>
           </div>
         </div>
 
-        {/* Quality Grade */}
+        {/* Condition */}
         <div className="mt-3">
-          <QualityBadge grade={material.condition} />
+          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getConditionColor(material.condition)}`}>
+            {material.condition ? material.condition.charAt(0).toUpperCase() + material.condition.slice(1) : 'Unknown'}
+          </span>
         </div>
       </div>
 
@@ -679,4 +702,3 @@ function Pagination({ currentPage, totalPages, onPageChange }: PaginationProps) 
     </div>
   );
 }
-
