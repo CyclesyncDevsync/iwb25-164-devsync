@@ -3,8 +3,6 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  MagnifyingGlassIcon, 
-  BellIcon,
   UserCircleIcon,
   Cog6ToothIcon,
   ArrowRightOnRectangleIcon,
@@ -18,7 +16,7 @@ import {
   ChevronDownIcon
 } from '@heroicons/react/24/outline';
 import { useAuth } from '../../hooks/useAuth';
-import { ROUTES, USER_ROLES } from '../../constants';
+import { USER_ROLES } from '../../constants';
 import { Button } from '../../components/ui/Button';
 import { NavDarkModeToggle } from '../../components/ui/DarkModeToggle';
 import { NotificationDropdown, useNotifications } from './NotificationDropdown';
@@ -82,9 +80,8 @@ const navigationItems: NavItem[] = [
 ];
 
 export function Navbar() {
-  const { isAuthenticated, user, logout } = useAuth();
+  const { isAuthenticated, user, logout, login, register, loading } = useAuth();
   const pathname = usePathname();
-  const router = useRouter();
   
   // Get navbar configuration based on current route
   const navbarConfig = useNavbarConfig();
@@ -98,9 +95,7 @@ export function Navbar() {
     notifications, 
     markAsRead, 
     markAllAsRead, 
-    clearAll, 
-    addNotification,
-    unreadCount 
+    clearAll
   } = useNotifications();
 
   // Close mobile menu when route changes
@@ -252,7 +247,7 @@ export function Navbar() {
                       >
                         <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
                           <p className="text-sm font-medium text-gray-900 dark:text-white">
-                            {user?.name || 'User'}
+                            {user?.email?.split('@')[0] || 'User'}
                           </p>
                           <p className="text-sm text-gray-500 dark:text-gray-400">
                             {user?.email}
@@ -302,16 +297,24 @@ export function Navbar() {
                 </div>
               ) : (
                 <div className="hidden md:flex items-center space-x-3">
-                  <Link href={ROUTES.LOGIN}>
-                    <Button variant="outline" size="sm">
-                      Sign In
-                    </Button>
-                  </Link>
-                  <Link href={ROUTES.REGISTER}>
-                    <Button variant="default" size="sm">
-                      Get Started
-                    </Button>
-                  </Link>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={login}
+                    disabled={loading}
+                    className="disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {loading ? 'Signing In...' : 'Sign In'}
+                  </Button>
+                  <Button 
+                    variant="default" 
+                    size="sm"
+                    onClick={register}
+                    disabled={loading}
+                    className="disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {loading ? 'Loading...' : 'Get Started'}
+                  </Button>
                 </div>
               )
             )}
@@ -429,22 +432,30 @@ export function Navbar() {
                       </div>
                     ) : (
                       <div className="space-y-3">
-                        <Link
-                          href={ROUTES.LOGIN}
-                          onClick={() => setMobileMenuOpen(false)}
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={() => {
+                            login();
+                            setMobileMenuOpen(false);
+                          }}
+                          disabled={loading}
+                          className="w-full disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                          <Button variant="outline" size="sm" className="w-full">
-                            Sign In
-                          </Button>
-                        </Link>
-                        <Link
-                          href={ROUTES.REGISTER}
-                          onClick={() => setMobileMenuOpen(false)}
+                          {loading ? 'Signing In...' : 'Sign In'}
+                        </Button>
+                        <Button 
+                          variant="default" 
+                          size="sm" 
+                          onClick={() => {
+                            register();
+                            setMobileMenuOpen(false);
+                          }}
+                          disabled={loading}
+                          className="w-full disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                          <Button variant="default" size="sm" className="w-full">
-                            Get Started
-                          </Button>
-                        </Link>
+                          {loading ? 'Loading...' : 'Get Started'}
+                        </Button>
                       </div>
                     )}
                   </div>

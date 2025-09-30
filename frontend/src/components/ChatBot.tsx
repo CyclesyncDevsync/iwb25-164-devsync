@@ -159,10 +159,10 @@ export default function ChatBot({ className = '' }: ChatBotProps) {
 
   if (!isOpen) {
     return (
-      <div className={`fixed bottom-4 right-4 ${className}`}>
+      <div className={`fixed bottom-4 right-4 z-40 ${className}`}>
         <button
           onClick={() => setIsOpen(true)}
-          className="bg-blue-600 hover:bg-blue-700 text-white rounded-full p-4 shadow-lg transition-all hover:scale-110"
+          className="bg-gradient-to-r from-blue-600 to-blue-700 dark:from-blue-500 dark:to-blue-600 hover:from-blue-700 hover:to-blue-800 dark:hover:from-blue-600 dark:hover:to-blue-700 text-white rounded-full p-4 shadow-xl shadow-blue-500/30 dark:shadow-blue-400/20 transition-all duration-300 hover:scale-110 hover:shadow-2xl backdrop-blur-sm border border-blue-500/20"
           aria-label="Open chat"
         >
           <Bot size={24} />
@@ -172,9 +172,9 @@ export default function ChatBot({ className = '' }: ChatBotProps) {
   }
 
   return (
-    <div className={`fixed bottom-4 right-4 w-96 bg-white rounded-lg shadow-2xl flex flex-col ${isMinimized ? 'h-14' : 'h-[600px]'} transition-all ${className}`}>
+    <div className={`fixed bottom-4 right-4 w-96 bg-white/95 dark:bg-slate-800/95 backdrop-blur-xl border border-blue-100 dark:border-slate-700 rounded-xl shadow-2xl shadow-blue-500/10 dark:shadow-blue-400/5 flex flex-col ${isMinimized ? 'h-14' : 'h-[600px]'} transition-all duration-300 z-40 ${className}`}>
       {/* Header */}
-      <div className="bg-blue-600 text-white p-4 rounded-t-lg flex items-center justify-between">
+      <div className="bg-gradient-to-r from-blue-600 to-blue-700 dark:from-blue-500 dark:to-blue-600 text-white p-4 rounded-t-xl flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Bot size={20} />
           <h3 className="font-semibold">CircularSync Assistant</h3>
@@ -183,14 +183,14 @@ export default function ChatBot({ className = '' }: ChatBotProps) {
         <div className="flex items-center gap-2">
           <button
             onClick={() => setIsMinimized(!isMinimized)}
-            className="hover:bg-blue-700 p-1 rounded transition-colors"
+            className="hover:bg-blue-700/50 dark:hover:bg-blue-600/50 p-2 rounded-lg transition-all duration-200 hover:scale-105"
             aria-label={isMinimized ? 'Maximize' : 'Minimize'}
           >
             {isMinimized ? <Maximize2 size={18} /> : <Minimize2 size={18} />}
           </button>
           <button
             onClick={() => setIsOpen(false)}
-            className="hover:bg-blue-700 p-1 rounded transition-colors"
+            className="hover:bg-blue-700/50 dark:hover:bg-blue-600/50 p-2 rounded-lg transition-all duration-200 hover:scale-105"
             aria-label="Close chat"
           >
             <X size={18} />
@@ -201,11 +201,11 @@ export default function ChatBot({ className = '' }: ChatBotProps) {
       {!isMinimized && (
         <>
           {/* Messages */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-4">
+          <div className="flex-1 overflow-y-auto p-6 space-y-4">
             {messages.length === 0 && (
-              <div className="text-center text-gray-500 mt-8">
-                <Bot size={48} className="mx-auto mb-4 text-gray-300" />
-                <p>Start a conversation!</p>
+              <div className="text-center text-gray-500 dark:text-gray-400 mt-8">
+                <Bot size={48} className="mx-auto mb-4 text-blue-300 dark:text-blue-400" />
+                <p className="font-medium">Start a conversation!</p>
                 <p className="text-sm mt-2">I can help with quality assessments, demand predictions, and more.</p>
               </div>
             )}
@@ -216,14 +216,14 @@ export default function ChatBot({ className = '' }: ChatBotProps) {
                 className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
               >
                 <div
-                  className={`max-w-[80%] p-3 rounded-lg ${
+                  className={`max-w-[80%] p-4 rounded-xl shadow-lg ${
                     message.type === 'user'
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-gray-100 text-gray-800'
+                      ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-blue-500/20'
+                      : 'bg-gray-100 dark:bg-slate-700 text-gray-800 dark:text-gray-200 shadow-gray-200/50 dark:shadow-slate-800/50'
                   }`}
                 >
-                  <p className="text-sm">{message.content}</p>
-                  <p className="text-xs mt-1 opacity-70">
+                  <p className="text-sm leading-relaxed">{message.content}</p>
+                  <p className="text-xs mt-2 opacity-70">
                     {message.timestamp.toLocaleTimeString()}
                   </p>
                 </div>
@@ -232,11 +232,11 @@ export default function ChatBot({ className = '' }: ChatBotProps) {
             
             {isTyping && (
               <div className="flex justify-start">
-                <div className="bg-gray-100 p-3 rounded-lg">
+                <div className="bg-gray-100 dark:bg-slate-700 p-4 rounded-xl shadow-lg shadow-gray-200/50 dark:shadow-slate-800/50">
                   <div className="flex gap-1">
-                    <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></span>
-                    <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce delay-100"></span>
-                    <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce delay-200"></span>
+                    <span className="w-2 h-2 bg-blue-400 rounded-full animate-bounce"></span>
+                    <span className="w-2 h-2 bg-blue-400 rounded-full animate-bounce delay-100"></span>
+                    <span className="w-2 h-2 bg-blue-400 rounded-full animate-bounce delay-200"></span>
                   </div>
                 </div>
               </div>
@@ -247,14 +247,14 @@ export default function ChatBot({ className = '' }: ChatBotProps) {
 
           {/* Quick Reply Suggestions */}
           {suggestions.length > 0 && (
-            <div className="border-t border-gray-100 p-3">
-              <div className="text-xs text-gray-500 mb-2">Quick replies:</div>
+            <div className="border-t border-gray-100 dark:border-slate-600 p-4">
+              <div className="text-xs text-gray-500 dark:text-gray-400 mb-3 font-medium">Quick replies:</div>
               <div className="flex flex-wrap gap-2">
                 {suggestions.map((suggestion, index) => (
                   <button
                     key={index}
                     onClick={() => handleSuggestionClick(suggestion)}
-                    className="px-3 py-1.5 text-sm bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-full border border-blue-200 transition-colors"
+                    className="px-3 py-2 text-sm bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 dark:hover:bg-blue-900/50 text-blue-700 dark:text-blue-300 rounded-lg border border-blue-200 dark:border-blue-700 transition-all duration-200 hover:scale-105 shadow-sm"
                     disabled={!isConnected}
                   >
                     {suggestion}
@@ -265,14 +265,14 @@ export default function ChatBot({ className = '' }: ChatBotProps) {
           )}
 
           {/* Input */}
-          <div className="border-t p-4">
+          <div className="border-t border-gray-100 dark:border-slate-600 p-4 bg-gray-50/50 dark:bg-slate-800/50 rounded-b-xl">
             {!isConnected && (
-              <div className="text-center text-red-500 text-sm mb-2">
+              <div className="text-center text-red-500 dark:text-red-400 text-sm mb-3 font-medium">
                 Connecting to assistant...
               </div>
             )}
             
-            <div className="flex gap-2">
+            <div className="flex gap-3">
               <input
                 type="text"
                 value={inputMessage}
@@ -280,12 +280,12 @@ export default function ChatBot({ className = '' }: ChatBotProps) {
                 onKeyPress={handleKeyPress}
                 placeholder="Type your message..."
                 disabled={!isConnected}
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
+                className="flex-1 px-4 py-3 border border-gray-200 dark:border-slate-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 disabled:bg-gray-100 dark:disabled:bg-slate-700 bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 shadow-sm transition-all duration-200"
               />
               <button
                 onClick={() => sendMessage()}
                 disabled={!isConnected || !inputMessage.trim()}
-                className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white p-2 rounded-md transition-colors"
+                className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 disabled:from-gray-300 disabled:to-gray-400 dark:disabled:from-slate-600 dark:disabled:to-slate-700 text-white p-3 rounded-xl transition-all duration-200 hover:scale-105 shadow-lg shadow-blue-500/20 disabled:shadow-none"
                 aria-label="Send message"
               >
                 <Send size={20} />

@@ -38,8 +38,8 @@ export const MATERIAL_CATEGORIES = [
 // Routes
 export const ROUTES = {
   HOME: '/',
-  LOGIN: '/login',
-  REGISTER: '/register',
+  LOGIN: '/auth/login',
+  REGISTER: '/auth/register',
   DASHBOARD: '/dashboard',
   ADMIN: {
     HOME: '/admin',
