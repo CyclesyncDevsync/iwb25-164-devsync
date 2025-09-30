@@ -44,7 +44,7 @@ export default function SupplierLayout({ children }: SupplierLayoutProps) {
       name: 'My Materials',
       href: '/supplier/materials',
       icon: DocumentDuplicateIcon,
-      current: pathname.startsWith('/supplier/materials') && pathname !== '/supplier/materials/new'
+      current: pathname === '/supplier/materials' || (pathname.startsWith('/supplier/materials') && !pathname.includes('/new'))
     },
     {
       name: 'Orders',
