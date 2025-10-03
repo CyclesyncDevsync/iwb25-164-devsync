@@ -41,6 +41,9 @@ export async function GET(request: NextRequest) {
     // Transform the backend response to match frontend expectations
     const agents = data.users?.map((user: any) => ({
       id: user.id.toString(),
+      asgardeo_id: user.asgardeoId, // Add the asgardeo_id field
+      first_name: user.firstName,
+      last_name: user.lastName,
       name: `${user.firstName} ${user.lastName}`,
       email: user.email,
       phone: user.phone || 'Not provided', // Phone might not be in the users table

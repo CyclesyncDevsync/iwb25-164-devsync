@@ -161,10 +161,26 @@ export function MaterialVerification() {
   const [photoAnalysisResults, setPhotoAnalysisResults] = useState<{[key: number]: any}>({});
 
   useEffect(() => {
-    fetchMaterialSubmissions();
-    fetchAgents();
+    // Fetch agents first, then fetch submissions
+    const loadData = async () => {
+      console.log('Starting data load...');
+      let agentsList: Agent[] = [];
+      try {
+        agentsList = await fetchAgents();
+        console.log('Agents fetched, count:', agentsList?.length || 0);
+      } catch (error) {
+        console.error('Error in fetchAgents:', error);
+      }
+      
+      // Fetch submissions and pass the agents list directly
+      console.log('Now fetching submissions with agents:', agentsList.length);
+      await fetchMaterialSubmissionsWithAgents(agentsList);
+    };
+    loadData();
     // fetchStatistics(); // Statistics are now calculated from actual data
   }, []);
+
+  // No need for re-processing since we pass agents directly now
   
   // Recalculate warehouse stats when submissions change
   useEffect(() => {
@@ -173,6 +189,167 @@ export function MaterialVerification() {
     }
   }, [submissions.length]); // Only depend on length to avoid infinite loops
 
+  const processSubmissionsData = (submissionsData: any[], agentsList: Agent[] = agents) => {
+    const apiSubmissions: MaterialSubmission[] = submissionsData.map((item: any) => ({
+      id: item.id,
+      transaction_id: item.transaction_id,
+      supplier_id: item.supplier_id,
+      supplier_name: item.supplier_name,
+      supplier_email: item.supplier_email,
+      title: item.title,
+      category: item.category,
+      quantity: item.quantity,
+      unit: item.unit,
+      delivery_method: item.delivery_method,
+      submission_status: item.submission_status,
+      created_at: item.created_at,
+      location_latitude: item.location_latitude,
+      location_longitude: item.location_longitude,
+      location_address: item.location_address,
+      selected_warehouse_name: item.selected_warehouse_name,
+      selected_warehouse_address: item.selected_warehouse_address,
+      expected_price: item.expected_price,
+      agent_assigned: item.agent_assigned === true || item.agent_id ? true : false,
+      agent_id: item.agent_id || item.assigned_agent?.id,
+      assigned_agent: (() => {
+        // Use agent_id if available
+        const agentId = item.agent_id || item.assigned_agent?.id;
+        if (agentId) {
+          // Try to find the agent in our agents list
+          const agent = agentsList.find(a => a.asgardeo_id === agentId);
+          if (agent) {
+            console.log(`Found agent for ${item.title}:`, agent);
+            return {
+              id: agent.asgardeo_id,
+              name: `${agent.first_name} ${agent.last_name}`,
+              distance: Math.random() * 5 + 1 // Mock distance
+            };
+          }
+          // If assigned_agent object exists, use it
+          if (item.assigned_agent?.name) {
+            return {
+              id: agentId,
+              name: item.assigned_agent.name,
+              distance: Math.random() * 5 + 1
+            };
+          }
+          // If agent not found in list, create placeholder
+          console.log(`Agent not found for ${item.title}, agent_id: ${agentId}`);
+          console.log('Available agents:', agentsList.map(a => ({ id: a.asgardeo_id, name: `${a.first_name} ${a.last_name}` })));
+          return {
+            id: agentId,
+            name: 'Assigned Agent',
+            distance: 0
+          };
+        }
+        return undefined;
+      })(),
+      // Additional fields for detailed view
+      description: item.description,
+      sub_category: item.sub_category,
+      condition: item.condition,
+      minimum_price: item.minimum_price,
+      negotiable: item.negotiable,
+      location_city: item.location_city,
+      location_district: item.location_district,
+      location_province: item.location_province,
+      material_type: item.material_type,
+      material_color: item.material_color,
+      material_brand: item.material_brand,
+      dimension_length: item.dimension_length,
+      dimension_width: item.dimension_width,
+      dimension_height: item.dimension_height,
+      dimension_weight: item.dimension_weight,
+      photos: (() => {
+        if (!item.photos) return [];
+        
+        // Handle different photo formats
+        if (Array.isArray(item.photos)) {
+          return item.photos.map(photo => {
+            // If photo is an object with 'data' property, extract it
+            if (typeof photo === 'object' && photo.data) {
+              return photo.data;
+            }
+            return photo;
+          });
+        }
+        
+        // If photos is a string, try to parse it
+        if (typeof item.photos === 'string') {
+          try {
+            const parsed = JSON.parse(item.photos);
+            if (Array.isArray(parsed)) {
+              return parsed.map(p => p.data || p);
+            }
+          } catch (e) {
+            console.error('Failed to parse photos:', e);
+          }
+        }
+        
+        return [];
+      })(),
+    }));
+    
+    setSubmissions(apiSubmissions);
+    console.log('Processed submissions with agents:', apiSubmissions);
+    
+    // Calculate statistics from the actual data
+    const stats = {
+      totalSubmissions: apiSubmissions.length,
+      agentVisits: apiSubmissions.filter(s => s.delivery_method === 'agent_visit').length,
+      dropOffs: apiSubmissions.filter(s => s.delivery_method === 'drop_off').length,
+      pendingVerifications: apiSubmissions.filter(s => s.submission_status === 'pending_verification').length
+    };
+    setStatistics(stats);
+  };
+
+  const fetchMaterialSubmissionsWithAgents = async (agentsList: Agent[]) => {
+    try {
+      setLoading(true);
+      
+      // Fetch from actual API
+      const response = await fetch('http://localhost:8080/api/test/material-submissions', {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log('API Response:', data); // Debug log
+        console.log('First item:', data.data?.[0]); // Debug log
+        console.log('Assigned agent for first item:', data.data?.[0]?.assigned_agent); // Debug agent field
+        
+        // Log all items that have assigned status
+        const assignedItems = data.data.filter((item: any) => item.submission_status === 'assigned');
+        console.log('Items with assigned status:', assignedItems.length);
+        assignedItems.forEach((item: any, index: number) => {
+          console.log(`Assigned item ${index}:`, {
+            id: item.id,
+            title: item.title,
+            status: item.submission_status,
+            agent_assigned: item.agent_assigned,
+            agent_id: item.agent_id,
+            assigned_agent: item.assigned_agent
+          });
+        });
+        
+        // Process with the passed agents list
+        console.log('Processing with passed agents count:', agentsList.length);
+        processSubmissionsData(data.data || [], agentsList);
+      } else {
+        console.log('API Response not OK:', response.status, response.statusText); // Debug log
+        // Fallback to empty data if API fails
+        setSubmissions([]);
+      }
+    } catch (error) {
+      console.error('Failed to fetch submissions:', error);
+      // Fallback to empty array on error
+      setSubmissions([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const fetchMaterialSubmissions = async () => {
     try {
@@ -190,114 +367,24 @@ export function MaterialVerification() {
         console.log('API Response:', data); // Debug log
         console.log('First item:', data.data?.[0]); // Debug log
         console.log('Assigned agent for first item:', data.data?.[0]?.assigned_agent); // Debug agent field
-        const apiSubmissions: MaterialSubmission[] = data.data.map((item: any) => ({
-          id: item.id,
-          transaction_id: item.transaction_id,
-          supplier_id: item.supplier_id,
-          supplier_name: item.supplier_name,
-          supplier_email: item.supplier_email,
-          title: item.title,
-          category: item.category,
-          quantity: item.quantity,
-          unit: item.unit,
-          delivery_method: item.delivery_method,
-          submission_status: item.submission_status,
-          created_at: item.created_at,
-          location_latitude: item.location_latitude,
-          location_longitude: item.location_longitude,
-          location_address: item.location_address,
-          selected_warehouse_name: item.selected_warehouse_name,
-          selected_warehouse_address: item.selected_warehouse_address,
-          expected_price: item.expected_price,
-          agent_assigned: item.assigned_agent ? true : false,
-          agent_id: item.assigned_agent?.id,
-          assigned_agent: item.assigned_agent ? {
-            id: item.assigned_agent.id,
-            name: item.assigned_agent.name,
-            distance: Math.random() * 5 + 1 // Mock distance
-          } : undefined,
-          // Additional fields for detailed view
-          description: item.description,
-          sub_category: item.sub_category,
-          condition: item.condition,
-          minimum_price: item.minimum_price,
-          negotiable: item.negotiable,
-          location_city: item.location_city,
-          location_district: item.location_district,
-          location_province: item.location_province,
-          material_type: item.material_type,
-          material_color: item.material_color,
-          material_brand: item.material_brand,
-          dimension_length: item.dimension_length,
-          dimension_width: item.dimension_width,
-          dimension_height: item.dimension_height,
-          dimension_weight: item.dimension_weight,
-          photos: (() => {
-            if (!item.photos) return [];
-            
-            // Handle different photo formats
-            if (Array.isArray(item.photos)) {
-              return item.photos.map(photo => {
-                // If photo is an object with 'data' property, extract it
-                if (typeof photo === 'object' && photo.data) {
-                  return photo.data;
-                }
-                return photo;
-              });
-            }
-            
-            // If photos is a string, try to parse it
-            if (typeof item.photos === 'string') {
-              try {
-                const parsed = JSON.parse(item.photos);
-                if (Array.isArray(parsed)) {
-                  return parsed.map(p => p.data || p);
-                }
-                return [parsed.data || parsed];
-              } catch (e) {
-                // If parsing fails, treat as single photo URL
-                return [item.photos];
-              }
-            }
-            
-            return [];
-          })(),
-        }));
-        setSubmissions(apiSubmissions);
-        console.log('Processed submissions:', apiSubmissions); // Debug log
         
-        // Log agent visit locations
-        const agentVisits = apiSubmissions.filter(s => s.delivery_method === 'agent_visit');
-        console.log('Agent visits with locations:', agentVisits.map(s => ({
-          id: s.id,
-          title: s.title,
-          lat: s.location_latitude,
-          lng: s.location_longitude,
-          address: s.location_address
-        })));
+        // Log all items that have assigned status
+        const assignedItems = data.data.filter((item: any) => item.submission_status === 'assigned');
+        console.log('Items with assigned status:', assignedItems.length);
+        assignedItems.forEach((item: any, index: number) => {
+          console.log(`Assigned item ${index}:`, {
+            id: item.id,
+            title: item.title,
+            status: item.submission_status,
+            agent_assigned: item.agent_assigned,
+            agent_id: item.agent_id,
+            assigned_agent: item.assigned_agent
+          });
+        });
         
-        // Log drop-off warehouses
-        const dropOffs = apiSubmissions.filter(s => s.delivery_method === 'drop_off');
-        console.log('Drop-off warehouses:', dropOffs.map(s => ({
-          id: s.id,
-          title: s.title,
-          warehouse: s.selected_warehouse_name,
-          address: s.selected_warehouse_address
-        })));
-        
-        // Calculate statistics from the actual data
-        const stats = {
-          totalSubmissions: apiSubmissions.length,
-          agentVisits: apiSubmissions.filter(s => s.delivery_method === 'agent_visit').length,
-          dropOffs: apiSubmissions.filter(s => s.delivery_method === 'drop_off').length,
-          pendingVerifications: apiSubmissions.filter(s => s.submission_status === 'pending_verification').length
-        };
-        console.log('Calculated stats:', stats); // Debug log
-        setStatistics(stats);
-      } else {
-        console.log('API Response not OK:', response.status, response.statusText); // Debug log
-        // Fallback to mock data if API fails
-        
+        // Process with current agents
+        console.log('Processing with agents count:', agents.length);
+        processSubmissionsData(data.data || [], agents);
       }
     } catch (error) {
       console.error('Failed to fetch submissions:', error);
@@ -362,30 +449,48 @@ export function MaterialVerification() {
 
   const fetchAgents = async () => {
     try {
+      // Use test endpoint directly for now
+      console.log('Fetching agents from test endpoint...');
       const response = await fetch('http://localhost:8080/api/test/users', {
         headers: {
           'Content-Type': 'application/json',
         },
       });
 
+      console.log('Agent API response status:', response.status);
+      
       if (response.ok) {
         const data = await response.json();
-        // Filter only users with AGENT role (case-insensitive)
-        const agentUsers = data.data.filter((user: any) => user.role?.toLowerCase() === 'agent');
+        console.log('Test users API response:', data);
+        
+        // Filter only users with AGENT role
+        const allUsers = data.data || [];
+        const agentUsers = allUsers.filter((user: any) => user.role?.toLowerCase() === 'agent');
+        console.log('Filtered agent users:', agentUsers);
+        
         const processedAgents: Agent[] = agentUsers.map((user: any) => ({
           id: user.id,
           asgardeo_id: user.asgardeo_id,
           first_name: user.first_name,
           last_name: user.last_name,
           email: user.email,
-          role: user.role,
+          role: 'agent', // Already filtered for agents
           status: user.status,
         }));
         setAgents(processedAgents);
-        console.log('Available agents:', processedAgents);
+        console.log('Processed agents with asgardeo_ids:', processedAgents.map(a => ({ 
+          id: a.asgardeo_id, 
+          name: `${a.first_name} ${a.last_name}` 
+        })));
+        return processedAgents; // Return the agents
+      } else {
+        const errorText = await response.text();
+        console.error('Test users API error:', response.status, errorText);
+        return [];
       }
     } catch (error) {
       console.error('Failed to fetch agents:', error);
+      return []; // Return empty array on error
     }
   };
 
@@ -911,7 +1016,7 @@ export function MaterialVerification() {
                           <p className="font-medium">{submission.assigned_agent.name}</p>
                           <p className="text-xs text-gray-500 dark:text-gray-400">
                             {submission.delivery_method === 'agent_visit' 
-                              ? `${submission.assigned_agent.distance.toFixed(1)} km away`
+                              ? 'Field Agent'
                               : 'Coordinator'}
                           </p>
                         </div>
@@ -1349,7 +1454,7 @@ export function MaterialVerification() {
                       <p className="text-sm"><span className="text-gray-500">Agent:</span> <span className="font-medium">{selectedSubmissionForDetails.assigned_agent.name}</span></p>
                       <p className="text-sm"><span className="text-gray-500">Role:</span> <span className="font-medium">
                         {selectedSubmissionForDetails.delivery_method === 'agent_visit' 
-                          ? `Field Agent (${selectedSubmissionForDetails.assigned_agent.distance.toFixed(1)} km away)`
+                          ? 'Field Agent'
                           : 'Coordination Agent'}
                       </span></p>
                       {selectedSubmissionForDetails.delivery_method === 'drop_off' && (
