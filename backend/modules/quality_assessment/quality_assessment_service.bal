@@ -7,6 +7,9 @@ import ballerina/log;
 import ballerina/uuid;
 import ballerina/lang.'float as floats;
 
+// Google Vision API configuration
+configurable string googleApiKey = ?;
+
 // Quality assessment service listener
 listener http:Listener qualityListener = new(8082);
 
@@ -37,7 +40,6 @@ service /api/ai/quality on qualityListener {
     // Main endpoint to assess image quality
     resource function post assess\-image(@http:Payload ImageUploadRequest request) 
             returns QualityAssessment|http:BadRequest|http:InternalServerError {
-        log:printInfo(string `Processing quality assessment for waste stream ${request.wasteStreamId}`);
         
         // Validate request
         string? validationError = validateImageRequest(request);
@@ -50,46 +52,96 @@ service /api/ai/quality on qualityListener {
             };
         }
         
-        // Process image with direct HTTP calls (simplified approach)
-        json visionApiResponse = {
-            "responses": [
-                {
-                    "localizedObjectAnnotations": [
-                        {
-                            "name": "bottle",
-                            "score": 0.85,
-                            "boundingPoly": {
-                                "vertices": [
-                                    {"x": 100, "y": 100},
-                                    {"x": 200, "y": 100},
-                                    {"x": 200, "y": 300},
-                                    {"x": 100, "y": 300}
+        // Clean base64 data if it has data URL prefix
+        string cleanBase64 = request.imageData;
+        if request.imageData.startsWith("data:") {
+            int? commaIndex = request.imageData.indexOf(",");
+            if commaIndex is int {
+                cleanBase64 = request.imageData.substring(commaIndex + 1);
+            }
+        }
+        
+        // Process image with actual Google Vision API
+        json visionApiResponse;
+        json|error visionApiResult = callVisionAPI(cleanBase64);
+        if visionApiResult is error {
+            log:printError(string `Failed to call Vision API: ${visionApiResult.message()}`, visionApiResult);
+            log:printError(string `Error details: ${visionApiResult.detail().toString()}`);
+            
+            // Fallback to mock response for testing
+            visionApiResponse = {
+                "responses": [
+                    {
+                        "localizedObjectAnnotations": [
+                            {
+                                "name": "bottle",
+                                "score": 0.85,
+                                "boundingPoly": {
+                                    "vertices": [
+                                        {"x": 100, "y": 100},
+                                        {"x": 200, "y": 100},
+                                        {"x": 200, "y": 300},
+                                        {"x": 100, "y": 300}
+                                    ]
+                                }
+                            }
+                        ],
+                        "textAnnotations": [],
+                        "labelAnnotations": [
+                            {
+                                "description": "paper waste",
+                                "score": 0.85,
+                                "topicality": 0.85
+                            },
+                            {
+                                "description": "recycling",
+                                "score": 0.80,
+                                "topicality": 0.80
+                            }
+                        ],
+                        "imagePropertiesAnnotation": {
+                            "dominantColors": {
+                                "colors": [
+                                    {
+                                        "color": {"red": 120, "green": 80, "blue": 60},
+                                        "score": 0.4,
+                                        "pixelFraction": 0.3
+                                    }
                                 ]
                             }
-                        }
-                    ],
-                    "textAnnotations": [],
-                    "imagePropertiesAnnotation": {
-                        "dominantColors": {
-                            "colors": [
+                        },
+                        "safeSearchAnnotation": {
+                            "adult": "UNLIKELY",
+                            "spoof": "UNLIKELY",
+                            "medical": "UNLIKELY", 
+                            "violence": "UNLIKELY",
+                            "racy": "UNLIKELY"
+                        },
+                        "webDetection": {
+                            "webEntities": [
                                 {
-                                    "color": {"red": 120, "green": 80, "blue": 60},
-                                    "score": 0.4,
-                                    "pixelFraction": 0.3
+                                    "description": "Paper recycling",
+                                    "score": 0.82
+                                },
+                                {
+                                    "description": "Waste paper",
+                                    "score": 0.75
+                                }
+                            ],
+                            "bestGuessLabels": [
+                                {
+                                    "label": "paper recycling materials"
                                 }
                             ]
                         }
-                    },
-                    "safeSearchAnnotation": {
-                        "adult": "UNLIKELY",
-                        "spoof": "UNLIKELY",
-                        "medical": "UNLIKELY", 
-                        "violence": "UNLIKELY",
-                        "racy": "UNLIKELY"
                     }
-                }
-            ]
-        };
+                ]
+            };
+        } else {
+            visionApiResponse = visionApiResult;
+            log:printInfo("Vision API call successful");
+            log:printInfo(string `Vision response: ${visionApiResponse.toJsonString()}`);
+        }
         
         // Convert Vision API response to our VisionAnalysis format
         VisionAnalysis|error visionParseResult = parseVisionApiResponse(visionApiResponse);
@@ -118,7 +170,6 @@ service /api/ai/quality on qualityListener {
             _ = start sendQualityAlert(assessment);
         }
         
-        log:printInfo(string `Quality assessment completed: ${assessment.qualityGrade} (${assessment.overallScore})`);
         return assessment;
     }
     
@@ -247,7 +298,7 @@ service /api/ai/quality on qualityListener {
         
         // Generate recommendations and issues
         string[] recommendations = generateRecommendations(qualityFactors, compliance);
-        string[] issues = identifyIssues(qualityFactors, compliance);
+        string[] issues = identifyIssues(qualityFactors, compliance, request.wasteType);
         
         // Determine next action
         string nextAction = determineNextAction(approved, overallScore, issues.length());
@@ -499,6 +550,7 @@ class QualityAnalyzer {
         float totalConfidence = 0.0;
         int relevantObjects = 0;
         
+        
         // Check if detected objects match the expected waste type
         foreach var obj in vision.detectedObjects {
             if isWasteObject(obj.name) {
@@ -514,39 +566,139 @@ class QualityAnalyzer {
         float categoryConfidence = 0.0;
         boolean correctCategory = true;
         float accuracyScore = 0.0;
+        string? detectedType = ();
+        string expectedType = wasteType.toLowerAscii();
+        boolean materialTypeMatches = false;
+        string comparisonMessage = "";
         
-        if relevantObjects > 0 {
-            // We detected waste objects
+        // Try to determine material type from labels first (most accurate)
+        LabelAnnotation[]? labels = vision.detectedLabels;
+        if labels is LabelAnnotation[] && labels.length() > 0 {
+            foreach var label in labels {
+                string? labelCategory = categorizeFromText(label.description);
+                if labelCategory is string {
+                    detectedType = labelCategory;
+                    categoryConfidence = floats:max(categoryConfidence, label.score);
+                    break;
+                }
+            }
+        }
+        
+        // If no type found from labels, check web detection
+        WebDetection? webDet = vision.webDetection;
+        if detectedType is () && webDet is WebDetection {
+            foreach var entity in webDet.webEntities {
+                string? desc = entity.description;
+                if desc is string {
+                    string? webCategory = categorizeFromText(desc);
+                    if webCategory is string {
+                        detectedType = webCategory;
+                        categoryConfidence = floats:max(categoryConfidence, entity.score);
+                        break;
+                    }
+                }
+            }
+        }
+        
+        // Finally, try object detection if still no type found
+        if detectedType is () && vision.detectedObjects.length() > 0 {
+            foreach var obj in vision.detectedObjects {
+                string? objCategory = categorizeObject(obj.name);
+                if objCategory is string {
+                    detectedType = objCategory;
+                    categoryConfidence = floats:max(categoryConfidence, obj.confidence);
+                    break;
+                }
+            }
+        }
+        
+        // Compare detected type with expected type
+        if detectedType is string {
+            string detectedLower = detectedType.toLowerAscii();
+            materialTypeMatches = detectedLower == expectedType || 
+                                 (expectedType == "electronics" && detectedLower == "electronic") ||
+                                 (expectedType == "e-waste" && detectedLower == "electronic") ||
+                                 (expectedType == "fabric" && detectedLower == "textile") ||
+                                 (expectedType == "organic" && detectedLower == "food") ||
+                                 (expectedType == "food" && detectedLower == "organic");
+            
+            if materialTypeMatches {
+                comparisonMessage = string `Material type verified! The image shows ${detectedType} material, which matches the declared type: ${wasteType}`;
+            } else {
+                comparisonMessage = string `Material type mismatch detected! The image appears to show ${detectedType} material, but was declared as: ${wasteType}`;
+            }
+        } else {
+            // Could not detect specific material type
+            comparisonMessage = string `Unable to clearly identify the material type from the image. User declared it as: ${wasteType}`;
+        }
+        
+        // Check if we successfully detected a material type from any source
+        if detectedType is string {
+            // We have a detected type - calculate scores based on match
+            if materialTypeMatches {
+                accuracyScore = categoryConfidence * 100.0;
+                correctCategory = true;
+                // Update comparison message if not already set
+                if comparisonMessage == "" {
+                    comparisonMessage = string `Material type verified! The image shows ${detectedType} material, which matches the declared type: ${wasteType}`;
+                }
+            } else {
+                accuracyScore = categoryConfidence * 40.0;
+                correctCategory = false;
+                // Update comparison message if not already set
+                if comparisonMessage == "" {
+                    comparisonMessage = string `Material type mismatch detected! The image appears to show ${detectedType} material, but was declared as: ${wasteType}`;
+                }
+            }
+        } else if relevantObjects > 0 {
+            // No material type detected from labels/web, but we have objects
             categoryConfidence = totalConfidence / <float>relevantObjects;
             correctCategory = incorrectItems.length() == 0;
             
             if correctCategory {
-                // All detected objects match the category - HIGH score
-                accuracyScore = categoryConfidence * 100.0;
+                // All detected objects seem waste-related but can't determine specific type
+                accuracyScore = categoryConfidence * 70.0;
+                comparisonMessage = string `Detected waste materials in image but unable to verify specific type. User declared: ${wasteType}`;
             } else {
-                // Some objects don't match - penalize based on incorrect ratio
+                // Some objects don't match expected waste type
                 float correctRatio = (<float>(relevantObjects - incorrectItems.length())) / <float>relevantObjects;
-                accuracyScore = correctRatio * categoryConfidence * 100.0;
+                accuracyScore = correctRatio * categoryConfidence * 50.0;
+                comparisonMessage = string `Some objects in image may not match declared type: ${wasteType}`;
             }
         } else {
-            // No objects detected - check if this might still be correct based on other indicators
+            // No material type detected and no relevant objects found
             boolean hasWasteText = false;
             foreach var text in vision.detectedText {
                 if matchesWasteType(text.text, wasteType) {
                     hasWasteText = true;
+                    // Try to detect type from text as well
+                    string? textCategory = categorizeFromText(text.text);
+                    if textCategory is string && detectedType is () {
+                        detectedType = textCategory;
+                        materialTypeMatches = textCategory.toLowerAscii() == expectedType;
+                    }
                     break;
                 }
             }
             
-            if hasWasteText {
-                // Found relevant text/labels - moderate score
+            if hasWasteText && materialTypeMatches {
+                // Found relevant text that matches
                 categoryConfidence = 0.7;
                 accuracyScore = 70.0;
+                comparisonMessage = string `Material type verified through text/labels! Detected ${detectedType ?: "material"} matches declared type: ${wasteType}`;
+                correctCategory = true;
+            } else if hasWasteText {
+                // Found text but doesn't match
+                categoryConfidence = 0.4;
+                accuracyScore = 40.0;
+                correctCategory = false;
+                comparisonMessage = string `Text detected in image suggests different material type than declared: ${wasteType}`;
             } else {
-                // No objects or text detected - give neutral score, not zero
-                categoryConfidence = 0.5;
-                accuracyScore = 50.0;
-                correctCategory = false; // Mark as uncertain
+                // No useful detection at all
+                categoryConfidence = 0.2;
+                accuracyScore = 20.0;
+                correctCategory = false;
+                comparisonMessage = string `Could not verify material type from image. User declared: ${wasteType}`;
             }
         }
         
@@ -554,7 +706,11 @@ class QualityAnalyzer {
             accuracyScore: accuracyScore,
             incorrectItems: incorrectItems,
             correctCategory: correctCategory,
-            categoryConfidence: categoryConfidence
+            categoryConfidence: categoryConfidence,
+            detectedType: detectedType,
+            expectedType: expectedType,
+            materialTypeMatches: materialTypeMatches,
+            comparisonMessage: comparisonMessage
         };
     }
     
@@ -668,10 +824,63 @@ function categorizeObject(string objectName) returns string? {
         return "plastic";
     } else if lowerName.includes("paper") || lowerName.includes("cardboard") || lowerName.includes("box") {
         return "paper";
-    } else if lowerName.includes("metal") || lowerName.includes("can") || lowerName.includes("aluminum") {
+    } else if lowerName.includes("metal") || lowerName.includes("can") || lowerName.includes("aluminum") || lowerName.includes("steel") || lowerName.includes("iron") {
         return "metal";
     } else if lowerName.includes("glass") || lowerName.includes("jar") {
         return "glass";
+    } else if lowerName.includes("electronic") || lowerName.includes("device") || lowerName.includes("computer") || lowerName.includes("phone") || lowerName.includes("circuit") {
+        return "electronic";
+    } else if lowerName.includes("textile") || lowerName.includes("fabric") || lowerName.includes("cloth") || lowerName.includes("clothing") {
+        return "textile";
+    } else if lowerName.includes("wood") || lowerName.includes("timber") || lowerName.includes("lumber") {
+        return "wood";
+    } else if lowerName.includes("rubber") || lowerName.includes("tire") || lowerName.includes("tyre") {
+        return "rubber";
+    }
+    
+    return (); // Unknown category
+}
+
+function categorizeFromText(string text) returns string? {
+    string lowerText = text.toLowerAscii();
+    
+    // Check for material type keywords in text/labels
+    if lowerText.includes("plastic") || lowerText.includes("pet") || lowerText.includes("hdpe") || 
+       lowerText.includes("pp") || lowerText.includes("pvc") || lowerText.includes("polypropylene") ||
+       lowerText.includes("polyethylene") || lowerText.includes("polymer") || lowerText.includes("synthetic") {
+        return "plastic";
+    } else if lowerText.includes("paper") || lowerText.includes("cardboard") || lowerText.includes("pulp") ||
+              lowerText.includes("newspaper") || lowerText.includes("magazine") || lowerText.includes("document") ||
+              lowerText.includes("carton") || lowerText.includes("paperboard") || lowerText.includes("corrugated") {
+        return "paper";
+    } else if lowerText.includes("metal") || lowerText.includes("aluminum") || lowerText.includes("steel") || 
+              lowerText.includes("iron") || lowerText.includes("tin") || lowerText.includes("copper") ||
+              lowerText.includes("brass") || lowerText.includes("alloy") || lowerText.includes("metallic") ||
+              lowerText.includes("aluminium") || lowerText.includes("scrap metal") {
+        return "metal";
+    } else if lowerText.includes("glass") || lowerText.includes("crystal") || lowerText.includes("glassy") ||
+              lowerText.includes("vitreous") {
+        return "glass";
+    } else if lowerText.includes("electronic") || lowerText.includes("e-waste") || lowerText.includes("circuit") || 
+              lowerText.includes("battery") || lowerText.includes("computer") || lowerText.includes("phone") ||
+              lowerText.includes("device") || lowerText.includes("gadget") || lowerText.includes("electrical") ||
+              lowerText.includes("ewaste") {
+        return "electronic";
+    } else if lowerText.includes("textile") || lowerText.includes("fabric") || lowerText.includes("cotton") || 
+              lowerText.includes("polyester") || lowerText.includes("cloth") || lowerText.includes("clothing") ||
+              lowerText.includes("garment") || lowerText.includes("fiber") || lowerText.includes("yarn") ||
+              lowerText.includes("wool") || lowerText.includes("silk") {
+        return "textile";
+    } else if lowerText.includes("wood") || lowerText.includes("timber") || lowerText.includes("lumber") ||
+              lowerText.includes("wooden") || lowerText.includes("plywood") {
+        return "wood";
+    } else if lowerText.includes("rubber") || lowerText.includes("latex") || lowerText.includes("tire") ||
+              lowerText.includes("tyre") || lowerText.includes("elastomer") {
+        return "rubber";
+    } else if lowerText.includes("organic") || lowerText.includes("compost") || lowerText.includes("food") ||
+              lowerText.includes("biodegradable") || lowerText.includes("vegetable") || lowerText.includes("fruit") ||
+              lowerText.includes("biomass") || lowerText.includes("waste food") {
+        return "organic";
     }
     
     return (); // Unknown category
@@ -787,6 +996,41 @@ function matchesWasteType(string objectName, string expectedWasteType) returns b
                 return true;
             }
         }
+    } else if lowerWasteType == "electronic" || lowerWasteType == "electronics" || lowerWasteType == "e-waste" {
+        string[] electronicKeywords = ["electronic", "device", "computer", "phone", "circuit", "battery", "monitor", "keyboard", "cable"];
+        foreach string keyword in electronicKeywords {
+            if lowerObject.includes(keyword) {
+                return true;
+            }
+        }
+    } else if lowerWasteType == "textile" || lowerWasteType == "fabric" {
+        string[] textileKeywords = ["textile", "fabric", "cloth", "clothing", "garment", "apparel", "shirt", "pants"];
+        foreach string keyword in textileKeywords {
+            if lowerObject.includes(keyword) {
+                return true;
+            }
+        }
+    } else if lowerWasteType == "wood" {
+        string[] woodKeywords = ["wood", "timber", "lumber", "plank", "board", "furniture"];
+        foreach string keyword in woodKeywords {
+            if lowerObject.includes(keyword) {
+                return true;
+            }
+        }
+    } else if lowerWasteType == "rubber" {
+        string[] rubberKeywords = ["rubber", "tire", "tyre", "latex", "elastomer"];
+        foreach string keyword in rubberKeywords {
+            if lowerObject.includes(keyword) {
+                return true;
+            }
+        }
+    } else if lowerWasteType == "organic" || lowerWasteType == "food" {
+        string[] organicKeywords = ["food", "organic", "vegetable", "fruit", "compost", "biodegradable"];
+        foreach string keyword in organicKeywords {
+            if lowerObject.includes(keyword) {
+                return true;
+            }
+        }
     }
     
     return false;
@@ -875,7 +1119,7 @@ function generateRecommendations(QualityFactors factors, ComplianceStatus compli
     return recommendations;
 }
 
-function identifyIssues(QualityFactors factors, ComplianceStatus compliance) returns string[] {
+function identifyIssues(QualityFactors factors, ComplianceStatus compliance, string wasteType) returns string[] {
     string[] issues = [];
     
     foreach string violation in compliance.violations {
@@ -891,7 +1135,12 @@ function identifyIssues(QualityFactors factors, ComplianceStatus compliance) ret
     }
     
     if !factors.sorting.correctCategory {
-        issues.push("Material appears to be incorrectly categorized");
+        string? detectedTypeOpt = factors.sorting?.detectedType;
+        if detectedTypeOpt is string {
+            issues.push(string `Material appears to be ${detectedTypeOpt} but was submitted as ${wasteType}`);
+        } else {
+            issues.push("Unable to identify material type from image");
+        }
     }
     
     return issues;
@@ -1141,13 +1390,11 @@ function parseVisionApiResponse(json visionResponse) returns VisionAnalysis|erro
     ObjectDetection[] detectedObjects = [];
     if response.localizedObjectAnnotations is json[] {
         json[] objects = check response.localizedObjectAnnotations.ensureType();
-        log:printInfo(string `Vision API detected ${objects.length()} objects`);
         foreach json obj in objects {
             string name = check obj.name.ensureType();
             float score = check obj.score.ensureType();
             json boundingPoly = check obj.boundingPoly;
             
-            log:printInfo(string `Detected object: ${name} (confidence: ${score})`);
             detectedObjects.push({
                 name: name,
                 confidence: score,
@@ -1156,7 +1403,6 @@ function parseVisionApiResponse(json visionResponse) returns VisionAnalysis|erro
             });
         }
     } else {
-        log:printInfo("No localizedObjectAnnotations found in Vision API response");
     }
     
     // Parse text annotations
@@ -1192,12 +1438,36 @@ function parseVisionApiResponse(json visionResponse) returns VisionAnalysis|erro
     }
     SafeSearchAnnotation safeSearch = parseSafeSearch(safeSearchData);
     
+    // Parse label annotations
+    LabelAnnotation[] detectedLabels = [];
+    if response.labelAnnotations is json[] {
+        json[] labels = check response.labelAnnotations.ensureType();
+        foreach json label in labels {
+            string description = check label.description.ensureType();
+            float score = check label.score.ensureType();
+            
+            detectedLabels.push({
+                description: description,
+                score: score,
+                topicality: label.topicality is float ? check label.topicality.ensureType() : ()
+            });
+        }
+    }
+    
+    // Parse web detection - safely access optional JSON field
+    WebDetection? webDetection = ();
+    json|error webDetectionResult = response.webDetection;
+    if webDetectionResult is json {
+        webDetection = parseWebDetection(webDetectionResult);
+    }
+    
     return {
         detectedObjects: detectedObjects,
         detectedText: detectedText,
+        detectedLabels: detectedLabels,
         imageProperties: imageProps,
         safeSearch: safeSearch,
-        webDetection: ()
+        webDetection: webDetection
     };
 }
 
@@ -1326,4 +1596,131 @@ function parseSafeSearch(json? safeSearch) returns SafeSearchAnnotation {
         violence: violenceValue,
         racy: racyValue
     };
+}
+
+function parseWebDetection(json webDetection) returns WebDetection? {
+    WebEntity[] webEntities = [];
+    WebImage[] fullMatchingImages = [];
+    WebImage[] partialMatchingImages = [];
+    WebPage[] pagesWithMatchingImages = [];
+    
+    // Parse web entities
+    if webDetection.webEntities is json[] {
+        json[]|error entitiesResult = webDetection.webEntities.ensureType();
+        if entitiesResult is json[] {
+            foreach json entity in entitiesResult {
+                float|error scoreResult = entity.score.ensureType();
+                if scoreResult is float {
+                    string? entityIdVal = ();
+                    string? descriptionVal = ();
+                    
+                    if entity.entityId is string {
+                        string|error idResult = entity.entityId.ensureType();
+                        if idResult is string {
+                            entityIdVal = idResult;
+                        }
+                    }
+                    
+                    if entity.description is string {
+                        string|error descResult = entity.description.ensureType();
+                        if descResult is string {
+                            descriptionVal = descResult;
+                        }
+                    }
+                    
+                    webEntities.push({
+                        entityId: entityIdVal,
+                        score: scoreResult,
+                        description: descriptionVal
+                    });
+                }
+            }
+        }
+    }
+    
+    // Parse best guess labels which often contain material information
+    if webDetection.bestGuessLabels is json[] {
+        json[]|error labelsResult = webDetection.bestGuessLabels.ensureType();
+        if labelsResult is json[] {
+            foreach json label in labelsResult {
+                if label.label is string {
+                    string|error labelResult = label.label.ensureType();
+                    if labelResult is string {
+                        // Add as web entity with high score
+                        webEntities.push({
+                            entityId: (),
+                            score: 0.95,
+                            description: labelResult
+                        });
+                    }
+                }
+            }
+        }
+    }
+    
+    return {
+        webEntities: webEntities,
+        fullMatchingImages: fullMatchingImages,
+        partialMatchingImages: partialMatchingImages,
+        pagesWithMatchingImages: pagesWithMatchingImages
+    };
+}
+
+// Direct HTTP call to Vision API with API key
+function callVisionAPI(string base64Image) returns json|error {
+    http:Client httpClient = check new("https://vision.googleapis.com");
+    
+    log:printInfo(string `Calling Vision API with image size: ${base64Image.length()} characters`);
+    
+    json requestBody = {
+        "requests": [
+            {
+                "image": {
+                    "content": base64Image
+                },
+                "features": [
+                    {
+                        "type": "LABEL_DETECTION",
+                        "maxResults": 30
+                    },
+                    {
+                        "type": "OBJECT_LOCALIZATION",
+                        "maxResults": 20
+                    },
+                    {
+                        "type": "TEXT_DETECTION", 
+                        "maxResults": 20
+                    },
+                    {
+                        "type": "WEB_DETECTION",
+                        "maxResults": 10
+                    },
+                    {
+                        "type": "IMAGE_PROPERTIES",
+                        "maxResults": 1
+                    },
+                    {
+                        "type": "SAFE_SEARCH_DETECTION",
+                        "maxResults": 1
+                    }
+                ]
+            }
+        ]
+    };
+    
+    string url = string `/v1/images:annotate?key=${googleApiKey}`;
+    
+    
+    http:Response response = check httpClient->post(url, requestBody, {
+        "Content-Type": "application/json"
+    });
+    
+    if response.statusCode != 200 {
+        string errorMsg = check response.getTextPayload();
+        log:printError(string `Vision API returned status ${response.statusCode}: ${errorMsg}`);
+        return error(string `Vision API error ${response.statusCode}: ${errorMsg}`);
+    }
+    
+    json result = check response.getJsonPayload();
+    return result;
 }

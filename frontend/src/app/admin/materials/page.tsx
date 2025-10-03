@@ -7,6 +7,7 @@ import DashboardLayout from '../../../components/layout/DashboardLayout';
 import { Loading } from '../../../components/ui/Loading';
 import { MaterialsManagement } from '../../../components/admin/MaterialsManagement';
 import { enhancedToast } from '../../../components/ui/EnhancedToast';
+import { redirectToAsgardeoLogin } from '../../../lib/auth-redirect';
 
 export default function MaterialsPage() {
   const { user, loading, isAuthenticated } = useAuth();
@@ -17,7 +18,7 @@ export default function MaterialsPage() {
     if (!loading) {
       if (!isAuthenticated) {
         enhancedToast.warning('Authentication required.');
-        router.push('/auth/login?redirect=/admin/materials');
+        redirectToAsgardeoLogin('/admin/materials');
         return;
       }
       

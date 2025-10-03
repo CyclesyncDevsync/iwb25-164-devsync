@@ -28,18 +28,22 @@ const MapContainer = dynamic(
     loading: () => <div className="h-[400px] bg-gray-100 dark:bg-gray-700 animate-pulse rounded-lg" />
   }
 );
+
 const TileLayer = dynamic(
   () => import('react-leaflet').then(mod => mod.TileLayer),
   { ssr: false }
 );
+
 const Marker = dynamic(
   () => import('react-leaflet').then(mod => mod.Marker),
   { ssr: false }
 );
+
 const Popup = dynamic(
   () => import('react-leaflet').then(mod => mod.Popup),
   { ssr: false }
 );
+
 const CircleMarker = dynamic(
   () => import('react-leaflet').then(mod => mod.CircleMarker),
   { ssr: false }
@@ -101,6 +105,8 @@ interface MaterialSubmission {
   supplier_name?: string;
   supplier_email?: string;
   expected_price?: number;
+  agent_assigned?: boolean;
+  agent_id?: string;
   assigned_agent?: { id: string; name: string; distance: number };
   // Additional fields for detailed view
   description?: string;
@@ -167,6 +173,7 @@ export function MaterialVerification() {
     }
   }, [submissions.length]); // Only depend on length to avoid infinite loops
 
+
   const fetchMaterialSubmissions = async () => {
     try {
       setLoading(true);
@@ -182,6 +189,7 @@ export function MaterialVerification() {
         const data = await response.json();
         console.log('API Response:', data); // Debug log
         console.log('First item:', data.data?.[0]); // Debug log
+        console.log('Assigned agent for first item:', data.data?.[0]?.assigned_agent); // Debug agent field
         const apiSubmissions: MaterialSubmission[] = data.data.map((item: any) => ({
           id: item.id,
           transaction_id: item.transaction_id,
@@ -201,6 +209,8 @@ export function MaterialVerification() {
           selected_warehouse_name: item.selected_warehouse_name,
           selected_warehouse_address: item.selected_warehouse_address,
           expected_price: item.expected_price,
+          agent_assigned: item.assigned_agent ? true : false,
+          agent_id: item.assigned_agent?.id,
           assigned_agent: item.assigned_agent ? {
             id: item.assigned_agent.id,
             name: item.assigned_agent.name,
@@ -442,7 +452,13 @@ export function MaterialVerification() {
     setShowAgentModal(true);
   };
 
-  const assignAgent = async (agentId: string) => {
+  const assignAgent = async (agentId: string, e?: React.MouseEvent) => {
+    // Prevent any default behavior that might cause page refresh
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    
     console.log('Assigning agent:', agentId);
     if (!selectedSubmissionForAgent) {
       console.log('No submission selected');
@@ -462,30 +478,23 @@ export function MaterialVerification() {
         agentId: selectedAgent.asgardeo_id
       });
       
-      // Call your working backend API endpoint through Next.js proxy to avoid CORS
-      const response = await fetch(`/backend/agent/assignment-with-notification`, {
+      // Call through Next.js API route - the route will handle authentication
+      // using the HTTP-only cookie containing the ID token
+      const response = await fetch('/api/test-assign', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          materialLocation: {
+          submissionId: selectedSubmissionForAgent.id,
+          agentAsgardeoId: selectedAgent.asgardeo_id,
+          assignedBy: 'admin',
+          notes: `Material submission #${selectedSubmissionForAgent.id} assigned by admin`,
+          location: {
             latitude: selectedSubmissionForAgent.location_latitude || 6.9271,
-            longitude: selectedSubmissionForAgent.location_longitude || 79.8612
-          },
-          supplierId: selectedSubmissionForAgent.supplier_id || 'unknown-supplier',
-          supplierName: selectedSubmissionForAgent.supplier_name || 'Unknown Supplier',
-          materialId: String(selectedSubmissionForAgent.id),
-          materialDetails: {
-            type: selectedSubmissionForAgent.category,
-            title: selectedSubmissionForAgent.title,
-            description: selectedSubmissionForAgent.description,
-            quantity: selectedSubmissionForAgent.quantity,
-            condition: selectedSubmissionForAgent.condition,
-            expectedPrice: selectedSubmissionForAgent.expected_price
-          },
-          urgency: 'medium',
-          notes: `Material submission #${selectedSubmissionForAgent.id} assigned by admin`
+            longitude: selectedSubmissionForAgent.location_longitude || 79.8612,
+            address: selectedSubmissionForAgent.location_address || 'Unknown location'
+          }
         })
       });
 
@@ -493,48 +502,15 @@ export function MaterialVerification() {
         const assignmentData = await response.json();
         console.log('Assignment successful:', assignmentData);
         
-        // Now update the submission status in the database
-        console.log('Updating submission status in database...');
-        try {
-          const updateResponse = await fetch(`/backend/material-submissions/${selectedSubmissionForAgent.id}/status`, {
-            method: 'PUT',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              submission_status: 'assigned',
-              agent_id: selectedAgent.asgardeo_id,
-              // Remove verification_date for now as it's causing format issues
-              additional_details: JSON.stringify({
-                assigned_by: 'admin',
-                assignment_time: new Date().toISOString(),
-                assignment_id: assignmentData.assignment.assignmentId,
-                notification_sent: true
-              })
-            })
-          });
-
-          if (updateResponse.ok) {
-            const updateResult = await updateResponse.json();
-            console.log('Submission status updated successfully:', updateResult);
-          } else {
-            console.error('Failed to update submission status:', await updateResponse.text());
-            // Log but don't fail the whole operation
-          }
-        } catch (updateError) {
-          console.error('Error updating submission status:', updateError);
-          // Log but don't fail the whole operation
-        }
-        
-        // Update local state with real agent information
+        // Update local state with assigned agent
         const updatedSubmissions = submissions.map(sub => {
           if (sub.id === selectedSubmissionForAgent.id) {
             return { 
               ...sub, 
               assigned_agent: {
-                id: assignmentData.assignment.agent.agentId,
-                name: assignmentData.assignment.agent.agentName,
-                distance: assignmentData.assignment.agent.distanceFromMaterial || 0
+                id: selectedAgent.asgardeo_id,
+                name: `${selectedAgent.first_name} ${selectedAgent.last_name}`,
+                distance: Math.random() * 5 + 1 // Mock distance since we don't have it in the response
               },
               submission_status: 'assigned',
               agent_assigned: true,
@@ -548,7 +524,7 @@ export function MaterialVerification() {
         
         // Show success toast message
         toast.success(
-          `Agent ${assignmentData.assignment.agent.agentName} assigned successfully! Notification sent.`,
+          `Agent ${selectedAgent.first_name} ${selectedAgent.last_name} assigned successfully!`,
           {
             duration: 4000,
             position: 'top-right',
@@ -570,22 +546,10 @@ export function MaterialVerification() {
       }
     } catch (error) {
       console.error('Failed to assign agent:', error);
-      // Still update UI optimistically
-      const updatedSubmissions = submissions.map(sub => {
-        if (sub.id === selectedSubmissionForAgent.id) {
-          return { 
-            ...sub, 
-            assigned_agent: {
-              id: selectedAgent.asgardeo_id,
-              name: `${selectedAgent.first_name} ${selectedAgent.last_name}`,
-              distance: Math.random() * 5 + 1 // Mock distance
-            }
-          };
-        }
-        return sub;
+      toast.error('Failed to assign agent. Please check your connection and try again.', {
+        duration: 4000,
+        position: 'top-right',
       });
-      setSubmissions(updatedSubmissions);
-      setShowAgentModal(false);
     }
   };
 
@@ -626,7 +590,9 @@ export function MaterialVerification() {
         metadata: {
           submissionId: selectedSubmissionForDetails.id.toString(),
           supplierId: selectedSubmissionForDetails.supplier_id,
-          deliveryMethod: selectedSubmissionForDetails.delivery_method
+          deliveryMethod: selectedSubmissionForDetails.delivery_method,
+          materialType: selectedSubmissionForDetails.category || 'Unknown',
+          expectedCategory: selectedSubmissionForDetails.category || 'Unknown'
         }
       };
       
@@ -696,7 +662,11 @@ export function MaterialVerification() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600 dark:text-gray-400">Total Submissions</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">{statistics.totalSubmissions}</p>
+              {loading ? (
+                <div className="h-8 w-16 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+              ) : (
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">{statistics.totalSubmissions}</p>
+              )}
             </div>
             <div className="p-3 bg-blue-100 dark:bg-blue-900/20 rounded-lg">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-blue-600 dark:text-blue-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -710,7 +680,11 @@ export function MaterialVerification() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600 dark:text-gray-400">Agent Visits</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">{statistics.agentVisits}</p>
+              {loading ? (
+                <div className="h-8 w-16 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+              ) : (
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">{statistics.agentVisits}</p>
+              )}
             </div>
             <div className="p-3 bg-green-100 dark:bg-green-900/20 rounded-lg">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-green-600 dark:text-green-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -725,7 +699,11 @@ export function MaterialVerification() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600 dark:text-gray-400">Drop-off Requests</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">{statistics.dropOffs}</p>
+              {loading ? (
+                <div className="h-8 w-16 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+              ) : (
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">{statistics.dropOffs}</p>
+              )}
             </div>
             <div className="p-3 bg-purple-100 dark:bg-purple-900/20 rounded-lg">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-purple-600 dark:text-purple-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -815,36 +793,40 @@ export function MaterialVerification() {
             ))}
             
             {/* Agent Visit Locations */}
-            {agentVisitSubmissions.map(submission => (
-              submission.location_latitude && submission.location_longitude && (
-                <CircleMarker
-                  key={submission.id}
-                  center={[submission.location_latitude, submission.location_longitude]}
-                  radius={8}
-                  fillColor="#10B981"
-                  color="#10B981"
-                  weight={2}
-                  opacity={1}
-                  fillOpacity={0.8}
-                >
-                  <Popup>
-                    <div className="p-2">
-                      <h3 className="font-semibold">{submission.title}</h3>
-                      <p className="text-sm text-gray-600">{submission.supplier_name}</p>
-                      <p className="text-sm text-gray-600">{submission.location_address}</p>
-                      <p className="text-sm mt-2">
-                        Quantity: <span className="font-medium">{submission.quantity} {submission.unit}</span>
-                      </p>
-                      {submission.assigned_agent && (
-                        <p className="text-sm">
-                          Agent: <span className="font-medium">{submission.assigned_agent.name}</span>
+            {agentVisitSubmissions.map(submission => {
+              // Only render if we have valid coordinates
+              if (submission.location_latitude && submission.location_longitude) {
+                return (
+                  <CircleMarker
+                    key={submission.id}
+                    center={[submission.location_latitude, submission.location_longitude]}
+                    radius={8}
+                    fillColor="#10B981"
+                    color="#10B981"
+                    weight={2}
+                    opacity={1}
+                    fillOpacity={0.8}
+                  >
+                    <Popup>
+                      <div className="p-2">
+                        <h3 className="font-semibold">{submission.title}</h3>
+                        <p className="text-sm text-gray-600">{submission.supplier_name}</p>
+                        <p className="text-sm text-gray-600">{submission.location_address}</p>
+                        <p className="text-sm mt-2">
+                          Quantity: <span className="font-medium">{submission.quantity} {submission.unit}</span>
                         </p>
-                      )}
-                    </div>
-                  </Popup>
-                </CircleMarker>
-              )
-            ))}
+                        {submission.assigned_agent && (
+                          <p className="text-sm">
+                            Agent: <span className="font-medium">{submission.assigned_agent.name}</span>
+                          </p>
+                        )}
+                      </div>
+                    </Popup>
+                  </CircleMarker>
+                );
+              }
+              return null;
+            })}
           </MapContainer>
         </div>
       </div>
@@ -1071,7 +1053,7 @@ export function MaterialVerification() {
                   {agents.map(agent => (
                     <div
                       key={agent.id}
-                      onClick={() => assignAgent(agent.asgardeo_id)}
+                      onClick={(e) => assignAgent(agent.asgardeo_id, e)}
                       className={`relative flex items-center p-4 rounded-lg cursor-pointer transition-all ${
                         selectedSubmissionForAgent?.assigned_agent?.id === agent.asgardeo_id
                           ? 'bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-500'
@@ -1191,125 +1173,122 @@ export function MaterialVerification() {
                       
                       return (
                         <div key={index} className="space-y-2">
-                          <div className="relative group">
-                            <img
-                              src={photoUrl}
-                              alt={`Material photo ${index + 1}`}
-                              className="w-full h-32 object-cover rounded-lg"
-                              onError={(e) => {
-                                console.error('Failed to load image:', photoUrl);
-                                (e.target as HTMLImageElement).src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgZmlsbD0iI2U1ZTdlYiIvPgogIDx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTYiIGZpbGw9IiM5Y2EzYWYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5JbWFnZSBub3QgYXZhaWxhYmxlPC90ZXh0Pgo8L3N2Zz4=';
-                              }}
-                            />
-                            <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 rounded-lg transition-all flex items-center justify-center gap-2">
+                          <div className="flex gap-2">
+                            <div className="relative group flex-1">
+                              <img
+                                src={photoUrl}
+                                alt={`Material photo ${index + 1}`}
+                                className="w-full h-32 object-cover rounded-lg"
+                                onError={(e) => {
+                                  console.error('Failed to load image:', photoUrl);
+                                  (e.target as HTMLImageElement).src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgZmlsbD0iI2U1ZTdlYiIvPgogIDx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTYiIGZpbGw9IiM5Y2EzYWYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5JbWFnZSBub3QgYXZhaWxhYmxlPC90ZXh0Pgo8L3N2Zz4=';
+                                }}
+                              />
                               <button
                                 onClick={() => window.open(photoUrl, '_blank')}
-                                className="p-2 bg-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity hover:bg-gray-100"
+                                className="absolute top-2 right-2 p-1.5 bg-white/80 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity hover:bg-white"
                                 title="View full size"
                               >
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
                                 </svg>
                               </button>
-                              <button
-                                onClick={() => analyzePhoto(photo, index)}
-                                disabled={analyzingPhoto === index}
-                                className="p-2 bg-blue-600 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity hover:bg-blue-700 disabled:bg-gray-400"
-                                title="AI Analysis"
-                              >
-                                {analyzingPhoto === index ? (
-                                  <svg className="h-5 w-5 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            </div>
+                            <button
+                              onClick={() => analyzePhoto(photo, index)}
+                              disabled={analyzingPhoto === index}
+                              className="px-3 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 text-sm font-medium flex items-center gap-2 self-start"
+                              title="AI Analysis"
+                            >
+                              {analyzingPhoto === index ? (
+                                <>
+                                  <svg className="h-4 w-4 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                   </svg>
-                                ) : (
-                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <span>Analyzing...</span>
+                                </>
+                              ) : (
+                                <>
+                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
                                   </svg>
-                                )}
-                              </button>
-                            </div>
+                                  <span>Analyze</span>
+                                </>
+                              )}
+                            </button>
                           </div>
                           
                           {/* AI Analysis Results */}
                           {photoAnalysisResults[index] && (
-                            <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 text-sm">
+                            <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 space-y-3">
                               {photoAnalysisResults[index].error ? (
-                                <p className="text-red-600 dark:text-red-400">
+                                <p className="text-red-600 dark:text-red-400 text-sm">
                                   Analysis Error: {photoAnalysisResults[index].error || 'Failed to analyze image'}
                                 </p>
                               ) : (
-                                <div className="space-y-2">
-                                  <div className="flex items-center justify-between">
-                                    <span className="font-medium text-gray-900 dark:text-white">Quality Score</span>
-                                    <span className={`font-bold ${
-                                      photoAnalysisResults[index].overallScore >= 80 ? 'text-green-600' :
-                                      photoAnalysisResults[index].overallScore >= 60 ? 'text-yellow-600' :
-                                      'text-red-600'
-                                    }`}>
-                                      {Math.round(photoAnalysisResults[index].overallScore || 0)}%
-                                    </span>
-                                  </div>
-                                  
-                                  <div className="flex items-center justify-between">
-                                    <span className="text-gray-600 dark:text-gray-400">Quality Grade</span>
-                                    <span className={`font-medium ${
-                                      photoAnalysisResults[index].qualityGrade === 'excellent' ? 'text-green-600' :
-                                      photoAnalysisResults[index].qualityGrade === 'good' ? 'text-blue-600' :
-                                      photoAnalysisResults[index].qualityGrade === 'fair' ? 'text-yellow-600' :
-                                      'text-red-600'
-                                    }`}>
-                                      {photoAnalysisResults[index].qualityGrade || 'N/A'}
-                                    </span>
-                                  </div>
-                                  
-                                  {photoAnalysisResults[index].qualityFactors && (
-                                    <>
-                                      <div className="text-xs space-y-1">
-                                        <div className="flex justify-between">
-                                          <span className="text-gray-600 dark:text-gray-400">Contamination:</span>
-                                          <span>{Math.round(photoAnalysisResults[index].qualityFactors.contamination?.contaminationLevel || 0)}%</span>
-                                        </div>
-                                        <div className="flex justify-between">
-                                          <span className="text-gray-600 dark:text-gray-400">Purity Score:</span>
-                                          <span>{Math.round(photoAnalysisResults[index].qualityFactors.contamination?.purityScore || 0)}%</span>
-                                        </div>
-                                        <div className="flex justify-between">
-                                          <span className="text-gray-600 dark:text-gray-400">Integrity:</span>
-                                          <span>{Math.round(photoAnalysisResults[index].qualityFactors.condition?.integrityScore || 0)}%</span>
-                                        </div>
-                                        <div className="flex justify-between">
-                                          <span className="text-gray-600 dark:text-gray-400">Sorting Accuracy:</span>
-                                          <span>{Math.round(photoAnalysisResults[index].qualityFactors.sorting?.accuracyScore || 0)}%</span>
-                                        </div>
-                                      </div>
-                                    </>
-                                  )}
-                                  
-                                  {photoAnalysisResults[index].recommendations && photoAnalysisResults[index].recommendations.length > 0 && (
-                                    <div className="mt-2">
-                                      <p className="font-medium text-gray-700 dark:text-gray-300 text-xs">Recommendations:</p>
-                                      <ul className="text-xs text-gray-600 dark:text-gray-400 list-disc list-inside">
-                                        {photoAnalysisResults[index].recommendations.slice(0, 2).map((rec, i) => (
-                                          <li key={i}>{rec}</li>
-                                        ))}
-                                      </ul>
-                                    </div>
-                                  )}
-                                  
-                                  {photoAnalysisResults[index].approved !== undefined && (
-                                    <div className={`text-center py-1 px-2 rounded ${
-                                      photoAnalysisResults[index].approved 
-                                        ? 'bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-400' 
-                                        : 'bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-400'
-                                    }`}>
-                                      {photoAnalysisResults[index].approved ? '✓ Approved' : '✗ Rejected'}
-                                      {photoAnalysisResults[index].rejectionReason && (
-                                        <p className="text-xs mt-1">{photoAnalysisResults[index].rejectionReason}</p>
+                                <>
+                                  {/* Material Type Comparison */}
+                                  <div className="space-y-2">
+                                    <div className="flex items-start gap-2">
+                                      {/* Use materialTypeMatches if available, otherwise fall back to previous logic */}
+                                      {(photoAnalysisResults[index].qualityFactors?.sorting?.materialTypeMatches === true || 
+                                        (photoAnalysisResults[index].qualityFactors?.sorting?.materialTypeMatches === undefined && 
+                                         (photoAnalysisResults[index].qualityFactors?.sorting?.accuracyScore >= 50 || 
+                                          photoAnalysisResults[index].qualityFactors?.sorting?.correctCategory))) ? (
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
+                                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                        </svg>
+                                      ) : (
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
+                                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                                        </svg>
                                       )}
+                                      <div className="flex-1">
+                                        {/* Use the comparison message if available */}
+                                        {photoAnalysisResults[index].qualityFactors?.sorting?.comparisonMessage ? (
+                                          <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                                            {photoAnalysisResults[index].qualityFactors.sorting.comparisonMessage}
+                                          </p>
+                                        ) : (
+                                          // Fallback to the old display logic
+                                          <p className="text-sm">
+                                            {(photoAnalysisResults[index].qualityFactors?.sorting?.accuracyScore >= 50 || 
+                                              photoAnalysisResults[index].qualityFactors?.sorting?.correctCategory) ? (
+                                              <span className="text-green-700 dark:text-green-300 font-medium">
+                                                Material type verified! The image shows <strong className="capitalize">{photoAnalysisResults[index].qualityFactors?.sorting?.detectedType || selectedSubmissionForDetails.category}</strong> material.
+                                              </span>
+                                            ) : (
+                                              <span className="text-red-700 dark:text-red-300 font-medium">
+                                                Material type mismatch! User declared <strong className="capitalize">{selectedSubmissionForDetails.category}</strong>
+                                                {photoAnalysisResults[index].qualityFactors?.sorting?.detectedType && (
+                                                  <>, but image shows <strong className="capitalize">{photoAnalysisResults[index].qualityFactors.sorting.detectedType}</strong></>
+                                                )}
+                                              </span>
+                                            )}
+                                          </p>
+                                        )}
+                                      </div>
                                     </div>
-                                  )}
-                                </div>
+                                    
+                                    {/* Additional Analysis Details */}
+                                    {photoAnalysisResults[index].qualityFactors && (
+                                      <div className="mt-2 pl-7 space-y-1">
+                                        <p className="text-xs text-gray-600 dark:text-gray-400">
+                                          Quality Score: <span className="font-medium">{photoAnalysisResults[index].overallScore?.toFixed(1) || 'N/A'}/100</span>
+                                        </p>
+                                        <p className="text-xs text-gray-600 dark:text-gray-400">
+                                          Detection Confidence: <span className="font-medium">{((photoAnalysisResults[index].qualityFactors?.sorting?.categoryConfidence || 0) * 100).toFixed(0)}%</span>
+                                        </p>
+                                        {photoAnalysisResults[index].qualityFactors?.contamination?.contaminants?.length > 0 && (
+                                          <p className="text-xs text-amber-600 dark:text-amber-400">
+                                            ⚠️ Contaminants detected: {photoAnalysisResults[index].qualityFactors.contamination.contaminants.join(', ')}
+                                          </p>
+                                        )}
+                                      </div>
+                                    )}
+                                  </div>
+                                </>
                               )}
                             </div>
                           )}
@@ -1319,18 +1298,6 @@ export function MaterialVerification() {
                   </div>
                 </div>
               )}
-
-              {/* Pricing Information */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-medium text-gray-900 dark:text-white">Pricing</h3>
-                <div className="space-y-2">
-                  <p className="text-sm"><span className="text-gray-500">Expected Price:</span> <span className="font-medium">Rs. {selectedSubmissionForDetails.expected_price?.toLocaleString() || 'N/A'}</span></p>
-                  {selectedSubmissionForDetails.minimum_price && (
-                    <p className="text-sm"><span className="text-gray-500">Minimum Price:</span> <span className="font-medium">Rs. {selectedSubmissionForDetails.minimum_price.toLocaleString()}</span></p>
-                  )}
-                  <p className="text-sm"><span className="text-gray-500">Negotiable:</span> <span className="font-medium">{selectedSubmissionForDetails.negotiable ? 'Yes' : 'No'}</span></p>
-                </div>
-              </div>
 
               {/* Location Information */}
               <div className="space-y-4">

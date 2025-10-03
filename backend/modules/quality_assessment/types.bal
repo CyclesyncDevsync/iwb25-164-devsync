@@ -49,6 +49,7 @@ public type QualityAssessment record {
 public type VisionAnalysis record {
     ObjectDetection[] detectedObjects;
     TextAnnotation[] detectedText;
+    LabelAnnotation[] detectedLabels?;
     ImageProperties imageProperties;
     SafeSearchAnnotation safeSearch;
     WebDetection? webDetection;
@@ -76,6 +77,13 @@ public type TextAnnotation record {
     float confidence;
     BoundingBox boundingBox;
     string language?;
+};
+
+// Label annotation from Label Detection
+public type LabelAnnotation record {
+    string description;
+    float score;
+    float topicality?;
 };
 
 // Image properties analysis
@@ -187,6 +195,10 @@ public type SortingAccuracy record {
     string[] incorrectItems;
     boolean correctCategory;
     float categoryConfidence;
+    string? detectedType?; // The actual material type detected by Vision API
+    string? expectedType?; // The material type provided by the user
+    boolean materialTypeMatches?; // True if detected matches expected
+    string? comparisonMessage?; // Human-readable comparison result
 };
 
 // Volume estimation
