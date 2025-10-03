@@ -9,6 +9,7 @@ import { Loading } from '../../components/ui/Loading';
 import { AdminFAB } from '../../components/ui/FloatingActionButton';
 import { enhancedToast } from '../../components/ui/EnhancedToast';
 import WalletBalance from '../../components/shared/WalletBalance';
+import { redirectToAsgardeoLogin } from '../../lib/auth-redirect';
 
 export default function AdminDashboard() {
   const { user, loading, isAuthenticated } = useAuth();
@@ -19,7 +20,7 @@ export default function AdminDashboard() {
     if (!loading) {
       if (!isAuthenticated) {
         enhancedToast.warning('Please log in to access the admin dashboard.');
-        router.push('/auth/login?redirect=/admin');
+        redirectToAsgardeoLogin('/admin');
         return;
       }
       

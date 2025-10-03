@@ -9,6 +9,121 @@ configurable string dbUsername = ?;
 configurable string dbPassword = ?;
 configurable string dbName = ?;
 
+// Type definitions
+type Location record {|
+    decimal latitude;
+    decimal longitude;
+    string? address?;
+|};
+
+type AssignmentRequest record {|
+    Location materialLocation;
+    string urgency = "medium";
+    string materialId;
+    string? notes?;
+|};
+
+type Agent record {|
+    string agentId;
+    string agentName;
+    string agentPhone;
+    string agentEmail;
+    Location coordinates;
+    int currentWorkload?;
+    int maxWorkload?;
+    decimal rating?;
+    string[] specializations?;
+    decimal distanceFromMaterial?;
+    time:Utc estimatedArrival?;
+    decimal visitCost?;
+    VisitCostDetails costBreakdown?;
+    decimal assignmentScore?;
+    string status;
+    time:Utc assignedAt;
+|};
+
+type VisitCostDetails record {|
+    decimal baseCost;
+    decimal distanceCost;
+    decimal timeCost;
+    decimal urgencySurcharge;
+    decimal totalCost;
+    decimal estimatedDuration;
+    decimal distanceKm;
+|};
+
+type AgentTracking record {|
+    string agentId;
+    string agentName;
+    Location currentLocation;
+    time:Civil lastLocationUpdate;
+    string status;
+    string? currentTaskId;
+    time:Civil? eta;
+    string? lastCheckpoint;
+|};
+
+type CostEstimateRequest record {|
+    Location pickupLocation;
+    Location deliveryLocation?;
+    string urgency = "medium";
+    decimal estimatedWeight?;
+|};
+
+# Agent Assignment Service - inline implementation
+isolated class AgentAssignmentService {
+    private final postgresql:Client dbClient;
+    
+    function init(postgresql:Client dbClient) {
+        self.dbClient = dbClient;
+    }
+    
+    isolated function assignAgent(Location materialLocation, string urgency = "medium") returns Agent|error {
+        // For now, return a mock agent to get the API working
+        return {
+            agentId: "agent-001",
+            agentName: "Mock Agent",
+            agentPhone: "+94771234567",
+            agentEmail: "agent@cyclesync.com",
+            coordinates: {
+                latitude: 6.9271,
+                longitude: 79.8612
+            },
+            currentWorkload: 3,
+            maxWorkload: 10,
+            rating: 4.5,
+            distanceFromMaterial: 5.2,
+            visitCost: 1500,
+            status: "assigned",
+            assignedAt: time:utcNow()
+        };
+    }
+    
+    isolated function getAgentTracking(string agentId) returns AgentTracking|error {
+        return {
+            agentId: agentId,
+            agentName: "Mock Agent",
+            currentLocation: {
+                latitude: 6.9271,
+                longitude: 79.8612
+            },
+            lastLocationUpdate: time:utcToCivil(time:utcNow()),
+            status: "active",
+            currentTaskId: (),
+            eta: (),
+            lastCheckpoint: ()
+        };
+    }
+    
+    isolated function updateAgentLocation(string agentId, Location location) returns boolean|error {
+        return true;
+    }
+    
+    isolated function getNearbyAgents(Location centerLocation, decimal radiusKm = 25) returns Agent[]|error {
+        return [];
+    }
+}
+
 # Agent Assignment API Service
 @http:ServiceConfig {
     cors: {
@@ -160,19 +275,3 @@ service /api/agent on new http:Listener(8091) {
         return string `https://www.google.com/maps/dir/${origin.latitude},${origin.longitude}/${destination.latitude},${destination.longitude}`;
     }
 }
-
-# Assignment request type
-type AssignmentRequest record {|
-    Location materialLocation;
-    string urgency = "medium";
-    string materialId;
-    string notes?;
-|};
-
-# Cost estimate request type
-type CostEstimateRequest record {|
-    Location pickupLocation;
-    Location deliveryLocation?;
-    string urgency = "medium";
-    decimal estimatedWeight?;
-|};

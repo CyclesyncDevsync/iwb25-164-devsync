@@ -2,6 +2,53 @@ import ballerina/sql;
 import ballerina/time;
 import ballerinax/postgresql;
 
+// Type definitions - these should match types.bal
+type Location record {|
+    decimal latitude;
+    decimal longitude;
+    string? address?;
+|};
+
+type Agent record {|
+    string agentId;
+    string agentName;
+    string agentPhone;
+    string agentEmail;
+    Location coordinates;
+    int currentWorkload?;
+    int maxWorkload?;
+    decimal rating?;
+    string[] specializations?;
+    decimal distanceFromMaterial?;
+    time:Utc estimatedArrival?;
+    decimal visitCost?;
+    VisitCostDetails costBreakdown?;
+    decimal assignmentScore?;
+    string status;
+    time:Utc assignedAt;
+|};
+
+type VisitCostDetails record {|
+    decimal baseCost;
+    decimal distanceCost;
+    decimal timeCost;
+    decimal urgencySurcharge;
+    decimal totalCost;
+    decimal estimatedDuration;
+    decimal distanceKm;
+|};
+
+type AgentTracking record {|
+    string agentId;
+    string agentName;
+    Location currentLocation;
+    time:Civil lastLocationUpdate;
+    string status;
+    string? currentTaskId;
+    time:Civil? eta;
+    string? lastCheckpoint;
+|};
+
 # Agent Assignment Service for location-based matching and costing
 public isolated class AgentAssignmentService {
     private final postgresql:Client dbClient;
