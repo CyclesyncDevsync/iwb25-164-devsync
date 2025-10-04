@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
@@ -14,10 +14,12 @@ import {
   MapPinIcon,
   DocumentDuplicateIcon,
   ShoppingBagIcon,
-  CurrencyDollarIcon
+  CurrencyDollarIcon,
+  ChatBubbleLeftRightIcon
 } from '@heroicons/react/24/outline';
 import { useAppSelector } from '../../hooks/redux';
 import { SupplierType } from '../../types/supplier';
+import { useAuth } from '../../hooks/useAuth';
 
 interface SupplierLayoutProps {
   children: React.ReactNode;
@@ -26,6 +28,44 @@ interface SupplierLayoutProps {
 export default function SupplierLayout({ children }: SupplierLayoutProps) {
   const pathname = usePathname();
   const { profile } = useAppSelector(state => state.supplier);
+  const { user } = useAuth();
+  const [unreadMessageCount, setUnreadMessageCount] = useState(0);
+
+  // Fetch unread message count
+  useEffect(() => {
+    const fetchUnreadCount = async () => {
+      if (!user?.asgardeoId && !user?.sub) return;
+
+      try {
+        const authResponse = await fetch('/api/auth/me');
+        if (!authResponse.ok) return;
+
+        const authData = await authResponse.json();
+        const idToken = authData.idToken;
+        const supplierId = authData.user?.asgardeoId || authData.user?.sub || authData.userId;
+
+        const response = await fetch(`/backend/chat/rooms/supplier/${supplierId}/unread-count`, {
+          headers: {
+            'Authorization': `Bearer ${idToken}`
+          }
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setUnreadMessageCount(data.unread_count || 0);
+        }
+      } catch (error) {
+        console.error('Error fetching unread count:', error);
+      }
+    };
+
+    // Fetch initially
+    fetchUnreadCount();
+
+    // Poll every 10 seconds
+    const interval = setInterval(fetchUnreadCount, 10000);
+    return () => clearInterval(interval);
+  }, [user]);
 
   const navigationItems = [
     {
@@ -51,6 +91,12 @@ export default function SupplierLayout({ children }: SupplierLayoutProps) {
       href: '/supplier/orders',
       icon: ShoppingBagIcon,
       current: pathname.startsWith('/supplier/orders')
+    },
+    {
+      name: 'Messages',
+      href: '/supplier/messages',
+      icon: ChatBubbleLeftRightIcon,
+      current: pathname.startsWith('/supplier/messages')
     },
     {
       name: 'Analytics',
@@ -151,7 +197,12 @@ export default function SupplierLayout({ children }: SupplierLayoutProps) {
                   } mr-3 h-5 w-5 flex-shrink-0`}
                   aria-hidden="true"
                 />
-                {item.name}
+                <span className="flex-1">{item.name}</span>
+                {item.name === 'Messages' && unreadMessageCount > 0 && (
+                  <span className="ml-auto inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-500 text-white">
+                    {unreadMessageCount}
+                  </span>
+                )}
               </Link>
             ))}
           </nav>

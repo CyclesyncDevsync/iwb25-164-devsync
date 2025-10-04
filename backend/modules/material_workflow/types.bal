@@ -25,6 +25,14 @@ public enum WorkflowStage {
     CANCELLED = "cancelled"
 }
 
+// Type for submission status update payload
+public type SubmissionStatusUpdate record {|
+    string submission_status;
+    string? agent_id?;
+    time:Utc? verification_date?;
+    string? additional_details?;
+|};
+
 // Core workflow types
 public type EnhancedMaterialSubmission record {
     string supplierId;
