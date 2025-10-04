@@ -62,10 +62,14 @@ const routeConfigs: Record<string, Partial<NavbarConfig>> = {
   },
   '/agent': {
     showBreadcrumbs: true,
+    showNotifications: false,
+    showUserMenu: false,
     variant: 'dashboard'
   },
   '/agent/*': {
     showBreadcrumbs: true,
+    showNotifications: false,
+    showUserMenu: false,
     variant: 'dashboard'
   },
   '/dashboard': {
@@ -93,7 +97,7 @@ const routeConfigs: Record<string, Partial<NavbarConfig>> = {
 
 export function useNavbarConfig(): NavbarConfig {
   const pathname = usePathname();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   
   // Find matching route configuration
   const getRouteConfig = (): Partial<NavbarConfig> => {
@@ -125,13 +129,17 @@ export function useNavbarConfig(): NavbarConfig {
     ...routeConfig
   };
   
-  // Adjust config based on authentication status
+  // Adjust config based on authentication status and user role
   if (!isAuthenticated) {
     config.showNotifications = false;
     if (config.showUserMenu) {
       // Keep user menu for sign in/sign up buttons
       config.showUserMenu = true;
     }
+  } else if (user?.role === 'AGENT') {
+    // Hide notifications and user menu for agent role
+    config.showNotifications = false;
+    config.showUserMenu = false;
   }
   
   return config;

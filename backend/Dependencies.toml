@@ -62,7 +62,7 @@ dependencies = [
 [[package]]
 org = "ballerina"
 name = "email"
-version = "2.12.0"
+version = "2.12.1"
 dependencies = [
 	{org = "ballerina", name = "jballerina.java"},
 	{org = "ballerina", name = "log"},
@@ -134,7 +134,7 @@ version = "0.0.0"
 [[package]]
 org = "ballerina"
 name = "jwt"
-version = "2.15.0"
+version = "2.15.1"
 dependencies = [
 	{org = "ballerina", name = "cache"},
 	{org = "ballerina", name = "crypto"},
@@ -303,7 +303,7 @@ dependencies = [
 [[package]]
 org = "ballerina"
 name = "os"
-version = "1.10.0"
+version = "1.10.1"
 dependencies = [
 	{org = "ballerina", name = "io"},
 	{org = "ballerina", name = "jballerina.java"}
@@ -490,9 +490,7 @@ modules = [
 	{org = "hp", packageName = "Cyclesync", moduleName = "Cyclesync"},
 	{org = "hp", packageName = "Cyclesync", moduleName = "Cyclesync.agent_assignment"},
 	{org = "hp", packageName = "Cyclesync", moduleName = "Cyclesync.agent_review"},
-	{org = "hp", packageName = "Cyclesync", moduleName = "Cyclesync.appointment_scheduling.disabled"},
 	{org = "hp", packageName = "Cyclesync", moduleName = "Cyclesync.auction"},
-	{org = "hp", packageName = "Cyclesync", moduleName = "Cyclesync.auction_integration.disabled"},
 	{org = "hp", packageName = "Cyclesync", moduleName = "Cyclesync.auth"},
 	{org = "hp", packageName = "Cyclesync", moduleName = "Cyclesync.chatbot"},
 	{org = "hp", packageName = "Cyclesync", moduleName = "Cyclesync.database"},
@@ -501,11 +499,8 @@ modules = [
 	{org = "hp", packageName = "Cyclesync", moduleName = "Cyclesync.dynamic_pricing"},
 	{org = "hp", packageName = "Cyclesync", moduleName = "Cyclesync.material_workflow"},
 	{org = "hp", packageName = "Cyclesync", moduleName = "Cyclesync.news"},
-	{org = "hp", packageName = "Cyclesync", moduleName = "Cyclesync.notification_system.disabled"},
 	{org = "hp", packageName = "Cyclesync", moduleName = "Cyclesync.notifications"},
-	{org = "hp", packageName = "Cyclesync", moduleName = "Cyclesync.payment_distribution.disabled"},
 	{org = "hp", packageName = "Cyclesync", moduleName = "Cyclesync.quality_assessment"},
-	{org = "hp", packageName = "Cyclesync", moduleName = "Cyclesync.wallet"},
-	{org = "hp", packageName = "Cyclesync", moduleName = "Cyclesync.warehouse_inventory.disabled"}
+	{org = "hp", packageName = "Cyclesync", moduleName = "Cyclesync.wallet"}
 ]
 
