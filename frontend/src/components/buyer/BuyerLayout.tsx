@@ -83,8 +83,6 @@ const BuyerLayout: React.FC<BuyerLayoutProps> = ({ children }) => {
 
   const closeSidebar = () => setIsSidebarOpen(false);
 
-  // ...existing code...
-
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-dark-bg">
       {/* Mobile sidebar overlay */}
@@ -108,12 +106,12 @@ const BuyerLayout: React.FC<BuyerLayoutProps> = ({ children }) => {
             initial={{ x: -300 }}
             animate={{ x: 0 }}
             exit={{ x: -300 }}
-            className="fixed inset-y-0 left-0 w-64 bg-gradient-to-b from-white to-gray-50 dark:from-dark-surface dark:to-gray-900 shadow-2xl z-[70] lg:hidden"
+            className="fixed inset-y-0 left-0 w-64 bg-white dark:from-dark-surface dark:to-gray-900 shadow-2xl z-[70] lg:hidden"
           >
             {/* Mobile Header */}
             <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-buyer-DEFAULT/10 to-buyer-DEFAULT/5">
               <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-buyer-DEFAULT rounded-lg flex items-center justify-center">
+                <div className="w-8 h-8 bg-green-700 rounded-lg flex items-center justify-center">
                   <UserCircleIcon className="w-5 h-5 text-white" />
                 </div>
                 <div>
@@ -134,7 +132,7 @@ const BuyerLayout: React.FC<BuyerLayoutProps> = ({ children }) => {
             {/* Mobile User Profile */}
             <div className="px-4 py-4 border-b border-gray-200 dark:border-gray-700">
               <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-gradient-to-br from-buyer-DEFAULT to-blue-600 rounded-full flex items-center justify-center shadow-md">
+                <div className="w-10 h-10 bg-gradient-to-br from-green-700 to-green-500 rounded-full flex items-center justify-center shadow-lg ring-1 ring-gray-100 dark:ring-transparent">
                   <span className="text-white font-semibold text-sm">
                     {user?.firstName?.charAt(0) || user?.email?.charAt(0) || 'B'}
                   </span>
@@ -164,14 +162,14 @@ const BuyerLayout: React.FC<BuyerLayoutProps> = ({ children }) => {
                     onClick={closeSidebar}
                     className={`group flex items-center px-4 py-3 mb-2 text-sm font-medium rounded-xl transition-all duration-200 transform hover:scale-105 ${
                       item.current
-                        ? 'bg-gradient-to-r from-buyer-DEFAULT to-blue-600 text-white shadow-lg shadow-buyer-DEFAULT/25'
-                        : 'text-gray-700 dark:text-gray-300 hover:bg-gradient-to-r hover:from-gray-100 hover:to-gray-50 dark:hover:from-gray-800 dark:hover:to-gray-700 hover:shadow-md'
+                        ? 'bg-buyer-DEFAULT/15 text-buyer-DEFAULT shadow-sm border-l-4 border-buyer-DEFAULT dark:bg-gradient-to-r dark:from-buyer-DEFAULT dark:to-blue-600 dark:text-white dark:shadow-lg dark:shadow-buyer-DEFAULT/25'
+                        : 'text-gray-800 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:shadow-md'
                     }`}
                   >
                     <motion.div
                       whileHover={{ rotate: 5 }}
                       className={`w-5 h-5 mr-3 flex-shrink-0 ${
-                        item.current ? 'text-white' : 'text-gray-600 dark:text-gray-400 group-hover:text-buyer-DEFAULT'
+                        item.current ? 'text-buyer-DEFAULT dark:text-white' : 'text-gray-700 dark:text-gray-400 group-hover:text-buyer-DEFAULT'
                       }`}
                     >
                       <item.icon className="w-5 h-5" />
@@ -193,9 +191,9 @@ const BuyerLayout: React.FC<BuyerLayoutProps> = ({ children }) => {
             <div className="px-3 pb-4">
               <button
                 onClick={logout}
-                className="group flex items-center w-full px-4 py-3 text-sm font-medium text-gray-700 dark:text-gray-300 rounded-xl transition-all duration-200 transform hover:scale-105 hover:bg-gradient-to-r hover:from-red-50 hover:to-red-100 dark:hover:from-red-900/20 dark:hover:to-red-800/20"
+                className="group flex items-center w-full px-4 py-3 text-sm font-medium text-red-700 dark:text-red-300 rounded-xl transition-all duration-200 transform hover:scale-105 hover:bg-red-100 dark:hover:bg-red-900/20"
               >
-                <ArrowRightOnRectangleIcon className="w-5 h-5 mr-3 text-gray-600 dark:text-gray-400 group-hover:text-red-500" />
+                <ArrowRightOnRectangleIcon className="w-5 h-5 mr-3 text-red-700 dark:text-red-300 group-hover:text-red-800" />
                 <span>Logout</span>
               </button>
             </div>
@@ -205,11 +203,11 @@ const BuyerLayout: React.FC<BuyerLayoutProps> = ({ children }) => {
 
       {/* Desktop Sidebar */}
       <div className="hidden lg:flex lg:w-64 lg:flex-col lg:fixed lg:inset-y-0 z-50">
-        <div className="flex flex-col flex-grow bg-gradient-to-b from-white to-gray-50 dark:from-dark-surface dark:to-gray-900 border-r border-gray-200 dark:border-gray-700 shadow-xl">
+        <div className="flex flex-col flex-grow bg-white dark:from-dark-surface dark:to-gray-900 border-r border-gray-200 dark:border-gray-700 shadow-xl">
           {/* Desktop Header */}
           <div className="flex items-center h-16 px-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-buyer-DEFAULT/10 to-buyer-DEFAULT/5">
             <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-buyer-DEFAULT rounded-lg flex items-center justify-center">
+              <div className="w-8 h-8 bg-green-700 rounded-lg flex items-center justify-center">
                 <UserCircleIcon className="w-5 h-5 text-white" />
               </div>
               <div>
@@ -224,7 +222,7 @@ const BuyerLayout: React.FC<BuyerLayoutProps> = ({ children }) => {
           {/* Desktop User Profile */}
           <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-buyer-DEFAULT to-blue-600 rounded-full flex items-center justify-center shadow-md">
+              <div className="w-10 h-10 bg-gradient-to-br from-green-700 to-green-500 rounded-full flex items-center justify-center shadow-lg ring-1 ring-gray-100 dark:ring-transparent">
                 <span className="text-white font-semibold text-sm">
                   {user?.firstName?.charAt(0) || user?.email?.charAt(0) || 'B'}
                 </span>
@@ -253,14 +251,14 @@ const BuyerLayout: React.FC<BuyerLayoutProps> = ({ children }) => {
                   href={item.href}
                   className={`group flex items-center px-4 py-3 mb-2 text-sm font-medium rounded-xl transition-all duration-200 transform hover:scale-105 ${
                     item.current
-                      ? 'bg-gradient-to-r from-buyer-DEFAULT to-blue-600 text-white shadow-lg shadow-buyer-DEFAULT/25'
-                      : 'text-gray-700 dark:text-gray-300 hover:bg-gradient-to-r hover:from-gray-100 hover:to-gray-50 dark:hover:from-gray-800 dark:hover:to-gray-700 hover:shadow-md'
+                      ? 'bg-buyer-DEFAULT/15 text-buyer-DEFAULT shadow-sm border-l-4 border-buyer-DEFAULT dark:bg-gradient-to-r dark:from-buyer-DEFAULT dark:to-blue-600 dark:text-white dark:shadow-lg dark:shadow-buyer-DEFAULT/25'
+                      : 'text-gray-800 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:shadow-md'
                   }`}
                 >
                   <motion.div
                     whileHover={{ rotate: 5 }}
                     className={`w-5 h-5 mr-3 flex-shrink-0 ${
-                      item.current ? 'text-white' : 'text-gray-600 dark:text-gray-400 group-hover:text-buyer-DEFAULT'
+                      item.current ? 'text-buyer-DEFAULT dark:text-white' : 'text-gray-700 dark:text-gray-400 group-hover:text-buyer-DEFAULT'
                     }`}
                   >
                     <item.icon className="w-5 h-5" />
@@ -282,9 +280,9 @@ const BuyerLayout: React.FC<BuyerLayoutProps> = ({ children }) => {
           <div className="px-3 pb-4">
             <button
               onClick={logout}
-              className="group flex items-center w-full px-4 py-3 text-sm font-medium text-gray-700 dark:text-gray-300 rounded-xl transition-all duration-200 transform hover:scale-105 hover:bg-gradient-to-r hover:from-red-50 hover:to-red-100 dark:hover:from-red-900/20 dark:hover:to-red-800/20"
+              className="group flex items-center w-full px-4 py-3 text-sm font-medium text-red-700 dark:text-red-300 rounded-xl transition-all duration-200 transform hover:scale-105 hover:bg-red-100 dark:hover:bg-red-900/20"
             >
-              <ArrowRightOnRectangleIcon className="w-5 h-5 mr-3 text-gray-600 dark:text-gray-400 group-hover:text-red-500" />
+              <ArrowRightOnRectangleIcon className="w-5 h-5 mr-3 text-red-700 dark:text-red-300 group-hover:text-red-800" />
               <span>Logout</span>
             </button>
           </div>

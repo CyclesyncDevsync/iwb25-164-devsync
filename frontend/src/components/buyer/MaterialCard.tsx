@@ -68,9 +68,9 @@ const MaterialCard: React.FC<MaterialCardProps> = ({
     <motion.div
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
-      className={`bg-white rounded-lg shadow-sm border hover:shadow-md transition-all duration-300 ${
-        viewMode === 'list' ? 'flex' : ''
-      }`}
+      className={`bg-white dark:bg-dark-surface rounded-lg shadow-sm border border-green-200 dark:border-green-800 hover:shadow-md transition-all duration-300 ${
+          viewMode === 'list' ? 'flex' : ''
+        }`}
     >
       {/* Image */}
       <div className={`${
@@ -171,13 +171,13 @@ const MaterialCard: React.FC<MaterialCardProps> = ({
         <div className="flex gap-2">
           <button
             onClick={() => onViewDetails(material)}
-            className="flex-1 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-medium text-sm"
+            className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium text-sm"
           >
             {material.isAuction ? 'Join Auction' : 'View Details'}
           </button>
           <button
             onClick={() => onContact(material)}
-            className="px-4 py-2 border border-purple-600 text-purple-600 rounded-lg hover:bg-purple-50 font-medium text-sm"
+            className="px-4 py-2 border border-green-600 dark:border-green-300 text-green-600 dark:text-green-300 rounded-lg hover:bg-green-50 dark:hover:bg-green-800/30 font-medium text-sm"
           >
             Contact
           </button>

@@ -47,12 +47,12 @@ const BuyerDashboard = () => {
   console.log('localStorage user:', typeof window !== 'undefined' ? localStorage.getItem('user') : 'SSR');
 
   // Show loading state while fetching user data
-  if (loading) {
+    if (loading) {
     console.log('Dashboard showing loading state');
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-dark-bg flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
           <p className="text-gray-600 dark:text-gray-400">Loading dashboard...</p>
         </div>
       </div>
@@ -88,8 +88,8 @@ const BuyerDashboard = () => {
       title: 'Active Bids',
       value: '12',
       icon: ClockIcon,
-      color: 'text-purple-600',
-      bgColor: 'bg-purple-100',
+      color: 'text-green-600',
+      bgColor: 'bg-green-100',
       change: '+2 from yesterday'
     },
     {
@@ -151,14 +151,14 @@ const BuyerDashboard = () => {
       description: 'Find and filter materials',
       icon: MagnifyingGlassIcon,
       href: '/buyer/search',
-      color: 'bg-purple-500 hover:bg-purple-600'
+      color: 'bg-green-500 hover:bg-green-600'
     },
     {
       title: 'Live Auctions',
       description: 'Join ongoing auctions',
       icon: ClockIcon,
       href: '/buyer/auctions',
-      color: 'bg-red-500 hover:bg-red-600'
+      color: 'bg-green-500 hover:bg-green-600'
     },
     {
       title: 'My Orders',
@@ -172,14 +172,14 @@ const BuyerDashboard = () => {
       description: 'View purchase insights',
       icon: ChartBarIcon,
       href: '/buyer/analytics',
-      color: 'bg-blue-500 hover:bg-blue-600'
+      color: 'bg-green-500 hover:bg-green-600'
     },
     {
       title: 'My Wallet',
       description: 'Manage balance & transactions',
       icon: WalletIcon,
       href: '/wallet',
-      color: 'bg-indigo-500 hover:bg-indigo-600'
+      color: 'bg-green-500 hover:bg-green-600'
     }
   ];
 
@@ -238,9 +238,9 @@ const BuyerDashboard = () => {
                       </div>
                     </div>
                     <div className="p-3 border-t border-gray-200 dark:border-gray-700">
-                      <button className="w-full text-center text-sm text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300">
-                        View all notifications
-                      </button>
+                      <button className="w-full text-center text-sm text-green-600 dark:text-green-300 hover:text-green-800 dark:hover:text-green-300">
+                          View all notifications
+                        </button>
                     </div>
                   </div>
                 )}
@@ -375,8 +375,8 @@ const BuyerDashboard = () => {
                   </div>
                   <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">High quality PET bottles, 500ml</p>
                   <div className="flex items-center justify-between">
-                    <span className="text-lg font-bold text-purple-600 dark:text-purple-400">₹12/kg</span>
-                    <button className="px-3 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-full text-xs font-medium hover:bg-purple-200 dark:hover:bg-purple-800/40">
+                    <span className="text-lg font-bold text-green-600 dark:text-green-300">₹12/kg</span>
+                    <button className="px-3 py-1 bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-300 rounded-full text-xs font-medium hover:bg-green-200 dark:hover:bg-green-800/40">
                       View Details
                     </button>
                   </div>
