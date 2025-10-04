@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -93,6 +93,8 @@ export function Navbar() {
   
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [roleMenuOpen, setRoleMenuOpen] = useState(false);
+  const roleMenuRef = useRef<HTMLDivElement | null>(null);
   
   // Use the notification hook
   const { 
@@ -100,7 +102,6 @@ export function Navbar() {
     markAsRead, 
     markAllAsRead, 
     clearAll, 
-    addNotification,
     unreadCount 
   } = useNotifications();
 
@@ -108,7 +109,28 @@ export function Navbar() {
   useEffect(() => {
     setMobileMenuOpen(false);
     setUserMenuOpen(false);
+    setRoleMenuOpen(false);
   }, [pathname]);
+
+  // Close role menu when clicking outside or pressing Escape
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (roleMenuOpen && roleMenuRef.current && !roleMenuRef.current.contains(e.target as Node)) {
+        setRoleMenuOpen(false);
+      }
+    }
+
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape' && roleMenuOpen) setRoleMenuOpen(false);
+    }
+
+    window.addEventListener('mousedown', handleClickOutside);
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('mousedown', handleClickOutside);
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [roleMenuOpen]);
 
   // Filter navigation items based on user authentication and role
   const getFilteredNavItems = () => {
@@ -309,16 +331,57 @@ export function Navbar() {
                   </AnimatePresence>
                 </div>
               ) : (
-                <div className="hidden md:flex items-center space-x-3">
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={login}
-                    disabled={loading}
-                    className="border-green-200 dark:border-slate-600 text-green-700 dark:text-green-400 hover:bg-green-50 dark:hover:bg-slate-700 hover:border-green-300 dark:hover:border-slate-500 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {loading ? 'Signing In...' : 'Sign In'}
-                  </Button>
+                <div className="hidden md:flex items-center space-x-0 relative">
+                  {/* Split Sign In + Role dropdown: primary signs in, chevron toggles role list */}
+                  <div className="inline-flex rounded-md shadow-sm" role="group">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        login();
+                        setRoleMenuOpen(false);
+                      }}
+                      disabled={loading}
+                      className="rounded-l-md border-green-200 dark:border-slate-600 text-green-700 dark:text-green-400 hover:bg-green-50 dark:hover:bg-slate-700 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {loading ? 'Signing In...' : 'Sign In'}
+                    </Button>
+                    <button
+                      onClick={() => setRoleMenuOpen(!roleMenuOpen)}
+                      aria-label="Open role menu"
+                      className="inline-flex items-center px-3 py-2 rounded-r-md border border-l-0 border-green-200 dark:border-slate-700 bg-white/50 dark:bg-slate-800/50 hover:bg-green-50 dark:hover:bg-slate-700"
+                    >
+                      <ChevronDownIcon className="w-4 h-4 text-gray-500" />
+                    </button>
+                  </div>
+
+                  <AnimatePresence>
+                    {roleMenuOpen && (
+                      <motion.div
+                        ref={roleMenuRef}
+                        initial={{ opacity: 0, y: -6 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -6 }}
+                        className="absolute right-0 mt-12 w-40 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-green-100 dark:border-slate-700 z-50"
+                      >
+                        <div className="py-1">
+                          {['Agent', 'Buyer', 'Supplier'].map((r) => (
+                            <button
+                              key={r}
+                              onClick={() => {
+                                // Keep Asgardeo sign-in behavior (no role attached)
+                                login();
+                                setRoleMenuOpen(false);
+                              }}
+                              className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700"
+                            >
+                              {r}
+                            </button>
+                          ))}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
               )
             )}
@@ -438,6 +501,20 @@ export function Navbar() {
                       </div>
                     ) : (
                       <div className="space-y-3">
+                        <div className="grid grid-cols-3 gap-2">
+                          {['Agent', 'Buyer', 'Supplier'].map((r) => (
+                            <button
+                              key={r}
+                              onClick={() => {
+                                login();
+                                setMobileMenuOpen(false);
+                              }}
+                              className="px-3 py-2 text-sm rounded-md bg-green-50 dark:bg-slate-800 text-green-700 dark:text-green-300 hover:bg-green-100 dark:hover:bg-slate-700"
+                            >
+                              {r}
+                            </button>
+                          ))}
+                        </div>
                         <Button 
                           variant="outline" 
                           size="sm" 

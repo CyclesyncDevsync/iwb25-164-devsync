@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -90,6 +90,8 @@ export function Navbar() {
   
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [roleMenuOpen, setRoleMenuOpen] = useState(false);
+  const roleMenuRef = useRef<HTMLDivElement | null>(null);
   
   // Use the notification hook
   const { 
@@ -99,11 +101,37 @@ export function Navbar() {
     clearAll
   } = useNotifications();
 
+  // Derived unread count for notification badge
+  const unreadCount = Array.isArray(notifications)
+    ? notifications.filter(n => !n.isRead).length
+    : 0;
+
   // Close mobile menu when route changes
   useEffect(() => {
     setMobileMenuOpen(false);
     setUserMenuOpen(false);
+    setRoleMenuOpen(false);
   }, [pathname]);
+
+  // Close role menu when clicking outside or pressing Escape
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (roleMenuOpen && roleMenuRef.current && !roleMenuRef.current.contains(e.target as Node)) {
+        setRoleMenuOpen(false);
+      }
+    }
+
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape' && roleMenuOpen) setRoleMenuOpen(false);
+    }
+
+    window.addEventListener('mousedown', handleClickOutside);
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('mousedown', handleClickOutside);
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [roleMenuOpen]);
 
   // Filter navigation items based on user authentication and role
   const getFilteredNavItems = () => {
@@ -298,7 +326,45 @@ export function Navbar() {
                   </AnimatePresence>
                 </div>
               ) : (
-                <div className="hidden md:flex items-center space-x-3">
+                <div className="hidden md:flex items-center space-x-3 relative">
+                  {/* Role Dropdown: Agent / Buyer / Supplier - opens Asgardeo sign in (no roles attached) */}
+                  <div className="relative">
+                    <button
+                      onClick={() => setRoleMenuOpen(!roleMenuOpen)}
+                      className="flex items-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700"
+                    >
+                      <span className="text-gray-700 dark:text-gray-300">Role</span>
+                      <ChevronDownIcon className="w-4 h-4 text-gray-500" />
+                    </button>
+
+                    <AnimatePresence>
+                      {roleMenuOpen && (
+                        <motion.div
+                          initial={{ opacity: 0, y: -6 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -6 }}
+                          className="absolute right-0 mt-2 w-40 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-50"
+                        >
+                          <div className="py-1">
+                            {['Agent', 'Buyer', 'Supplier'].map((r) => (
+                              <button
+                                key={r}
+                                onClick={() => {
+                                  // keep Asgardeo sign-in behavior (no role attached)
+                                  login();
+                                  setRoleMenuOpen(false);
+                                }}
+                                className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+                              >
+                                {r}
+                              </button>
+                            ))}
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+
                   <Button 
                     variant="outline" 
                     size="sm"
@@ -434,6 +500,21 @@ export function Navbar() {
                       </div>
                     ) : (
                       <div className="space-y-3">
+                        <div className="grid grid-cols-3 gap-2">
+                          {['Agent', 'Buyer', 'Supplier'].map((r) => (
+                            <button
+                              key={r}
+                              onClick={() => {
+                                // Keep Asgardeo sign-in behavior
+                                login();
+                                setMobileMenuOpen(false);
+                              }}
+                              className="px-3 py-2 text-sm rounded-md bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
+                            >
+                              {r}
+                            </button>
+                          ))}
+                        </div>
                         <Button 
                           variant="outline" 
                           size="sm" 

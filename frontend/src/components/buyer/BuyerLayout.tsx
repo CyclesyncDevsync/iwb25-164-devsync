@@ -1,26 +1,22 @@
 'use client';
 
-import React from 'react';
-import Link from 'next/link';
+import { useState, useMemo } from 'react';
 import { usePathname } from 'next/navigation';
-import { 
-  MagnifyingGlassIcon,
-  ShoppingBagIcon,
-  ClockIcon,
+import Link from 'next/link';
+import {
   ChartBarIcon,
-  BellIcon,
-  UserCircleIcon,
+  MagnifyingGlassIcon,
+  ClockIcon,
+  ShoppingBagIcon,
   HeartIcon,
-  BookmarkIcon
+  BookmarkIcon,
+  UserCircleIcon,
+  Cog6ToothIcon,
+  XMarkIcon,
+  ArrowRightOnRectangleIcon
 } from '@heroicons/react/24/outline';
-
-interface NavigationItem {
-  name: string;
-  href: string;
-  icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
-  current: boolean;
-  badge?: string;
-}
+import { motion, AnimatePresence } from 'framer-motion';
+import { useAuth } from '@/hooks/useAuth';
 
 interface BuyerLayoutProps {
   children: React.ReactNode;
@@ -28,181 +24,277 @@ interface BuyerLayoutProps {
 
 const BuyerLayout: React.FC<BuyerLayoutProps> = ({ children }) => {
   const pathname = usePathname();
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const { user, logout } = useAuth();
 
-  const navigation = [
+  // Clean pathname by removing query parameters
+  const cleanPathname = pathname.split('?')[0];
+
+  const navigationItems = useMemo(() => [
     {
       name: 'Dashboard',
       href: '/buyer',
       icon: ChartBarIcon,
-      current: pathname === '/buyer'
+      current: cleanPathname === '/buyer'
     },
     {
       name: 'Search Materials',
       href: '/buyer/search',
       icon: MagnifyingGlassIcon,
-      current: pathname === '/buyer/search'
-    },
-    {
-      name: 'Enhanced Search',
-      href: '/buyer/enhanced-search',
-      icon: MagnifyingGlassIcon,
-      current: pathname === '/buyer/enhanced-search',
-      badge: 'NEW'
+      current: cleanPathname.startsWith('/buyer/search')
     },
     {
       name: 'Live Auctions',
       href: '/buyer/auctions',
       icon: ClockIcon,
-      current: pathname === '/buyer/auctions'
-    },
-    {
-      name: 'Enhanced Auctions',
-      href: '/buyer/enhanced-auctions',
-      icon: ClockIcon,
-      current: pathname === '/buyer/enhanced-auctions',
-      badge: 'ENHANCED'
+      current: cleanPathname.startsWith('/buyer/auctions')
     },
     {
       name: 'My Orders',
       href: '/buyer/orders',
       icon: ShoppingBagIcon,
-      current: pathname === '/buyer/orders'
-    },
-    {
-      name: 'Enhanced Orders',
-      href: '/buyer/enhanced-orders',
-      icon: ShoppingBagIcon,
-      current: pathname === '/buyer/enhanced-orders',
-      badge: 'PREMIUM'
+      current: cleanPathname.startsWith('/buyer/orders')
     },
     {
       name: 'Analytics',
       href: '/buyer/analytics',
       icon: ChartBarIcon,
-      current: pathname === '/buyer/analytics'
+      current: cleanPathname === '/buyer/analytics'
     },
     {
       name: 'Favorites',
       href: '/buyer/favorites',
       icon: HeartIcon,
-      current: pathname === '/buyer/favorites'
+      current: cleanPathname === '/buyer/favorites'
     },
     {
       name: 'Saved Items',
       href: '/buyer/saved',
       icon: BookmarkIcon,
-      current: pathname === '/buyer/saved'
+      current: cleanPathname === '/buyer/saved'
+    },
+    {
+      name: 'Settings',
+      href: '/buyer/settings',
+      icon: Cog6ToothIcon,
+      current: cleanPathname === '/buyer/settings'
     }
-  ];
+  ], [cleanPathname]);
+
+  const closeSidebar = () => setIsSidebarOpen(false);
+
+  // ...existing code...
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Sidebar */}
-      <div className="fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg">
-        {/* Logo */}
-        <div className="flex items-center h-16 px-6 border-b">
-          <div className="flex items-center">
-            <div className="w-8 h-8 bg-purple-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-sm">CS</span>
-            </div>
-            <span className="ml-3 text-lg font-semibold text-gray-900">CircularSync</span>
-          </div>
-        </div>
+    <div className="min-h-screen bg-gray-50 dark:bg-dark-bg">
+      {/* Mobile sidebar overlay */}
+      <AnimatePresence>
+        {isSidebarOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[65] lg:hidden"
+          >
+            <div className="fixed inset-0 bg-black bg-opacity-50" onClick={closeSidebar} />
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-        {/* Navigation */}
-        <nav className="mt-6 px-3">
-          <div className="space-y-1">
-            {navigation.map((item) => (
-              <Link
-                key={item.name}
-                href={item.href}
-                className={`group flex items-center justify-between px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
-                  item.current
-                    ? 'bg-purple-100 text-purple-700'
-                    : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-                }`}
-              >
-                <div className="flex items-center">
-                  <item.icon
-                    className={`mr-3 h-5 w-5 ${
-                      item.current ? 'text-purple-500' : 'text-gray-400 group-hover:text-gray-500'
-                    }`}
-                  />
-                  {item.name}
+      {/* Mobile sidebar */}
+      <AnimatePresence>
+        {isSidebarOpen && (
+          <motion.div
+            initial={{ x: -300 }}
+            animate={{ x: 0 }}
+            exit={{ x: -300 }}
+            className="fixed inset-y-0 left-0 w-64 bg-gradient-to-b from-white to-gray-50 dark:from-dark-surface dark:to-gray-900 shadow-2xl z-[70] lg:hidden"
+          >
+            {/* Mobile Header */}
+            <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-buyer-DEFAULT/10 to-buyer-DEFAULT/5">
+              <div className="flex items-center space-x-3">
+                <div className="w-8 h-8 bg-buyer-DEFAULT rounded-lg flex items-center justify-center">
+                  <UserCircleIcon className="w-5 h-5 text-white" />
                 </div>
-                {item.badge && (
-                  <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${
-                    item.badge === 'NEW' ? 'bg-green-100 text-green-800' :
-                    item.badge === 'ENHANCED' ? 'bg-blue-100 text-blue-800' :
-                    item.badge === 'PREMIUM' ? 'bg-purple-100 text-purple-800' :
-                    'bg-gray-100 text-gray-800'
-                  }`}>
-                    {item.badge}
-                  </span>
-                )}
-              </Link>
-            ))}
-          </div>
-        </nav>
+                <div>
+                  <h2 className="text-lg font-bold text-buyer-DEFAULT dark:text-buyer-dark">
+                    Buyer Portal
+                  </h2>
+                  <p className="text-xs text-gray-600 dark:text-gray-400">Dashboard</p>
+                </div>
+              </div>
+              <button
+                onClick={closeSidebar}
+                className="p-2 rounded-lg text-gray-400 hover:text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              >
+                <XMarkIcon className="w-5 h-5" />
+              </button>
+            </div>
 
-        {/* User Profile */}
-        <div className="absolute bottom-0 left-0 right-0 p-4 border-t">
-          <div className="flex items-center">
-            <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
-              <span className="text-purple-600 font-medium text-sm">JD</span>
+            {/* Mobile User Profile */}
+            <div className="px-4 py-4 border-b border-gray-200 dark:border-gray-700">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-gradient-to-br from-buyer-DEFAULT to-blue-600 rounded-full flex items-center justify-center shadow-md">
+                  <span className="text-white font-semibold text-sm">
+                    {user?.firstName?.charAt(0) || user?.email?.charAt(0) || 'B'}
+                  </span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                    {user?.firstName || 'Buyer'}
+                  </p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                    {user?.email || 'buyer@example.com'}
+                  </p>
+                </div>
+              </div>
             </div>
-            <div className="ml-3 flex-1">
-              <p className="text-sm font-medium text-gray-900">John Doe</p>
-              <p className="text-xs text-gray-500">Buyer Account</p>
+
+            {/* Mobile Navigation */}
+            <nav className="mt-6 px-3 flex-1">
+              {navigationItems.map((item, index) => (
+                <motion.div
+                  key={item.name}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: index * 0.1 }}
+                >
+                  <Link
+                    href={item.href}
+                    onClick={closeSidebar}
+                    className={`group flex items-center px-4 py-3 mb-2 text-sm font-medium rounded-xl transition-all duration-200 transform hover:scale-105 ${
+                      item.current
+                        ? 'bg-gradient-to-r from-buyer-DEFAULT to-blue-600 text-white shadow-lg shadow-buyer-DEFAULT/25'
+                        : 'text-gray-700 dark:text-gray-300 hover:bg-gradient-to-r hover:from-gray-100 hover:to-gray-50 dark:hover:from-gray-800 dark:hover:to-gray-700 hover:shadow-md'
+                    }`}
+                  >
+                    <motion.div
+                      whileHover={{ rotate: 5 }}
+                      className={`w-5 h-5 mr-3 flex-shrink-0 ${
+                        item.current ? 'text-white' : 'text-gray-600 dark:text-gray-400 group-hover:text-buyer-DEFAULT'
+                      }`}
+                    >
+                      <item.icon className="w-5 h-5" />
+                    </motion.div>
+                    <span className="flex-1">{item.name}</span>
+                    {item.current && (
+                      <motion.div
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        className="w-2 h-2 bg-white rounded-full"
+                      />
+                    )}
+                  </Link>
+                </motion.div>
+              ))}
+            </nav>
+
+            {/* Mobile Logout */}
+            <div className="px-3 pb-4">
+              <button
+                onClick={logout}
+                className="group flex items-center w-full px-4 py-3 text-sm font-medium text-gray-700 dark:text-gray-300 rounded-xl transition-all duration-200 transform hover:scale-105 hover:bg-gradient-to-r hover:from-red-50 hover:to-red-100 dark:hover:from-red-900/20 dark:hover:to-red-800/20"
+              >
+                <ArrowRightOnRectangleIcon className="w-5 h-5 mr-3 text-gray-600 dark:text-gray-400 group-hover:text-red-500" />
+                <span>Logout</span>
+              </button>
             </div>
-            <button className="text-gray-400 hover:text-gray-500">
-              <UserCircleIcon className="h-5 w-5" />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Desktop Sidebar */}
+      <div className="hidden lg:flex lg:w-64 lg:flex-col lg:fixed lg:inset-y-0 z-50">
+        <div className="flex flex-col flex-grow bg-gradient-to-b from-white to-gray-50 dark:from-dark-surface dark:to-gray-900 border-r border-gray-200 dark:border-gray-700 shadow-xl">
+          {/* Desktop Header */}
+          <div className="flex items-center h-16 px-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-buyer-DEFAULT/10 to-buyer-DEFAULT/5">
+            <div className="flex items-center space-x-3">
+              <div className="w-8 h-8 bg-buyer-DEFAULT rounded-lg flex items-center justify-center">
+                <UserCircleIcon className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h2 className="text-lg font-bold text-buyer-DEFAULT dark:text-buyer-dark">
+                  Buyer Portal
+                </h2>
+                <p className="text-xs text-gray-600 dark:text-gray-400">Dashboard</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Desktop User Profile */}
+          <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-buyer-DEFAULT to-blue-600 rounded-full flex items-center justify-center shadow-md">
+                <span className="text-white font-semibold text-sm">
+                  {user?.firstName?.charAt(0) || user?.email?.charAt(0) || 'B'}
+                </span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                  {user?.firstName || 'Buyer'}
+                </p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                  {user?.email || 'buyer@example.com'}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Desktop Navigation */}
+          <nav className="mt-6 px-3 flex-1">
+            {navigationItems.map((item, index) => (
+              <motion.div
+                key={item.name}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: index * 0.1 }}
+              >
+                <Link
+                  href={item.href}
+                  className={`group flex items-center px-4 py-3 mb-2 text-sm font-medium rounded-xl transition-all duration-200 transform hover:scale-105 ${
+                    item.current
+                      ? 'bg-gradient-to-r from-buyer-DEFAULT to-blue-600 text-white shadow-lg shadow-buyer-DEFAULT/25'
+                      : 'text-gray-700 dark:text-gray-300 hover:bg-gradient-to-r hover:from-gray-100 hover:to-gray-50 dark:hover:from-gray-800 dark:hover:to-gray-700 hover:shadow-md'
+                  }`}
+                >
+                  <motion.div
+                    whileHover={{ rotate: 5 }}
+                    className={`w-5 h-5 mr-3 flex-shrink-0 ${
+                      item.current ? 'text-white' : 'text-gray-600 dark:text-gray-400 group-hover:text-buyer-DEFAULT'
+                    }`}
+                  >
+                    <item.icon className="w-5 h-5" />
+                  </motion.div>
+                  <span className="flex-1">{item.name}</span>
+                  {item.current && (
+                    <motion.div
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      className="w-2 h-2 bg-white rounded-full"
+                    />
+                  )}
+                </Link>
+              </motion.div>
+            ))}
+          </nav>
+
+          {/* Desktop Logout */}
+          <div className="px-3 pb-4">
+            <button
+              onClick={logout}
+              className="group flex items-center w-full px-4 py-3 text-sm font-medium text-gray-700 dark:text-gray-300 rounded-xl transition-all duration-200 transform hover:scale-105 hover:bg-gradient-to-r hover:from-red-50 hover:to-red-100 dark:hover:from-red-900/20 dark:hover:to-red-800/20"
+            >
+              <ArrowRightOnRectangleIcon className="w-5 h-5 mr-3 text-gray-600 dark:text-gray-400 group-hover:text-red-500" />
+              <span>Logout</span>
             </button>
           </div>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="pl-64">
-        {/* Top Bar */}
-        <div className="sticky top-0 z-40 bg-white border-b shadow-sm">
-          <div className="flex items-center justify-between h-16 px-6">
-            <div className="flex-1">
-              {/* Quick Search */}
-              <div className="max-w-lg">
-                <div className="relative">
-                  <MagnifyingGlassIcon className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                  <input
-                    type="text"
-                    placeholder="Quick search materials..."
-                    className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="flex items-center space-x-4">
-              {/* Notifications */}
-              <button className="relative p-2 text-gray-400 hover:text-gray-500">
-                <BellIcon className="h-5 w-5" />
-                <span className="absolute top-1 right-1 block h-2 w-2 bg-red-400 rounded-full"></span>
-              </button>
-
-              {/* Profile Menu */}
-              <div className="relative">
-                <button className="flex items-center space-x-2 text-sm">
-                  <div className="w-7 h-7 bg-purple-100 rounded-full flex items-center justify-center">
-                    <span className="text-purple-600 font-medium text-xs">JD</span>
-                  </div>
-                  <span className="text-gray-700 font-medium">John Doe</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-
+      <div className="lg:pl-64 flex flex-col flex-1 relative z-10">
         {/* Page Content */}
-        <main>
+        <main className="min-h-screen">
           {children}
         </main>
       </div>

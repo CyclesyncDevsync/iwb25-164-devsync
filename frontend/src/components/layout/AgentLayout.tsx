@@ -159,7 +159,7 @@ const AgentLayout: React.FC<AgentLayoutProps> = ({ children }) => {
                           setIsMessagesModalOpen(true);
                           closeSidebar();
                         }}
-                        className={`group flex items-center w-full px-4 py-3 mb-2 text-sm font-medium rounded-xl transition-all duration-200 transform hover:scale-105 text-gray-700 dark:text-gray-300 hover:bg-gradient-to-r hover:from-gray-100 hover:to-gray-50 dark:hover:from-gray-800 dark:hover:to-gray-700 hover:shadow-md`}
+                        className={`relative group flex items-center w-full px-4 py-3 mb-2 pr-12 text-sm font-medium rounded-xl transition-all duration-200 transform hover:scale-105 text-gray-700 dark:text-gray-300 hover:bg-gradient-to-r hover:from-gray-100 hover:to-gray-50 dark:hover:from-gray-800 dark:hover:to-gray-700 hover:shadow-md`}
                       >
                         <motion.div
                           whileHover={{ rotate: 5 }}
@@ -168,15 +168,22 @@ const AgentLayout: React.FC<AgentLayoutProps> = ({ children }) => {
                           <item.icon className="w-5 h-5" />
                         </motion.div>
                         <span className="flex-1">{item.name}</span>
-                        {item.badge && (
-                          <motion.span
-                            initial={{ scale: 0 }}
-                            animate={{ scale: 1 }}
-                            className="bg-red-500 text-white text-xs rounded-full px-2 py-1 min-w-[20px] text-center shadow-sm"
-                          >
-                            {item.badge}
-                          </motion.span>
-                        )}
+                            {item.badge && (
+                              <motion.span
+                                initial={{ scale: 0 }}
+                                animate={{ scale: 1 }}
+                                className="absolute right-10 top-1/2 -translate-y-1/2 bg-red-500 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center shadow-sm"
+                              >
+                                {item.badge}
+                              </motion.span>
+                            )}
+                            {item.current && (
+                              <motion.div
+                                initial={{ scale: 0 }}
+                                animate={{ scale: 1 }}
+                                className="absolute right-3 top-1/2 -translate-y-1/2 w-2 h-2 bg-white rounded-full"
+                              />
+                            )}
                       </button>
                     ) : (
                       <Link
@@ -307,7 +314,7 @@ const AgentLayout: React.FC<AgentLayoutProps> = ({ children }) => {
                 ) : (
                   <Link
                     href={item.href}
-                    className={`group flex items-center px-4 py-3 mb-2 text-sm font-medium rounded-xl transition-all duration-200 transform hover:scale-105 ${
+                    className={`relative group flex items-center px-4 py-3 mb-2 pr-12 text-sm font-medium rounded-xl transition-all duration-200 transform hover:scale-105 ${
                       item.current
                         ? 'bg-gradient-to-r from-agent-DEFAULT to-green-600 text-white shadow-lg shadow-agent-DEFAULT/25'
                         : 'text-gray-700 dark:text-gray-300 hover:bg-gradient-to-r hover:from-gray-100 hover:to-gray-50 dark:hover:from-gray-800 dark:hover:to-gray-700 hover:shadow-md'
@@ -326,7 +333,7 @@ const AgentLayout: React.FC<AgentLayoutProps> = ({ children }) => {
                       <motion.span
                         initial={{ scale: 0 }}
                         animate={{ scale: 1 }}
-                        className="bg-red-500 text-white text-xs rounded-full px-2 py-1 min-w-[20px] text-center shadow-sm"
+                        className="absolute right-10 top-1/2 -translate-y-1/2 bg-red-500 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center shadow-sm"
                       >
                         {item.badge}
                       </motion.span>
@@ -335,7 +342,7 @@ const AgentLayout: React.FC<AgentLayoutProps> = ({ children }) => {
                       <motion.div
                         initial={{ scale: 0 }}
                         animate={{ scale: 1 }}
-                        className="w-2 h-2 bg-white rounded-full ml-2"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 w-2 h-2 bg-white rounded-full"
                       />
                     )}
                   </Link>
