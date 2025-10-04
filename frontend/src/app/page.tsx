@@ -1,90 +1,102 @@
 
 import { Button } from '../components/ui/Button';
 import Link from 'next/link';
-import Image from 'next/image';
+import NewsWidget from '../components/NewsWidget';
+import NewsletterSignup from '../components/NewsletterSignup';
 import { 
   ShieldCheck, 
   TrendingUp, 
-  CreditCard, 
-  Recycle, 
   Brain, 
   BarChart3, 
-  Users, 
   ArrowRight,
   CheckCircle,
   Globe,
-  Leaf,
   Zap,
-  Star,
   Target,
-  Lightbulb,
-  PieChart,
-  Activity,
-  Sparkles,
-  Eye,
-  Filter,
-  Smartphone
+  Star,
+  Award,
+  Recycle,
+  LineChart,
+  DollarSign,
+  Clock,
+  Shield,
+  Truck,
+  Factory,
+  Eye
 } from 'lucide-react';
 
 export default function Home() {
   return (
-    <div className="flex flex-col overflow-hidden bg-white dark:bg-gray-900">
+    <div className="flex flex-col overflow-hidden bg-white dark:bg-slate-900">
       {/* Hero Section */}
-      <section className="relative bg-gradient-to-br from-green-50 via-white to-blue-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 overflow-hidden">
-        {/* Background Pattern */}
-        <div className="absolute inset-0 opacity-20">
-          <svg className="w-full h-full" viewBox="0 0 60 60" fill="none">
-            <g opacity="0.1">
-              <circle cx="30" cy="30" r="1.5" fill="currentColor" className="text-green-500"/>
-              <circle cx="10" cy="10" r="1" fill="currentColor" className="text-blue-500"/>
-              <circle cx="50" cy="10" r="1" fill="currentColor" className="text-purple-500"/>
-              <circle cx="10" cy="50" r="1" fill="currentColor" className="text-orange-500"/>
-              <circle cx="50" cy="50" r="1" fill="currentColor" className="text-green-500"/>
-            </g>
+      <section className="relative bg-gradient-to-br from-green-50 via-white to-emerald-50 dark:from-slate-900 dark:via-blue-900 dark:to-slate-800 overflow-hidden pt-8 pb-16">
+        {/* Professional Background Pattern */}
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute inset-0 bg-gradient-to-r from-green-500/20 via-transparent to-emerald-500/20 dark:from-green-400/10 dark:via-transparent dark:to-blue-400/10"></div>
+          <svg className="w-full h-full" viewBox="0 0 100 100" fill="none">
+            <defs>
+              <pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse">
+                <path d="M 10 0 L 0 0 0 10" fill="none" stroke="currentColor" strokeWidth="0.5" className="text-green-500/20 dark:text-green-400/10"/>
+              </pattern>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#grid)" />
           </svg>
         </div>
+        
+        {/* Floating Elements */}
+        <div className="absolute top-1 left-10 w-32 h-32 bg-green-100/50 dark:bg-green-900/20 rounded-full blur-xl animate-pulse"></div>
+        <div className="absolute bottom-8 right-10 w-40 h-40 bg-emerald-100/50 dark:bg-blue-900/20 rounded-full blur-xl animate-pulse delay-1000"></div>
 
-        <div className="container mx-auto px-6 py-16 md:py-24 relative">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            <div className="space-y-8">
+        <div className="container mx-auto px-6 pt-1 pb-8 relative">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+            <div className="space-y-6">
               <div className="space-y-6">
-                <div className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-green-100 to-blue-100 text-green-800 dark:bg-gradient-to-r dark:from-green-900/30 dark:to-blue-900/30 dark:text-green-200 rounded-full text-sm font-medium backdrop-blur-sm border border-green-200/50">
-                  <Sparkles className="w-4 h-4 mr-2" />
-                  AI-Powered • Smart Matching • Real-time Analytics
+                <div className="inline-flex items-center px-6 py-3 bg-white/80 dark:bg-slate-800/80 text-green-800 dark:text-green-200 rounded-full text-sm font-semibold backdrop-blur-sm border border-green-200/50 dark:border-green-400/20 shadow-lg">
+                  <Star className="w-4 h-4 mr-2 text-green-600 dark:text-green-400" />
+                  AI-Powered Platform • 50K+ Materials Matched • 94% Success Rate
                 </div>
-                <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold">
-                  <span className="bg-gradient-to-r from-[#00684A] via-[#0066CC] to-[#8B5CF6] bg-clip-text text-transparent">
-                    Intelligent
+                <h1 className="text-5xl md:text-6xl lg:text-7xl font-extrabold leading-tight">
+                  <span className="bg-gradient-to-r from-green-600 via-emerald-500 to-green-700 dark:from-green-400 dark:via-emerald-300 dark:to-green-500 bg-clip-text text-transparent">
+                    CircularSync
                   </span>
                   <br />
-                  <span className="text-gray-900 dark:text-white">
-                    Circular Economy
+                  <span className="text-slate-900 dark:text-white">
+                    Smart Trading
                   </span>
                 </h1>
-                <p className="text-xl text-gray-600 dark:text-gray-300 leading-relaxed max-w-xl">
-                  Transform waste into value with AI-powered material matching, predictive analytics, and smart recommendations that optimize your circular economy operations.
+                <p className="text-xl md:text-2xl text-slate-600 dark:text-slate-300 leading-relaxed max-w-2xl font-medium">
+                  Transform waste into value with AI-powered material matching, predictive market analytics, and intelligent recommendations for the circular economy.
                 </p>
               </div>
 
-              {/* AI Features Preview */}
-              <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-2xl p-6 border border-gray-200/50 dark:border-gray-700/50">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
-                      <Target className="w-5 h-5 text-green-600" />
+              {/* Key Features Preview */}
+              <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-lg rounded-3xl p-6 border border-green-200/50 dark:border-slate-700/50 shadow-2xl">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="flex items-center space-x-4">
+                    <div className="w-14 h-14 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl flex items-center justify-center shadow-lg">
+                      <Brain className="w-7 h-7 text-white" />
                     </div>
                     <div>
-                      <div className="text-sm font-semibold text-gray-900 dark:text-white">Smart Matching</div>
-                      <div className="text-xs text-gray-600 dark:text-gray-400">94% accuracy</div>
+                      <div className="text-lg font-bold text-slate-900 dark:text-white">AI Matching</div>
+                      <div className="text-sm text-slate-600 dark:text-slate-400">94% accuracy rate</div>
                     </div>
                   </div>
-                  <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
-                      <Activity className="w-5 h-5 text-blue-600" />
+                  <div className="flex items-center space-x-4">
+                    <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-blue-600 dark:from-blue-400 dark:to-blue-500 rounded-2xl flex items-center justify-center shadow-lg">
+                      <LineChart className="w-7 h-7 text-white" />
                     </div>
                     <div>
-                      <div className="text-sm font-semibold text-gray-900 dark:text-white">Live Analytics</div>
-                      <div className="text-xs text-gray-600 dark:text-gray-400">Real-time insights</div>
+                      <div className="text-lg font-bold text-slate-900 dark:text-white">Real-time Data</div>
+                      <div className="text-sm text-slate-600 dark:text-slate-400">Live market insights</div>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-4">
+                    <div className="w-14 h-14 bg-gradient-to-br from-emerald-500 to-green-600 rounded-2xl flex items-center justify-center shadow-lg">
+                      <Shield className="w-7 h-7 text-white" />
+                    </div>
+                    <div>
+                      <div className="text-lg font-bold text-slate-900 dark:text-white">Secure Trading</div>
+                      <div className="text-sm text-slate-600 dark:text-slate-400">Protected transactions</div>
                     </div>
                   </div>
                 </div>
@@ -92,367 +104,306 @@ export default function Home() {
 
               {/* CTA Buttons */}
               <div className="flex flex-col sm:flex-row gap-4">
-                <Link href="/auth/register">
-                  <Button size="lg" className="w-full sm:w-auto group bg-gradient-to-r from-[#00684A] to-[#0066CC] hover:from-[#005a40] hover:to-[#0052a3] text-white shadow-lg hover:shadow-xl transition-all duration-300">
-                    Start Smart Trading
-                    <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
+                <Link href="/auth/register" className="group">
+                  <Button size="lg" className="w-full sm:w-auto bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white shadow-2xl hover:shadow-green-500/25 transition-all duration-300 text-lg px-8 py-4 rounded-2xl font-semibold">
+                    Start Trading Now
+                    <ArrowRight className="w-5 h-5 ml-3 group-hover:translate-x-1 transition-transform" />
                   </Button>
                 </Link>
-                <Link href="#ai-demo">
-                  <Button variant="outline" size="lg" className="w-full sm:w-auto border-[#00684A] text-[#00684A] hover:bg-[#00684A]/10 dark:border-[#47A16B] dark:text-[#47A16B] dark:hover:bg-[#47A16B]/20">
-                    <Eye className="w-4 h-4 mr-2" />
-                    View AI Demo
+                <Link href="#features" className="group">
+                  <Button variant="outline" size="lg" className="w-full sm:w-auto border-2 border-green-600 text-green-700 hover:bg-green-50 dark:border-green-400 dark:text-green-300 dark:hover:bg-green-900/20 shadow-lg hover:shadow-xl transition-all duration-300 text-lg px-8 py-4 rounded-2xl font-semibold backdrop-blur-sm">
+                    <Eye className="w-5 h-5 mr-3" />
+                    See How It Works
                   </Button>
                 </Link>
               </div>
             </div>
 
-            {/* Enhanced Hero Visual */}
+            {/* Professional Dashboard Preview */}
             <div className="relative">
-              <div className="relative h-96 md:h-[500px]">
-                {/* AI Dashboard Preview */}
-                <div className="absolute inset-0 bg-gradient-to-br from-white/90 to-gray-50/90 dark:from-gray-800/90 dark:to-gray-900/90 rounded-3xl shadow-2xl backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50 p-6">
-                  <div className="space-y-4">
-                    {/* Header */}
+              <div className="relative h-96 md:h-[600px]">
+                {/* Main Dashboard Container */}
+                <div className="absolute inset-0 bg-white/95 dark:bg-slate-800/95 backdrop-blur-xl rounded-3xl shadow-2xl border border-green-200/30 dark:border-slate-700/50 p-8 overflow-hidden">
+                  <div className="space-y-6">
+                    {/* Dashboard Header */}
                     <div className="flex items-center justify-between">
-                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white">AI Dashboard</h3>
-                      <div className="flex items-center space-x-2">
-                        <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                        <span className="text-xs text-gray-500">Live</span>
+                      <div className="flex items-center space-x-4">
+                        <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl flex items-center justify-center shadow-lg">
+                          <BarChart3 className="w-6 h-6 text-white" />
+                        </div>
+                        <div>
+                          <h3 className="text-2xl font-bold text-slate-900 dark:text-white">Trading Dashboard</h3>
+                          <p className="text-slate-600 dark:text-slate-400">Real-time market analytics</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-3">
+                        <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+                        <span className="text-sm font-medium text-slate-600 dark:text-slate-400">Live Data</span>
                       </div>
                     </div>
 
-                    {/* Smart Matching Section */}
-                    <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-100 dark:border-gray-700">
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center space-x-2">
-                          <Brain className="w-5 h-5 text-green-600" />
-                          <span className="font-medium text-gray-900 dark:text-white">Smart Matches</span>
-                        </div>
-                        <span className="text-sm text-green-600 font-semibold">+23%</span>
+                    {/* Market Overview Chart */}
+                    <div className="bg-gradient-to-br from-white to-green-50/50 dark:from-slate-700 dark:to-slate-600 rounded-2xl p-6 border border-green-100 dark:border-slate-600 shadow-lg">
+                      <div className="flex items-center justify-between mb-4">
+                        <h4 className="text-lg font-semibold text-slate-900 dark:text-white flex items-center">
+                          <TrendingUp className="w-5 h-5 mr-2 text-green-600" />
+                          Market Performance
+                        </h4>
+                        <span className="text-sm text-green-600 dark:text-green-400 font-semibold bg-green-100 dark:bg-green-900/30 px-3 py-1 rounded-full">+24.3%</span>
                       </div>
-                      <div className="space-y-2">
-                        <div className="flex justify-between items-center">
-                          <span className="text-sm text-gray-600 dark:text-gray-400">Plastic PET</span>
-                          <div className="flex items-center space-x-2">
-                            <div className="w-16 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-                              <div className="w-14 h-full bg-green-500 rounded-full"></div>
-                            </div>
-                            <span className="text-xs text-gray-500">87%</span>
-                          </div>
+                      <div className="h-32 flex items-end justify-between space-x-2">
+                        <div className="flex flex-col items-center space-y-2">
+                          <div className="w-8 bg-gradient-to-t from-green-500 to-green-400 rounded-t-lg shadow-lg h-20"></div>
+                          <span className="text-xs text-slate-600 dark:text-slate-400 font-medium">Plastic</span>
                         </div>
-                        <div className="flex justify-between items-center">
-                          <span className="text-sm text-gray-600 dark:text-gray-400">Metal Aluminum</span>
-                          <div className="flex items-center space-x-2">
-                            <div className="w-16 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-                              <div className="w-12 h-full bg-blue-500 rounded-full"></div>
-                            </div>
-                            <span className="text-xs text-gray-500">75%</span>
-                          </div>
+                        <div className="flex flex-col items-center space-y-2">
+                          <div className="w-8 bg-gradient-to-t from-blue-500 to-blue-400 rounded-t-lg shadow-lg h-24"></div>
+                          <span className="text-xs text-slate-600 dark:text-slate-400 font-medium">Metal</span>
+                        </div>
+                        <div className="flex flex-col items-center space-y-2">
+                          <div className="w-8 bg-gradient-to-t from-purple-500 to-purple-400 rounded-t-lg shadow-lg h-14"></div>
+                          <span className="text-xs text-slate-600 dark:text-slate-400 font-medium">Paper</span>
+                        </div>
+                        <div className="flex flex-col items-center space-y-2">
+                          <div className="w-8 bg-gradient-to-t from-orange-500 to-orange-400 rounded-t-lg shadow-lg h-20"></div>
+                          <span className="text-xs text-slate-600 dark:text-slate-400 font-medium">Glass</span>
+                        </div>
+                        <div className="flex flex-col items-center space-y-2">
+                          <div className="w-8 bg-gradient-to-t from-emerald-500 to-emerald-400 rounded-t-lg shadow-lg animate-pulse h-28"></div>
+                          <span className="text-xs text-emerald-600 dark:text-emerald-400 font-bold">Textiles</span>
                         </div>
                       </div>
                     </div>
 
-                    {/* Analytics Section */}
-                    <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-100 dark:border-gray-700">
-                      <div className="flex items-center space-x-2 mb-3">
-                        <BarChart3 className="w-5 h-5 text-blue-600" />
-                        <span className="font-medium text-gray-900 dark:text-white">Market Trends</span>
+                    {/* Key Metrics Grid */}
+                    <div className="grid grid-cols-3 gap-4">
+                      <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-xl p-4 text-center border border-green-200/50 dark:border-green-700/30">
+                        <div className="text-2xl font-bold text-green-700 dark:text-green-400">50.2K</div>
+                        <div className="text-xs text-slate-600 dark:text-slate-400 font-medium">Active Materials</div>
                       </div>
-                      <div className="h-20 bg-gradient-to-r from-blue-100 to-purple-100 dark:from-blue-900/30 dark:to-purple-900/30 rounded-lg flex items-end justify-around p-2">
-                        <div className="w-3 bg-blue-500 rounded-t" style={{height: '60%'}}></div>
-                        <div className="w-3 bg-green-500 rounded-t" style={{height: '80%'}}></div>
-                        <div className="w-3 bg-purple-500 rounded-t" style={{height: '45%'}}></div>
-                        <div className="w-3 bg-orange-500 rounded-t" style={{height: '70%'}}></div>
-                        <div className="w-3 bg-pink-500 rounded-t" style={{height: '90%'}}></div>
+                      <div className="bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 rounded-xl p-4 text-center border border-blue-200/50 dark:border-blue-700/30">
+                        <div className="text-2xl font-bold text-blue-700 dark:text-blue-400">1.8K</div>
+                        <div className="text-xs text-slate-600 dark:text-slate-400 font-medium">Live Auctions</div>
+                      </div>
+                      <div className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-xl p-4 text-center border border-purple-200/50 dark:border-purple-700/30">
+                        <div className="text-2xl font-bold text-purple-700 dark:text-purple-400">94.2%</div>
+                        <div className="text-xs text-slate-600 dark:text-slate-400 font-medium">Success Rate</div>
                       </div>
                     </div>
 
-                    {/* Live Stats */}
-                    <div className="grid grid-cols-3 gap-3">
-                      <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-3 text-center">
-                        <div className="text-lg font-bold text-green-600">1.2k</div>
-                        <div className="text-xs text-gray-600 dark:text-gray-400">Active Materials</div>
+                    {/* AI Recommendations */}
+                    <div className="bg-gradient-to-r from-slate-50 to-green-50/50 dark:from-slate-700 dark:to-green-900/20 rounded-xl p-4 border border-slate-200 dark:border-slate-600">
+                      <div className="flex items-center space-x-3 mb-3">
+                        <Brain className="w-5 h-5 text-green-600" />
+                        <span className="text-sm font-semibold text-slate-900 dark:text-white">AI Recommendations</span>
+                        <span className="text-xs bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 px-2 py-1 rounded-full font-medium">Hot</span>
                       </div>
-                      <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 text-center">
-                        <div className="text-lg font-bold text-blue-600">847</div>
-                        <div className="text-xs text-gray-600 dark:text-gray-400">Live Auctions</div>
-                      </div>
-                      <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-3 text-center">
-                        <div className="text-lg font-bold text-purple-600">94%</div>
-                        <div className="text-xs text-gray-600 dark:text-gray-400">Match Rate</div>
+                      <div className="text-sm text-slate-700 dark:text-slate-300">
+                        <span className="font-medium">Premium PET bottles</span> demand up 24% - optimal listing time: 2-4 PM
                       </div>
                     </div>
                   </div>
                 </div>
 
-                {/* Floating AI Elements */}
-                <div className="absolute -top-4 -right-4 w-12 h-12 bg-gradient-to-r from-green-500 to-blue-500 rounded-full flex items-center justify-center shadow-lg animate-bounce">
-                  <Sparkles className="w-6 h-6 text-white" />
-                </div>
-                <div className="absolute -bottom-4 -left-4 w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center shadow-lg animate-bounce delay-500">
-                  <Lightbulb className="w-5 h-5 text-white" />
-                </div>
+               
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* AI Features Showcase - Phase 12 Implementation */}
-      <section id="ai-demo" className="py-20 bg-gray-50 dark:bg-gray-800/50">
+      {/* Advanced Features Section */}
+      <section id="features" className="py-16 bg-slate-50 dark:bg-slate-900">
         <div className="container mx-auto px-6">
-          <div className="text-center space-y-4 mb-16">
-            <div className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-green-100 to-blue-100 text-green-800 dark:bg-gradient-to-r dark:from-green-900/30 dark:to-blue-900/30 dark:text-green-200 rounded-full text-sm font-medium">
+          <div className="text-center space-y-4 mb-12">
+            <div className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-green-100 to-emerald-100 dark:from-green-900/30 dark:to-emerald-900/30 text-green-800 dark:text-green-200 rounded-full text-sm font-bold backdrop-blur-sm border border-green-200/50 dark:border-green-700/30">
               <Brain className="w-4 h-4 mr-2" />
-              Phase 12: AI Features Interface
+              Powered by Advanced AI Technology
             </div>
-            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white">
-              Intelligent <span className="bg-gradient-to-r from-[#00684A] via-[#0066CC] to-[#8B5CF6] bg-clip-text text-transparent">AI Features</span>
+            <h2 className="text-5xl md:text-6xl font-bold text-slate-900 dark:text-white leading-tight">
+              Smart Features for 
+              <span className="bg-gradient-to-r from-green-600 via-emerald-500 to-green-700 dark:from-green-400 dark:via-emerald-300 dark:to-green-500 bg-clip-text text-transparent block">
+                Modern Trading
+              </span>
             </h2>
-            <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
-              Experience next-generation AI capabilities that transform how you trade materials with smart matching, predictive analytics, and real-time insights.
+            <p className="text-xl text-slate-600 dark:text-slate-300 max-w-4xl mx-auto leading-relaxed">
+              Harness cutting-edge artificial intelligence to revolutionize your material trading experience with precision matching, predictive market insights, and automated optimization.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-            {/* Smart Matching Interface */}
-            <div className="space-y-6">
-              <div className="bg-white dark:bg-gray-900 rounded-2xl p-8 shadow-xl border border-gray-200 dark:border-gray-700">
-                <div className="flex items-center space-x-3 mb-6">
-                  <div className="w-12 h-12 bg-gradient-to-r from-[#00684A] to-[#0066CC] rounded-xl flex items-center justify-center">
-                    <Target className="w-6 h-6 text-white" />
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
+            {/* AI-Powered Matching */}
+            <div className="bg-white dark:bg-slate-800 rounded-3xl p-8 shadow-2xl border border-green-200/30 dark:border-slate-700/50 hover:shadow-green-500/10 dark:hover:shadow-green-400/10 transition-all duration-300 group">
+              <div className="flex items-center space-x-4 mb-8">
+                <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
+                  <Brain className="w-8 h-8 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-2xl font-bold text-slate-900 dark:text-white">AI Matching</h3>
+                  <p className="text-slate-600 dark:text-slate-400">Intelligent material pairing</p>
+                </div>
+              </div>
+              <div className="space-y-4">
+                <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-xl p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-sm font-semibold text-slate-900 dark:text-white">Match Accuracy</span>
+                    <span className="text-sm font-bold text-green-600">94.2%</span>
                   </div>
-                  <div>
-                    <h3 className="text-xl font-bold text-gray-900 dark:text-white">Smart Matching Interface</h3>
-                    <p className="text-gray-600 dark:text-gray-400">AI-powered recommendation system</p>
+                  <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2">
+                    <div className="bg-gradient-to-r from-green-500 to-emerald-500 h-2 rounded-full" style={{width: '94.2%'}}></div>
                   </div>
                 </div>
-
-                <div className="space-y-4">
-                  {/* Material Recommendations */}
-                  <div className="bg-green-50 dark:bg-green-900/20 rounded-xl p-4">
-                    <h4 className="font-semibold text-green-800 dark:text-green-200 mb-3 flex items-center">
-                      <Sparkles className="w-4 h-4 mr-2" />
-                      Material Recommendations
-                    </h4>
-                    <div className="space-y-2">
-                      <div className="flex justify-between items-center p-2 bg-white dark:bg-gray-800 rounded-lg">
-                        <span className="text-sm font-medium">Plastic PET Bottles</span>
-                        <div className="flex items-center space-x-2">
-                          <div className="w-16 h-2 bg-gray-200 dark:bg-gray-700 rounded-full">
-                            <div className="w-14 h-full bg-green-500 rounded-full"></div>
-                          </div>
-                          <span className="text-xs text-green-600 font-semibold">94%</span>
-                        </div>
-                      </div>
-                      <div className="flex justify-between items-center p-2 bg-white dark:bg-gray-800 rounded-lg">
-                        <span className="text-sm font-medium">Aluminum Cans</span>
-                        <div className="flex items-center space-x-2">
-                          <div className="w-16 h-2 bg-gray-200 dark:bg-gray-700 rounded-full">
-                            <div className="w-12 h-full bg-blue-500 rounded-full"></div>
-                          </div>
-                          <span className="text-xs text-blue-600 font-semibold">87%</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Buyer Suggestions */}
-                  <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4">
-                    <h4 className="font-semibold text-blue-800 dark:text-blue-200 mb-3 flex items-center">
-                      <Users className="w-4 h-4 mr-2" />
-                      Buyer Suggestions
-                    </h4>
-                    <div className="grid grid-cols-2 gap-2">
-                      <div className="bg-white dark:bg-gray-800 rounded-lg p-3 text-center">
-                        <div className="text-sm font-semibold text-gray-900 dark:text-white">EcoPlastic Ltd</div>
-                        <div className="text-xs text-gray-600 dark:text-gray-400">92% match</div>
-                      </div>
-                      <div className="bg-white dark:bg-gray-800 rounded-lg p-3 text-center">
-                        <div className="text-sm font-semibold text-gray-900 dark:text-white">GreenMetal Co</div>
-                        <div className="text-xs text-gray-600 dark:text-gray-400">89% match</div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Price Optimization */}
-                  <div className="bg-purple-50 dark:bg-purple-900/20 rounded-xl p-4">
-                    <h4 className="font-semibold text-purple-800 dark:text-purple-200 mb-3 flex items-center">
-                      <TrendingUp className="w-4 h-4 mr-2" />
-                      Price Optimization Alerts
-                    </h4>
-                    <div className="flex items-center justify-between p-2 bg-white dark:bg-gray-800 rounded-lg">
-                      <span className="text-sm">Suggested Price Range</span>
-                      <span className="text-sm font-bold text-purple-600">$245 - $280/ton</span>
-                    </div>
+                <div className="bg-slate-50 dark:bg-slate-700/50 rounded-xl p-4">
+                  <div className="text-sm text-slate-700 dark:text-slate-300">
+                    <strong>Recent Match:</strong> PET bottles → Packaging Corp (+$2,400 revenue)
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Analytics Dashboard */}
-            <div className="space-y-6">
-              <div className="bg-white dark:bg-gray-900 rounded-2xl p-8 shadow-xl border border-gray-200 dark:border-gray-700">
-                <div className="flex items-center space-x-3 mb-6">
-                  <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl flex items-center justify-center">
-                    <BarChart3 className="w-6 h-6 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-bold text-gray-900 dark:text-white">Analytics Dashboard</h3>
-                    <p className="text-gray-600 dark:text-gray-400">AI-powered analytics and insights</p>
+            {/* Real-time Analytics */}
+            <div className="bg-white dark:bg-slate-800 rounded-3xl p-8 shadow-2xl border border-blue-200/30 dark:border-slate-700/50 hover:shadow-blue-500/10 dark:hover:shadow-blue-400/10 transition-all duration-300 group">
+              <div className="flex items-center space-x-4 mb-8">
+                <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-cyan-600 dark:from-blue-400 dark:to-cyan-500 rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
+                  <BarChart3 className="w-8 h-8 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-2xl font-bold text-slate-900 dark:text-white">Live Analytics</h3>
+                  <p className="text-slate-600 dark:text-slate-400">Market insights & trends</p>
+                </div>
+              </div>
+              <div className="space-y-4">
+                <div className="bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 rounded-xl p-4">
+                  <div className="h-24 flex items-end justify-between space-x-2">
+                    <div className="w-6 bg-gradient-to-t from-blue-500 to-blue-300 rounded-t-lg" style={{height: '60%'}}></div>
+                    <div className="w-6 bg-gradient-to-t from-green-500 to-green-300 rounded-t-lg" style={{height: '80%'}}></div>
+                    <div className="w-6 bg-gradient-to-t from-purple-500 to-purple-300 rounded-t-lg" style={{height: '45%'}}></div>
+                    <div className="w-6 bg-gradient-to-t from-orange-500 to-orange-300 rounded-t-lg" style={{height: '90%'}}></div>
                   </div>
                 </div>
-
-                <div className="space-y-4">
-                  {/* Predictive Analytics */}
-                  <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-xl p-4">
-                    <h4 className="font-semibold text-gray-900 dark:text-white mb-3 flex items-center">
-                      <Activity className="w-4 h-4 mr-2" />
-                      Predictive Analytics
-                    </h4>
-                    <div className="h-24 bg-white dark:bg-gray-800 rounded-lg p-3 flex items-end justify-around">
-                      <div className="flex flex-col items-center">
-                        <div className="w-4 bg-gradient-to-t from-blue-500 to-blue-300 rounded-t" style={{height: '60%'}}></div>
-                        <span className="text-xs text-gray-600 dark:text-gray-400 mt-1">Week 1</span>
-                      </div>
-                      <div className="flex flex-col items-center">
-                        <div className="w-4 bg-gradient-to-t from-green-500 to-green-300 rounded-t" style={{height: '80%'}}></div>
-                        <span className="text-xs text-gray-600 dark:text-gray-400 mt-1">Week 2</span>
-                      </div>
-                      <div className="flex flex-col items-center">
-                        <div className="w-4 bg-gradient-to-t from-purple-500 to-purple-300 rounded-t" style={{height: '45%'}}></div>
-                        <span className="text-xs text-gray-600 dark:text-gray-400 mt-1">Week 3</span>
-                      </div>
-                      <div className="flex flex-col items-center">
-                        <div className="w-4 bg-gradient-to-t from-orange-500 to-orange-300 rounded-t" style={{height: '95%'}}></div>
-                        <span className="text-xs text-orange-600 dark:text-orange-400 mt-1 font-semibold">Predicted</span>
-                      </div>
-                    </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="text-center">
+                    <div className="text-lg font-bold text-blue-600">+24%</div>
+                    <div className="text-xs text-slate-600 dark:text-slate-400">Volume Growth</div>
                   </div>
-
-                  {/* Market Trends */}
-                  <div className="bg-orange-50 dark:bg-orange-900/20 rounded-xl p-4">
-                    <h4 className="font-semibold text-orange-800 dark:text-orange-200 mb-3 flex items-center">
-                      <TrendingUp className="w-4 h-4 mr-2" />
-                      Market Trends
-                    </h4>
-                    <div className="space-y-2">
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm">Plastic Demand</span>
-                        <span className="text-sm font-semibold text-green-600">↗ +15%</span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm">Metal Prices</span>
-                        <span className="text-sm font-semibold text-blue-600">↗ +8%</span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm">Paper Supply</span>
-                        <span className="text-sm font-semibold text-orange-600">↘ -3%</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Performance Insights */}
-                  <div className="bg-pink-50 dark:bg-pink-900/20 rounded-xl p-4">
-                    <h4 className="font-semibold text-pink-800 dark:text-pink-200 mb-3 flex items-center">
-                      <PieChart className="w-4 h-4 mr-2" />
-                      Performance Insights
-                    </h4>
-                    <div className="grid grid-cols-3 gap-2">
-                      <div className="text-center">
-                        <div className="text-lg font-bold text-green-600">94%</div>
-                        <div className="text-xs text-gray-600 dark:text-gray-400">Success Rate</div>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-lg font-bold text-blue-600">2.3x</div>
-                        <div className="text-xs text-gray-600 dark:text-gray-400">Efficiency</div>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-lg font-bold text-purple-600">$1.2M</div>
-                        <div className="text-xs text-gray-600 dark:text-gray-400">Revenue</div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Custom Reports */}
-                  <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4">
-                    <h4 className="font-semibold text-gray-900 dark:text-white mb-3 flex items-center">
-                      <Filter className="w-4 h-4 mr-2" />
-                      Custom Reports
-                    </h4>
-                    <div className="flex space-x-2">
-                      <button className="px-3 py-1 bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-200 rounded-full text-xs font-medium">
-                        Weekly Report
-                      </button>
-                      <button className="px-3 py-1 bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-200 rounded-full text-xs font-medium">
-                        Material Analysis
-                      </button>
-                      <button className="px-3 py-1 bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-200 rounded-full text-xs font-medium">
-                        Price Trends
-                      </button>
-                    </div>
+                  <div className="text-center">
+                    <div className="text-lg font-bold text-green-600">$2.8M</div>
+                    <div className="text-xs text-slate-600 dark:text-slate-400">Monthly GMV</div>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
 
-          {/* Market Insights & Demand Forecasting */}
-          <div className="mt-12 bg-white dark:bg-gray-900 rounded-2xl p-8 shadow-xl border border-gray-200 dark:border-gray-700">
-            <div className="text-center mb-8">
-              <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Market Insights & Demand Forecasting</h3>
-              <p className="text-gray-600 dark:text-gray-400">Real-time market intelligence powered by AI</p>
+            {/* Smart Pricing */}
+            <div className="bg-white dark:bg-slate-800 rounded-3xl p-8 shadow-2xl border border-purple-200/30 dark:border-slate-700/50 hover:shadow-purple-500/10 dark:hover:shadow-purple-400/10 transition-all duration-300 group">
+              <div className="flex items-center space-x-4 mb-8">
+                <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
+                  <DollarSign className="w-8 h-8 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-2xl font-bold text-slate-900 dark:text-white">Smart Pricing</h3>
+                  <p className="text-slate-600 dark:text-slate-400">Dynamic price optimization</p>
+                </div>
+              </div>
+              <div className="space-y-4">
+                <div className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-xl p-4">
+                  <div className="text-sm text-slate-700 dark:text-slate-300 mb-2">
+                    <strong>Recommended Price:</strong>
+                  </div>
+                  <div className="text-2xl font-bold text-purple-600">$280/ton</div>
+                  <div className="text-xs text-green-600">+12% above market avg</div>
+                </div>
+                <div className="bg-slate-50 dark:bg-slate-700/50 rounded-xl p-4">
+                  <div className="text-sm text-slate-700 dark:text-slate-300">
+                    <strong>Trend:</strong> Peak demand window detected (2-4 PM)
+                  </div>
+                </div>
+              </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="bg-gradient-to-br from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 rounded-xl p-6">
-                <div className="flex items-center space-x-3 mb-4">
-                  <Eye className="w-6 h-6 text-green-600" />
-                  <h4 className="font-semibold text-gray-900 dark:text-white">Market Insights</h4>
+            {/* Quality Assessment */}
+            <div className="bg-white dark:bg-slate-800 rounded-3xl p-8 shadow-2xl border border-emerald-200/30 dark:border-slate-700/50 hover:shadow-emerald-500/10 dark:hover:shadow-emerald-400/10 transition-all duration-300 group">
+              <div className="flex items-center space-x-4 mb-8">
+                <div className="w-16 h-16 bg-gradient-to-br from-emerald-500 to-green-600 rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
+                  <Award className="w-8 h-8 text-white" />
                 </div>
-                <div className="space-y-3">
-                  <div className="bg-white dark:bg-gray-800 rounded-lg p-3">
-                    <div className="text-sm font-medium text-gray-900 dark:text-white">Top Material: Plastic PET</div>
-                    <div className="text-xs text-gray-600 dark:text-gray-400">45% of total volume</div>
+                <div>
+                  <h3 className="text-2xl font-bold text-slate-900 dark:text-white">Quality Check</h3>
+                  <p className="text-slate-600 dark:text-slate-400">AI-powered assessment</p>
+                </div>
+              </div>
+              <div className="space-y-4">
+                <div className="bg-gradient-to-r from-emerald-50 to-green-50 dark:from-emerald-900/20 dark:to-green-900/20 rounded-xl p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-sm font-semibold text-slate-900 dark:text-white">Quality Score</span>
+                    <span className="text-sm font-bold text-emerald-600">A+ Grade</span>
                   </div>
-                  <div className="bg-white dark:bg-gray-800 rounded-lg p-3">
-                    <div className="text-sm font-medium text-gray-900 dark:text-white">Peak Hours: 2-4 PM</div>
-                    <div className="text-xs text-gray-600 dark:text-gray-400">Highest activity period</div>
+                  <div className="flex items-center space-x-2">
+                    <Star className="w-4 h-4 text-yellow-500 fill-current" />
+                    <Star className="w-4 h-4 text-yellow-500 fill-current" />
+                    <Star className="w-4 h-4 text-yellow-500 fill-current" />
+                    <Star className="w-4 h-4 text-yellow-500 fill-current" />
+                    <Star className="w-4 h-4 text-yellow-500 fill-current" />
+                    <span className="text-xs text-slate-600 dark:text-slate-400 ml-2">5.0/5.0</span>
+                  </div>
+                </div>
+                <div className="bg-slate-50 dark:bg-slate-700/50 rounded-xl p-4">
+                  <div className="text-sm text-slate-700 dark:text-slate-300">
+                    <strong>Verified:</strong> Contamination-free, premium grade materials
                   </div>
                 </div>
               </div>
+            </div>
 
-              <div className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-xl p-6">
-                <div className="flex items-center space-x-3 mb-4">
-                  <Lightbulb className="w-6 h-6 text-purple-600" />
-                  <h4 className="font-semibold text-gray-900 dark:text-white">Demand Forecasting</h4>
+            {/* Supply Chain Insights */}
+            <div className="bg-white dark:bg-slate-800 rounded-3xl p-8 shadow-2xl border border-orange-200/30 dark:border-slate-700/50 hover:shadow-orange-500/10 dark:hover:shadow-orange-400/10 transition-all duration-300 group">
+              <div className="flex items-center space-x-4 mb-8">
+                <div className="w-16 h-16 bg-gradient-to-br from-orange-500 to-red-600 rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
+                  <Truck className="w-8 h-8 text-white" />
                 </div>
-                <div className="space-y-3">
-                  <div className="bg-white dark:bg-gray-800 rounded-lg p-3">
-                    <div className="text-sm font-medium text-gray-900 dark:text-white">Next Week: +23% Demand</div>
-                    <div className="text-xs text-green-600">Metal materials trending up</div>
+                <div>
+                  <h3 className="text-2xl font-bold text-slate-900 dark:text-white">Supply Chain</h3>
+                  <p className="text-slate-600 dark:text-slate-400">Logistics optimization</p>
+                </div>
+              </div>
+              <div className="space-y-4">
+                <div className="bg-gradient-to-r from-orange-50 to-red-50 dark:from-orange-900/20 dark:to-red-900/20 rounded-xl p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-sm font-semibold text-slate-900 dark:text-white">Delivery Time</span>
+                    <span className="text-sm font-bold text-orange-600">2-3 Days</span>
                   </div>
-                  <div className="bg-white dark:bg-gray-800 rounded-lg p-3">
-                    <div className="text-sm font-medium text-gray-900 dark:text-white">Q2 Forecast: $2.8M</div>
-                    <div className="text-xs text-blue-600">15% above Q1 results</div>
+                  <div className="text-xs text-green-600">15% faster than average</div>
+                </div>
+                <div className="bg-slate-50 dark:bg-slate-700/50 rounded-xl p-4">
+                  <div className="text-sm text-slate-700 dark:text-slate-300">
+                    <strong>Route:</strong> Optimized for minimal carbon footprint
                   </div>
                 </div>
               </div>
+            </div>
 
-              <div className="bg-gradient-to-br from-orange-50 to-red-50 dark:from-orange-900/20 dark:to-red-900/20 rounded-xl p-6">
-                <div className="flex items-center space-x-3 mb-4">
-                  <Smartphone className="w-6 h-6 text-orange-600" />
-                  <h4 className="font-semibold text-gray-900 dark:text-white">Optimization Suggestions</h4>
+            {/* Sustainability Metrics */}
+            <div className="bg-white dark:bg-slate-800 rounded-3xl p-8 shadow-2xl border border-teal-200/30 dark:border-slate-700/50 hover:shadow-teal-500/10 dark:hover:shadow-teal-400/10 transition-all duration-300 group">
+              <div className="flex items-center space-x-4 mb-8">
+                <div className="w-16 h-16 bg-gradient-to-br from-teal-500 to-green-600 rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
+                  <Recycle className="w-8 h-8 text-white" />
                 </div>
-                <div className="space-y-3">
-                  <div className="bg-white dark:bg-gray-800 rounded-lg p-3">
-                    <div className="text-sm font-medium text-gray-900 dark:text-white">List 3 hours earlier</div>
-                    <div className="text-xs text-orange-600">+12% better pricing</div>
+                <div>
+                  <h3 className="text-2xl font-bold text-slate-900 dark:text-white">Sustainability</h3>
+                  <p className="text-slate-600 dark:text-slate-400">Environmental impact</p>
+                </div>
+              </div>
+              <div className="space-y-4">
+                <div className="bg-gradient-to-r from-teal-50 to-green-50 dark:from-teal-900/20 dark:to-green-900/20 rounded-xl p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-sm font-semibold text-slate-900 dark:text-white">CO₂ Saved</span>
+                    <span className="text-sm font-bold text-teal-600">840 kg</span>
                   </div>
-                  <div className="bg-white dark:bg-gray-800 rounded-lg p-3">
-                    <div className="text-sm font-medium text-gray-900 dark:text-white">Bundle with aluminum</div>
-                    <div className="text-xs text-purple-600">+8% buyer interest</div>
+                  <div className="text-xs text-green-600">This month's contribution</div>
+                </div>
+                <div className="bg-slate-50 dark:bg-slate-700/50 rounded-xl p-4">
+                  <div className="text-sm text-slate-700 dark:text-slate-300">
+                    <strong>Impact:</strong> Equivalent to planting 38 trees
                   </div>
                 </div>
               </div>
@@ -461,141 +412,255 @@ export default function Home() {
         </div>
       </section>
 
-      {/* How It Works Section - Simplified */}
-      <section id="how-it-works" className="py-20 bg-white dark:bg-gray-900">
+      {/* How It Works Section */}
+      <section id="how-it-works" className="py-16 bg-white dark:bg-slate-900">
         <div className="container mx-auto px-6">
-          <div className="text-center space-y-4 mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white">
-              Simple. Smart. <span className="text-green-600">Sustainable.</span>
+          <div className="text-center space-y-4 mb-12">
+            <h2 className="text-5xl md:text-6xl font-bold text-slate-900 dark:text-white leading-tight">
+              Simple. Smart. 
+              <span className="bg-gradient-to-r from-green-600 via-emerald-500 to-green-700 dark:from-green-400 dark:via-emerald-300 dark:to-green-500 bg-clip-text text-transparent block">
+                Sustainable.
+              </span>
             </h2>
-            <p className="text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-              Three easy steps to transform your material trading with AI-powered intelligence.
+            <p className="text-xl text-slate-600 dark:text-slate-300 max-w-3xl mx-auto leading-relaxed">
+              Transform your material trading experience in three intelligent steps powered by advanced AI technology.
             </p>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
-            {/* Step 1: Upload & AI Analysis */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-12 max-w-6xl mx-auto">
+            {/* Step 1: Smart Upload & Analysis */}
             <div className="text-center group">
-              <div className="w-20 h-20 bg-gradient-to-r from-green-500 to-blue-500 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300">
-                <Brain className="w-10 h-10 text-white" />
+              <div className="relative">
+                <div className="w-24 h-24 bg-gradient-to-br from-green-500 to-emerald-600 rounded-3xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-all duration-300 shadow-2xl shadow-green-500/25">
+                  <Brain className="w-12 h-12 text-white" />
+                </div>
+                <div className="absolute -top-2 -right-2 w-8 h-8 bg-white dark:bg-slate-800 rounded-full flex items-center justify-center shadow-lg">
+                  <span className="text-sm font-bold text-green-600">1</span>
+                </div>
               </div>
-              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">Upload & AI Analysis</h3>
-              <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
-                Upload your materials and let our AI analyze quality, suggest pricing, and find perfect matches.
+              <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-3">Smart Upload & Analysis</h3>
+              <p className="text-slate-600 dark:text-slate-400 leading-relaxed text-lg">
+                Upload materials and let our AI instantly analyze quality, assess value, and generate optimal pricing strategies with 94% accuracy.
               </p>
             </div>
 
-            {/* Step 2: Smart Matching */}
+            {/* Step 2: Intelligent Matching */}
             <div className="text-center group">
-              <div className="w-20 h-20 bg-gradient-to-r from-blue-500 to-purple-500 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300">
-                <Target className="w-10 h-10 text-white" />
+              <div className="relative">
+                <div className="w-24 h-24 bg-gradient-to-br from-blue-500 to-cyan-600 dark:from-blue-400 dark:to-cyan-500 rounded-3xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-all duration-300 shadow-2xl shadow-blue-500/25">
+                  <Target className="w-12 h-12 text-white" />
+                </div>
+                <div className="absolute -top-2 -right-2 w-8 h-8 bg-white dark:bg-slate-800 rounded-full flex items-center justify-center shadow-lg">
+                  <span className="text-sm font-bold text-blue-600">2</span>
+                </div>
               </div>
-              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">Smart Matching</h3>
-              <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
-                Our AI connects you with verified buyers and suppliers based on real-time market insights.
+              <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-3">Intelligent Matching</h3>
+              <p className="text-slate-600 dark:text-slate-400 leading-relaxed text-lg">
+                Connect with verified buyers and suppliers through AI-powered matching based on real-time market data and predictive insights.
               </p>
             </div>
 
-            {/* Step 3: Secure Trading */}
+            {/* Step 3: Secure Execution */}
             <div className="text-center group">
-              <div className="w-20 h-20 bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300">
-                <ShieldCheck className="w-10 h-10 text-white" />
+              <div className="relative">
+                <div className="w-24 h-24 bg-gradient-to-br from-purple-500 to-pink-600 rounded-3xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-all duration-300 shadow-2xl shadow-purple-500/25">
+                  <ShieldCheck className="w-12 h-12 text-white" />
+                </div>
+                <div className="absolute -top-2 -right-2 w-8 h-8 bg-white dark:bg-slate-800 rounded-full flex items-center justify-center shadow-lg">
+                  <span className="text-sm font-bold text-purple-600">3</span>
+                </div>
               </div>
-              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">Secure Trading</h3>
-              <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
-                Complete transactions safely with escrow protection and automated smart contracts.
+              <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-3">Secure Execution</h3>
+              <p className="text-slate-600 dark:text-slate-400 leading-relaxed text-lg">
+                Complete transactions with confidence using encrypted escrow protection, automated contracts, and real-time tracking.
               </p>
             </div>
           </div>
 
-          {/* Trust Indicators */}
-          <div className="flex flex-wrap justify-center items-center gap-8 mt-16 pt-8 border-t border-gray-200 dark:border-gray-700">
-            <div className="flex items-center space-x-2 text-gray-600 dark:text-gray-400">
-              <CheckCircle className="w-5 h-5 text-[#10B981]" />
-              <span className="font-medium">AI-Verified Quality</span>
-            </div>
-            <div className="flex items-center space-x-2 text-gray-600 dark:text-gray-400">
-              <ShieldCheck className="w-5 h-5 text-[#0066CC]" />
-              <span className="font-medium">Secure Transactions</span>
-            </div>
-            <div className="flex items-center space-x-2 text-gray-600 dark:text-gray-400">
-              <Globe className="w-5 h-5 text-[#8B5CF6]" />
-              <span className="font-medium">Global Network</span>
-            </div>
-            <div className="flex items-center space-x-2 text-gray-600 dark:text-gray-400">
-              <Zap className="w-5 h-5 text-[#F59E0B]" />
-              <span className="font-medium">Real-time Analytics</span>
+          {/* Professional Trust Indicators */}
+          <div className="mt-12 bg-gradient-to-r from-slate-50 to-green-50/50 dark:from-slate-800 dark:to-slate-700 rounded-3xl p-6 border border-slate-200 dark:border-slate-700">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+              <div className="flex items-center space-x-4 group">
+                <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                  <CheckCircle className="w-6 h-6 text-green-600" />
+                </div>
+                <div>
+                  <div className="text-lg font-bold text-slate-900 dark:text-white">AI-Verified</div>
+                  <div className="text-sm text-slate-600 dark:text-slate-400">Quality Assured</div>
+                </div>
+              </div>
+              <div className="flex items-center space-x-4 group">
+                <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                  <ShieldCheck className="w-6 h-6 text-blue-600" />
+                </div>
+                <div>
+                  <div className="text-lg font-bold text-slate-900 dark:text-white">Bank-Level</div>
+                  <div className="text-sm text-slate-600 dark:text-slate-400">Security</div>
+                </div>
+              </div>
+              <div className="flex items-center space-x-4 group">
+                <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/30 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                  <Globe className="w-6 h-6 text-purple-600" />
+                </div>
+                <div>
+                  <div className="text-lg font-bold text-slate-900 dark:text-white">Global</div>
+                  <div className="text-sm text-slate-600 dark:text-slate-400">Network</div>
+                </div>
+              </div>
+              <div className="flex items-center space-x-4 group">
+                <div className="w-12 h-12 bg-orange-100 dark:bg-orange-900/30 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                  <Zap className="w-6 h-6 text-orange-600" />
+                </div>
+                <div>
+                  <div className="text-lg font-bold text-slate-900 dark:text-white">Real-time</div>
+                  <div className="text-sm text-slate-600 dark:text-slate-400">Analytics</div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Enhanced Stats Section */}
-      <section className="py-16 bg-gray-50 dark:bg-gray-800/50">
+      {/* Impact Stats Section */}
+      <section className="py-16 bg-slate-50 dark:bg-slate-900">
         <div className="container mx-auto px-6">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
+          <div className="text-center mb-10">
+            <h2 className="text-4xl md:text-5xl font-bold text-slate-900 dark:text-white mb-4">
               Trusted by Industry Leaders
             </h2>
-            <p className="text-gray-600 dark:text-gray-400">Real impact, measurable results</p>
+            <p className="text-xl text-slate-600 dark:text-slate-300">Real impact, measurable results across the globe</p>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            <div className="text-center">
-              <div className="text-3xl md:text-4xl font-bold text-green-600 mb-2">50K+</div>
-              <div className="text-gray-600 dark:text-gray-400 text-sm">Materials Matched</div>
+            <div className="text-center bg-white dark:bg-slate-800 rounded-3xl p-8 shadow-xl border border-green-200/30 dark:border-slate-700/50 hover:shadow-green-500/10 transition-all duration-300">
+              <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+                <Factory className="w-8 h-8 text-white" />
+              </div>
+              <div className="text-4xl md:text-5xl font-bold text-green-600 mb-2">50.2K+</div>
+              <div className="text-slate-600 dark:text-slate-400 font-medium">Materials Matched</div>
             </div>
-            <div className="text-center">
-              <div className="text-3xl md:text-4xl font-bold text-blue-600 mb-2">94%</div>
-              <div className="text-gray-600 dark:text-gray-400 text-sm">AI Accuracy</div>
+            <div className="text-center bg-white dark:bg-slate-800 rounded-3xl p-8 shadow-xl border border-blue-200/30 dark:border-slate-700/50 hover:shadow-blue-500/10 transition-all duration-300">
+              <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-cyan-600 dark:from-blue-400 dark:to-cyan-500 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+                <Brain className="w-8 h-8 text-white" />
+              </div>
+              <div className="text-4xl md:text-5xl font-bold text-blue-600 mb-2">94.2%</div>
+              <div className="text-slate-600 dark:text-slate-400 font-medium">AI Accuracy</div>
             </div>
-            <div className="text-center">
-              <div className="text-3xl md:text-4xl font-bold text-purple-600 mb-2">$2.8M</div>
-              <div className="text-gray-600 dark:text-gray-400 text-sm">Platform Volume</div>
+            <div className="text-center bg-white dark:bg-slate-800 rounded-3xl p-8 shadow-xl border border-purple-200/30 dark:border-slate-700/50 hover:shadow-purple-500/10 transition-all duration-300">
+              <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+                <DollarSign className="w-8 h-8 text-white" />
+              </div>
+              <div className="text-4xl md:text-5xl font-bold text-purple-600 mb-2">$2.8M</div>
+              <div className="text-slate-600 dark:text-slate-400 font-medium">Monthly GMV</div>
             </div>
-            <div className="text-center">
-              <div className="text-3xl md:text-4xl font-bold text-orange-600 mb-2">1.2M</div>
-              <div className="text-gray-600 dark:text-gray-400 text-sm">Tons Processed</div>
+            <div className="text-center bg-white dark:bg-slate-800 rounded-3xl p-8 shadow-xl border border-orange-200/30 dark:border-slate-700/50 hover:shadow-orange-500/10 transition-all duration-300">
+              <div className="w-16 h-16 bg-gradient-to-br from-orange-500 to-red-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+                <Recycle className="w-8 h-8 text-white" />
+              </div>
+              <div className="text-4xl md:text-5xl font-bold text-orange-600 mb-2">1.2M</div>
+              <div className="text-slate-600 dark:text-slate-400 font-medium">Tons Processed</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Industry News Section */}
+      <section className="py-16 bg-white dark:bg-slate-900">
+        <div className="container mx-auto px-6">
+          <div className="text-center mb-10">
+            <h2 className="text-4xl md:text-5xl font-bold text-slate-900 dark:text-white mb-4">
+              Industry <span className="bg-gradient-to-r from-green-600 via-emerald-500 to-green-700 dark:from-green-400 dark:via-emerald-300 dark:to-green-500 bg-clip-text text-transparent">Insights</span>
+            </h2>
+            <p className="text-xl text-slate-600 dark:text-slate-300">Stay ahead with the latest circular economy and technology trends</p>
+          </div>
+          <div className="bg-slate-50 dark:bg-slate-800 rounded-3xl p-8 border border-slate-200 dark:border-slate-700 shadow-xl">
+            <NewsWidget />
+          </div>
+        </div>
+      </section>
+
+      {/* Newsletter Signup Section */}
+      <section className="py-16 bg-gradient-to-br from-green-50 via-white to-emerald-50 dark:from-slate-900 dark:via-blue-900/50 dark:to-slate-800">
+        <div className="container mx-auto px-6">
+          <div className="max-w-2xl mx-auto text-center">
+            <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-lg rounded-3xl p-8 shadow-2xl border border-green-200/30 dark:border-slate-700/50">
+              <div className="mb-6">
+                <h2 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white mb-3">
+                  Stay <span className="bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">Connected</span>
+                </h2>
+                <p className="text-lg text-slate-600 dark:text-slate-300">Get exclusive insights, market trends, and platform updates delivered to your inbox</p>
+              </div>
+              <NewsletterSignup />
             </div>
           </div>
         </div>
       </section>
 
       {/* Final CTA Section */}
-      <section className="py-20 bg-gradient-to-r from-[#00684A] via-[#0066CC] to-[#00684A] dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
-        <div className="container mx-auto px-6 text-center">
-          <div className="max-w-4xl mx-auto space-y-8">
-            <div className="space-y-4">
-              <h2 className="text-4xl md:text-5xl font-bold text-white dark:text-[#47A16B]">
-                Ready to Transform the Circular Economy?
+      <section className="py-20 bg-gradient-to-br from-green-600 via-emerald-600 to-green-700 dark:from-slate-900 dark:via-blue-900 dark:to-slate-800 relative overflow-hidden">
+        {/* Professional Background Pattern */}
+        <div className="absolute inset-0 opacity-20">
+          <div className="absolute inset-0 bg-gradient-to-r from-white/10 via-transparent to-white/10"></div>
+          <svg className="w-full h-full" viewBox="0 0 100 100" fill="none">
+            <defs>
+              <pattern id="cta-grid" width="8" height="8" patternUnits="userSpaceOnUse">
+                <path d="M 8 0 L 0 0 0 8" fill="none" stroke="currentColor" strokeWidth="0.3" className="text-white/20"/>
+              </pattern>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#cta-grid)" />
+          </svg>
+        </div>
+        
+        <div className="container mx-auto px-6 text-center relative">
+          <div className="max-w-5xl mx-auto space-y-8">
+            <div className="space-y-6">
+              <div className="inline-flex items-center px-6 py-3 bg-white/20 backdrop-blur-sm text-white rounded-full text-sm font-semibold border border-white/30">
+                <Award className="w-4 h-4 mr-2" />
+                Join 50,000+ Industry Leaders Today
+              </div>
+              <h2 className="text-5xl md:text-7xl font-bold text-white dark:text-green-300 leading-tight">
+                Ready to Transform
+                <span className="block bg-gradient-to-r from-white to-green-100 dark:from-green-200 dark:to-emerald-200 bg-clip-text text-transparent">
+                  The Circular Economy?
+                </span>
               </h2>
-              <p className="text-xl text-white/90 dark:text-gray-300">
-                Join CircularSync today and be part of the sustainable future. Start your journey in minutes.
+              <p className="text-2xl text-white/90 dark:text-slate-200 max-w-3xl mx-auto leading-relaxed">
+                Join CircularSync today and be part of the sustainable future. Start your intelligent trading journey in minutes with our AI-powered platform.
               </p>
             </div>
 
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link href="/auth/register">
-                <Button size="lg" className="bg-white text-[#00684A] hover:bg-gray-100 shadow-xl">
-                  Get Started for Free
-                  <ArrowRight className="w-4 h-4 ml-2" />
+            <div className="flex flex-col sm:flex-row gap-8 justify-center items-center">
+              <Link href="/auth/register" className="group">
+                <Button size="lg" className="bg-white text-green-600 hover:bg-green-50 shadow-2xl hover:shadow-white/20 text-xl px-12 py-6 rounded-2xl font-bold transition-all duration-300 group-hover:scale-105">
+                  Start Trading Free
+                  <ArrowRight className="w-6 h-6 ml-3 group-hover:translate-x-1 transition-transform" />
                 </Button>
               </Link>
-              <Link href="/auction/live">
-                <Button size="lg" variant="outline" className="border-white text-white hover:bg-white hover:text-[#00684A]">
-                  View Live Auctions
+              <Link href="/auction/live" className="group">
+                <Button size="lg" variant="outline" className="border-2 border-white text-white hover:bg-white hover:text-green-600 backdrop-blur-sm shadow-lg hover:shadow-xl text-xl px-12 py-6 rounded-2xl font-bold transition-all duration-300 group-hover:scale-105">
+                  <Eye className="w-6 h-6 mr-3" />
+                  View Live Demo
                 </Button>
               </Link>
             </div>
 
-            <div className="pt-8 border-t border-white/20 dark:border-gray-700">
-              <p className="text-white/80 dark:text-gray-400">
-                No credit card required • Free forever plan available • 30-day money-back guarantee
-
-              </p>
+            <div className="pt-8 border-t border-white/20 dark:border-slate-700/50">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-white/90 dark:text-slate-300">
+                <div className="flex items-center justify-center space-x-3">
+                  <CheckCircle className="w-6 h-6 text-green-200" />
+                  <span className="font-medium">No credit card required</span>
+                </div>
+                <div className="flex items-center justify-center space-x-3">
+                  <ShieldCheck className="w-6 h-6 text-blue-200" />
+                  <span className="font-medium">Enterprise-grade security</span>
+                </div>
+                <div className="flex items-center justify-center space-x-3">
+                  <Clock className="w-6 h-6 text-purple-200" />
+                  <span className="font-medium">Setup in 2 minutes</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
-
       </section>
     </div>
   );

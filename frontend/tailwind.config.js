@@ -60,6 +60,8 @@ module.exports = {
         'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
         'float': 'float 6s ease-in-out infinite',
         'float-delay': 'float 6s ease-in-out infinite 2s',
+        'professional-pulse': 'professional-pulse 4s ease-in-out infinite',
+        'gradient-shift': 'gradient-shift 8s ease-in-out infinite',
       },
       keyframes: {
         pulse: {
@@ -69,6 +71,14 @@ module.exports = {
         float: {
           '0%, 100%': { transform: 'translateY(0px)' },
           '50%': { transform: 'translateY(-20px)' },
+        },
+        'professional-pulse': {
+          '0%, 100%': { opacity: 1, transform: 'scale(1)' },
+          '50%': { opacity: 0.8, transform: 'scale(1.05)' },
+        },
+        'gradient-shift': {
+          '0%, 100%': { 'background-position': '0% 50%' },
+          '50%': { 'background-position': '100% 50%' },
         },
       },
       fontFamily: {

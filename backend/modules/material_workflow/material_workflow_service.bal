@@ -265,8 +265,8 @@ service /api/material/workflow on workflowListener {
                 SELECT 
                     workflow_id, transaction_id, title, category, 
                     sub_category, quantity, unit, expected_price,
-                    delivery_method, submission_status,
-                    created_at
+                    delivery_method, submission_status, condition,
+                    created_at, photos
                 FROM material_submissions 
                 WHERE supplier_id = ${supplierId}
                 ORDER BY created_at DESC`;

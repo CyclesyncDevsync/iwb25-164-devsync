@@ -24,6 +24,7 @@ export interface Material {
   tags: string[];
   estimatedPickupDate?: Date;
   availability: AvailabilityStatus;
+  deliveryMethod?: string;
   
   // Enhanced fields
   aiAnalysis?: AIAnalysisResult;
@@ -247,7 +248,7 @@ export interface MaterialPhoto {
   mimeType: string;
   isMain: boolean;
   caption?: string;
-  uploadedAt: Date;
+  uploadedAt: string; // Changed to string for Redux serialization
 }
 
 export interface MaterialPricing {

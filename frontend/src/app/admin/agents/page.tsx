@@ -7,6 +7,7 @@ import DashboardLayout from '../../../components/layout/DashboardLayout';
 import { Loading } from '../../../components/ui/Loading';
 import { AgentsManagement } from '../../../components/admin/AgentsManagement';
 import { enhancedToast } from '../../../components/ui/EnhancedToast';
+import { redirectToAsgardeoLogin } from '../../../lib/auth-redirect';
 
 export default function AgentsPage() {
   const { user, loading, isAuthenticated } = useAuth();
@@ -17,7 +18,7 @@ export default function AgentsPage() {
     if (!loading) {
       if (!isAuthenticated) {
         enhancedToast.warning('Authentication required.');
-        router.push('/auth/login?redirect=/admin/agents');
+        redirectToAsgardeoLogin('/admin/agents');
         return;
       }
       

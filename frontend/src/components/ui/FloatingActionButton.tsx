@@ -71,7 +71,7 @@ export function FloatingActionButton({
   const { darkMode } = useSelector((state: RootState) => state.theme);
 
   const positionClasses = {
-    'bottom-right': 'bottom-6 right-6',
+    'bottom-right': 'bottom-20 right-4', // Positioned above chatbot icon (bottom-4)
     'bottom-left': 'bottom-6 left-6',
     'top-right': 'top-6 right-6',
     'top-left': 'top-6 left-6'

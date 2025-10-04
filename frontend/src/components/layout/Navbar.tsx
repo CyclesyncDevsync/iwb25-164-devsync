@@ -18,7 +18,7 @@ import {
   ChevronDownIcon
 } from '@heroicons/react/24/outline';
 import { useAuth } from '../../hooks/useAuth';
-import { ROUTES, USER_ROLES } from '../../constants';
+import { USER_ROLES } from '../../constants';
 import { Button } from '../../components/ui/Button';
 import { NavDarkModeToggle } from '../../components/ui/DarkModeToggle';
 import { NotificationDropdown } from './NotificationDropdown';
@@ -83,7 +83,7 @@ const navigationItems: NavItem[] = [
 ];
 
 export function Navbar() {
-  const { isAuthenticated, user, logout } = useAuth();
+  const { isAuthenticated, user, logout, login, register, loading } = useAuth();
   const pathname = usePathname();
   const router = useRouter();
   
@@ -146,24 +146,24 @@ export function Navbar() {
   const filteredNavItems = getFilteredNavItems();
 
   return (
-    <nav className={getNavbarClasses(navbarConfig)}>
+    <nav className={`${getNavbarClasses(navbarConfig)} bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border-b border-green-100 dark:border-slate-800 shadow-lg shadow-green-100/50 dark:shadow-slate-900/50`}>
       <div className="w-full px-0">
         {/* Main Navbar */}
-        <div className="flex items-center justify-between h-16 px-4">
+        <div className="flex items-center justify-between h-16 px-6">
           {/* Logo and Brand */}
           <div className="flex items-center flex-shrink-0">
-            <Link href="/" className="flex items-center space-x-2">
+            <Link href="/" className="flex items-center space-x-3 group">
               <div className="relative">
                 <Image
                   src="/globe.svg"
                   alt="CircularSync Logo"
-                  width={32}
-                  height={32}
-                  className="h-8 w-auto"
+                  width={36}
+                  height={36}
+                  className="h-9 w-auto transition-transform duration-300 group-hover:scale-110"
                 />
-                <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+                <div className="absolute -top-1 -right-1 w-3 h-3 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full animate-pulse shadow-lg shadow-green-400/50"></div>
               </div>
-              <span className="text-xl font-bold bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">
+              <span className="text-xl font-bold bg-gradient-to-r from-green-600 via-emerald-600 to-teal-600 dark:from-green-400 dark:via-emerald-400 dark:to-teal-400 bg-clip-text text-transparent">
                 CircularSync
               </span>
             </Link>
@@ -171,16 +171,16 @@ export function Navbar() {
 
           {/* Center Navigation */}
           <div className="hidden lg:flex items-center justify-center flex-1">
-            <div className="flex items-center space-x-1">
+            <div className="flex items-center space-x-2 bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm rounded-full px-4 py-2 shadow-lg shadow-green-100/30 dark:shadow-slate-900/30 border border-green-100/50 dark:border-slate-700/50">
               {filteredNavItems.map((item) => (
                 <div key={item.href} className="relative group">
                   <Link
                     href={item.href}
                     className={`
-                      flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200
+                      flex items-center px-4 py-2.5 rounded-full text-sm font-medium transition-all duration-300 hover:scale-105
                       ${isActiveLink(item.href)
-                        ? 'text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20'
-                        : 'text-gray-700 dark:text-gray-300 hover:text-green-600 dark:hover:text-green-400 hover:bg-gray-50 dark:hover:bg-gray-800'
+                        ? 'text-white bg-gradient-to-r from-green-500 to-emerald-600 shadow-lg shadow-green-500/30 dark:shadow-green-400/20'
+                        : 'text-gray-700 dark:text-gray-300 hover:text-green-600 dark:hover:text-green-400 hover:bg-green-50/80 dark:hover:bg-slate-700/50'
                       }
                     `}
                   >
@@ -191,13 +191,13 @@ export function Navbar() {
                   
                   {/* Dropdown Menu */}
                   {item.children && (
-                    <div className="absolute top-full left-0 mt-1 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
-                      <div className="py-2">
+                    <div className="absolute top-full left-0 mt-2 w-52 bg-white/95 dark:bg-slate-800/95 backdrop-blur-xl rounded-xl shadow-2xl border border-green-100 dark:border-slate-700 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50">
+                      <div className="py-3">
                         {item.children.map((child) => (
                           <Link
                             key={child.href}
                             href={child.href}
-                            className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-green-600 dark:hover:text-green-400"
+                            className="block px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gradient-to-r hover:from-green-50 hover:to-emerald-50 dark:hover:from-slate-700 dark:hover:to-slate-600 hover:text-green-600 dark:hover:text-green-400 transition-all duration-200 rounded-lg mx-2"
                           >
                             {child.label}
                           </Link>
@@ -220,17 +220,21 @@ export function Navbar() {
             )}
 
             {/* Dark Mode Toggle */}
-            <NavDarkModeToggle />
+            <div className="bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm rounded-full p-1 shadow-lg shadow-green-100/30 dark:shadow-slate-900/30 border border-green-100/50 dark:border-slate-700/50">
+              <NavDarkModeToggle />
+            </div>
 
             {/* Notifications */}
             {navbarConfig.showNotifications && isAuthenticated && (
-              <NotificationDropdown
-                notifications={notifications}
-                unreadCount={unreadCount}
-                onMarkAsRead={markAsRead}
-                onMarkAllAsRead={markAllAsRead}
-                onClearAll={clearAll}
-              />
+              <div className="bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm rounded-full p-1 shadow-lg shadow-green-100/30 dark:shadow-slate-900/30 border border-green-100/50 dark:border-slate-700/50">
+                <NotificationDropdown
+                  notifications={notifications}
+                  unreadCount={unreadCount}
+                  onMarkAsRead={markAsRead}
+                  onMarkAllAsRead={markAllAsRead}
+                  onClearAll={clearAll}
+                />
+              </div>
             )}
 
             {/* User Menu */}
@@ -239,64 +243,64 @@ export function Navbar() {
                 <div className="relative">
                   <button
                     onClick={() => setUserMenuOpen(!userMenuOpen)}
-                    className="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                    className="flex items-center space-x-2 p-3 rounded-full hover:bg-green-50/80 dark:hover:bg-slate-700/50 transition-all duration-300 hover:scale-105 bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm shadow-lg shadow-green-100/30 dark:shadow-slate-900/30 border border-green-100/50 dark:border-slate-700/50"
                   >
                     <UserAvatar user={user || undefined} size="sm" />
-                    <ChevronDownIcon className="w-4 h-4 text-gray-500" />
+                    <ChevronDownIcon className="w-4 h-4 text-gray-500 dark:text-gray-400" />
                   </button>
 
                   {/* User Dropdown */}
                   <AnimatePresence>
                     {userMenuOpen && (
                       <motion.div
-                        initial={{ opacity: 0, y: -10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -10 }}
-                        className="absolute right-0 mt-2 w-64 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-50"
+                        initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                        className="absolute right-0 mt-3 w-72 bg-white/95 dark:bg-slate-800/95 backdrop-blur-xl rounded-xl shadow-2xl border border-green-100 dark:border-slate-700 z-50"
                       >
-                        <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
-                          <p className="text-sm font-medium text-gray-900 dark:text-white">
-                            {user?.name || 'User'}
+                        <div className="px-6 py-4 border-b border-green-100 dark:border-slate-700 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-slate-800 dark:to-slate-700 rounded-t-xl">
+                          <p className="text-sm font-semibold text-gray-900 dark:text-white">
+                            {user?.email?.split('@')[0] || 'User'}
                           </p>
-                          <p className="text-sm text-gray-500 dark:text-gray-400">
+                          <p className="text-sm text-gray-600 dark:text-gray-400">
                             {user?.email}
                           </p>
-                          <p className="text-xs text-green-600 dark:text-green-400 capitalize">
+                          <p className="text-xs font-medium text-green-600 dark:text-green-400 capitalize mt-1 px-2 py-1 bg-green-100 dark:bg-green-900/30 rounded-full inline-block">
                             {user?.role} Account
                           </p>
                         </div>
-                        <div className="py-2">
+                        <div className="py-3">
                           <Link
                             href={getUserDashboardLink()}
-                            className="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+                            className="flex items-center px-6 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gradient-to-r hover:from-green-50 hover:to-emerald-50 dark:hover:from-slate-700 dark:hover:to-slate-600 transition-all duration-200"
                           >
-                            <ChartBarIcon className="w-4 h-4 mr-3" />
+                            <ChartBarIcon className="w-5 h-5 mr-3 text-green-600 dark:text-green-400" />
                             Dashboard
                           </Link>
                           <Link
                             href="/profile"
-                            className="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+                            className="flex items-center px-6 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gradient-to-r hover:from-green-50 hover:to-emerald-50 dark:hover:from-slate-700 dark:hover:to-slate-600 transition-all duration-200"
                           >
-                            <UserCircleIcon className="w-4 h-4 mr-3" />
+                            <UserCircleIcon className="w-5 h-5 mr-3 text-green-600 dark:text-green-400" />
                             Profile
                           </Link>
                           <Link
                             href="/settings"
-                            className="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+                            className="flex items-center px-6 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gradient-to-r hover:from-green-50 hover:to-emerald-50 dark:hover:from-slate-700 dark:hover:to-slate-600 transition-all duration-200"
                           >
-                            <Cog6ToothIcon className="w-4 h-4 mr-3" />
+                            <Cog6ToothIcon className="w-5 h-5 mr-3 text-green-600 dark:text-green-400" />
                             Settings
                           </Link>
                         </div>
-                        <div className="border-t border-gray-200 dark:border-gray-700 py-2">
+                        <div className="border-t border-green-100 dark:border-slate-700 py-3">
                           <button
                             onClick={() => {
                               logout();
                               setUserMenuOpen(false);
                             }}
-                            className="flex items-center w-full px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
+                            className="flex items-center w-full px-6 py-3 text-sm text-red-600 dark:text-red-400 hover:bg-red-50/80 dark:hover:bg-red-900/20 transition-all duration-200"
                           >
-                            <ArrowRightOnRectangleIcon className="w-4 h-4 mr-3" />
+                            <ArrowRightOnRectangleIcon className="w-5 h-5 mr-3" />
                             Sign Out
                           </button>
                         </div>
@@ -306,16 +310,15 @@ export function Navbar() {
                 </div>
               ) : (
                 <div className="hidden md:flex items-center space-x-3">
-                  <Link href={ROUTES.LOGIN}>
-                    <Button variant="outline" size="sm">
-                      Sign In
-                    </Button>
-                  </Link>
-                  <Link href={ROUTES.REGISTER}>
-                    <Button variant="default" size="sm">
-                      Get Started
-                    </Button>
-                  </Link>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={login}
+                    disabled={loading}
+                    className="border-green-200 dark:border-slate-600 text-green-700 dark:text-green-400 hover:bg-green-50 dark:hover:bg-slate-700 hover:border-green-300 dark:hover:border-slate-500 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {loading ? 'Signing In...' : 'Sign In'}
+                  </Button>
                 </div>
               )
             )}
@@ -323,12 +326,12 @@ export function Navbar() {
             {/* Mobile Menu Button */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="lg:hidden p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
+              className="lg:hidden p-3 text-gray-500 hover:text-green-600 dark:text-gray-400 dark:hover:text-green-400 rounded-full hover:bg-green-50/80 dark:hover:bg-slate-700/50 transition-all duration-300 hover:scale-105 bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm shadow-lg shadow-green-100/30 dark:shadow-slate-900/30 border border-green-100/50 dark:border-slate-700/50"
             >
               {mobileMenuOpen ? (
-                <XMarkIcon className="w-6 h-6" />
+                <XMarkIcon className="w-5 h-5" />
               ) : (
-                <Bars3Icon className="w-6 h-6" />
+                <Bars3Icon className="w-5 h-5" />
               )}
             </button>
           </div>
@@ -348,12 +351,12 @@ export function Navbar() {
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
-              className="lg:hidden border-t border-gray-200 dark:border-gray-700"
+              className="lg:hidden border-t border-green-100 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl"
             >
-              <div className="py-4 space-y-2">
+              <div className="py-6 space-y-3 px-4">
                 {/* Mobile Search */}
                 {navbarConfig.showSearch && (
-                  <div className="px-4 mb-4">
+                  <div className="mb-6">
                     <NavbarSearch />
                   </div>
                 )}
@@ -364,10 +367,10 @@ export function Navbar() {
                     <Link
                       href={item.href}
                       className={`
-                        flex items-center px-4 py-3 text-base font-medium transition-colors
+                        flex items-center px-4 py-3 text-base font-medium transition-all duration-300 rounded-xl
                         ${isActiveLink(item.href)
-                          ? 'text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20'
-                          : 'text-gray-700 dark:text-gray-300'
+                          ? 'text-white bg-gradient-to-r from-green-500 to-emerald-600 shadow-lg shadow-green-500/30'
+                          : 'text-gray-700 dark:text-gray-300 hover:bg-green-50/80 dark:hover:bg-slate-700/50 hover:text-green-600 dark:hover:text-green-400'
                         }
                       `}
                       onClick={() => setMobileMenuOpen(false)}
@@ -376,12 +379,12 @@ export function Navbar() {
                       {item.label}
                     </Link>
                     {item.children && (
-                      <div className="ml-8 space-y-1">
+                      <div className="ml-8 space-y-2 mt-2">
                         {item.children.map((child) => (
                           <Link
                             key={child.href}
                             href={child.href}
-                            className="block px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-green-600 dark:hover:text-green-400"
+                            className="block px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-green-600 dark:hover:text-green-400 hover:bg-green-50/50 dark:hover:bg-slate-700/30 rounded-lg transition-all duration-200"
                             onClick={() => setMobileMenuOpen(false)}
                           >
                             {child.label}
@@ -394,30 +397,32 @@ export function Navbar() {
 
                 {/* Mobile Auth Section */}
                 {navbarConfig.showUserMenu && (
-                  <div className="px-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                  <div className="px-0 pt-6 border-t border-green-100 dark:border-slate-800 mt-6">
                     {isAuthenticated ? (
-                      <div className="space-y-3">
-                        <UserAvatar 
-                          user={user || undefined} 
-                          size="md" 
-                          showName 
-                          showEmail 
-                          className="py-2" 
-                        />
+                      <div className="space-y-4">
+                        <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-slate-800 dark:to-slate-700 rounded-xl p-4">
+                          <UserAvatar 
+                            user={user || undefined} 
+                            size="md" 
+                            showName 
+                            showEmail 
+                            className="py-2" 
+                          />
+                        </div>
                         <Link
                           href="/profile"
-                          className="flex items-center px-2 py-2 text-sm text-gray-700 dark:text-gray-300"
+                          className="flex items-center px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-green-50/80 dark:hover:bg-slate-700/50 rounded-xl transition-all duration-200"
                           onClick={() => setMobileMenuOpen(false)}
                         >
-                          <UserCircleIcon className="w-4 h-4 mr-3" />
+                          <UserCircleIcon className="w-5 h-5 mr-3 text-green-600 dark:text-green-400" />
                           Profile
                         </Link>
                         <Link
                           href="/settings"
-                          className="flex items-center px-2 py-2 text-sm text-gray-700 dark:text-gray-300"
+                          className="flex items-center px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-green-50/80 dark:hover:bg-slate-700/50 rounded-xl transition-all duration-200"
                           onClick={() => setMobileMenuOpen(false)}
                         >
-                          <Cog6ToothIcon className="w-4 h-4 mr-3" />
+                          <Cog6ToothIcon className="w-5 h-5 mr-3 text-green-600 dark:text-green-400" />
                           Settings
                         </Link>
                         <button
@@ -425,30 +430,26 @@ export function Navbar() {
                             logout();
                             setMobileMenuOpen(false);
                           }}
-                          className="flex items-center w-full px-2 py-2 text-sm text-red-600 dark:text-red-400"
+                          className="flex items-center w-full px-4 py-3 text-sm text-red-600 dark:text-red-400 hover:bg-red-50/80 dark:hover:bg-red-900/20 rounded-xl transition-all duration-200"
                         >
-                          <ArrowRightOnRectangleIcon className="w-4 h-4 mr-3" />
+                          <ArrowRightOnRectangleIcon className="w-5 h-5 mr-3" />
                           Sign Out
                         </button>
                       </div>
                     ) : (
                       <div className="space-y-3">
-                        <Link
-                          href={ROUTES.LOGIN}
-                          onClick={() => setMobileMenuOpen(false)}
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={() => {
+                            login();
+                            setMobileMenuOpen(false);
+                          }}
+                          disabled={loading}
+                          className="w-full border-green-200 dark:border-slate-600 text-green-700 dark:text-green-400 hover:bg-green-50 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                          <Button variant="outline" size="sm" className="w-full">
-                            Sign In
-                          </Button>
-                        </Link>
-                        <Link
-                          href={ROUTES.REGISTER}
-                          onClick={() => setMobileMenuOpen(false)}
-                        >
-                          <Button variant="default" size="sm" className="w-full">
-                            Get Started
-                          </Button>
-                        </Link>
+                          {loading ? 'Signing In...' : 'Sign In'}
+                        </Button>
                       </div>
                     )}
                   </div>

@@ -5,6 +5,7 @@ import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useRouter } from 'next/navigation';
 import {
   PhotoIcon,
   XMarkIcon,
@@ -50,9 +51,9 @@ const enhancedMaterialSchema = z.object({
   quantity: z.number().min(1, 'Quantity must be at least 1'),
   unit: z.string().min(1, 'Unit is required'),
   condition: z.nativeEnum(QualityGrade),
-  expectedPrice: z.number().min(0, 'Price must be positive'),
-  minimumPrice: z.number().min(0, 'Minimum price must be positive'),
-  negotiable: z.boolean(),
+  expectedPrice: z.number().min(0, 'Price must be positive').optional(),
+  minimumPrice: z.number().min(0, 'Minimum price must be positive').optional(),
+  negotiable: z.boolean().optional(),
   photos: z.array(z.instanceof(File)).min(1, 'At least one photo is required').max(10, 'Maximum 10 photos allowed'),
   deliveryMethod: z.enum(['agent_visit', 'drop_off']),
   location: z.object({
@@ -108,7 +109,6 @@ const STEPS = [
   { id: 'photos', title: 'Photos', description: 'Upload material photos' },
   { id: 'delivery', title: 'Delivery Method', description: 'Choose verification location' },
   { id: 'location', title: 'Location', description: 'Pickup location details' },
-  { id: 'pricing', title: 'Pricing', description: 'Set your pricing expectations' },
   { id: 'specifications', title: 'Specifications', description: 'Additional material details' },
   { id: 'review', title: 'Review', description: 'Review and submit' }
 ];
@@ -139,6 +139,7 @@ interface StandaloneMaterialRegistrationProps {
 }
 
 export default function StandaloneMaterialRegistration({ onComplete, supplierId }: StandaloneMaterialRegistrationProps) {
+  const router = useRouter();
   const [currentStep, setCurrentStep] = useState(0);
   const [uploadedPhotos, setUploadedPhotos] = useState<File[]>([]);
   const [photoPreviews, setPhotoPreviews] = useState<string[]>([]);
@@ -150,8 +151,8 @@ export default function StandaloneMaterialRegistration({ onComplete, supplierId 
   // Log the supplier ID to debug
   console.log('📌 StandaloneMaterialRegistration received supplierId:', supplierId);
 
-  // No Redux, no auth checks
-  const loading = { creating: false };
+  // Loading state
+  const [loading, setLoading] = useState({ creating: false });
 
   const {
     register,
@@ -170,12 +171,20 @@ export default function StandaloneMaterialRegistration({ onComplete, supplierId 
       photos: [],
       deliveryMethod: 'agent_visit'
     },
-    mode: 'onChange'
+    mode: 'all' // Validate on both onChange and onBlur
   });
 
   const watchedCategory = watch('category');
   const watchedCondition = watch('condition');
   const watchedDeliveryMethod = watch('deliveryMethod');
+  
+  // Trigger full validation when reaching review step
+  useEffect(() => {
+    if (currentStep === 5) { // Review step
+      // Just validate, don't submit
+      trigger();
+    }
+  }, [currentStep, trigger]);
 
   // Photo upload handlers
   const handleFileUpload = useCallback((files: FileList | null) => {
@@ -200,7 +209,8 @@ export default function StandaloneMaterialRegistration({ onComplete, supplierId 
     const updatedPhotos = [...uploadedPhotos, ...newFiles];
     setUploadedPhotos(updatedPhotos);
     setValue('photos', updatedPhotos);
-  }, [uploadedPhotos, setValue]);
+    trigger('photos'); // Trigger validation for photos field
+  }, [uploadedPhotos, setValue, trigger]);
 
   const removePhoto = (index: number) => {
     const newPhotos = uploadedPhotos.filter((_, i) => i !== index);
@@ -208,11 +218,14 @@ export default function StandaloneMaterialRegistration({ onComplete, supplierId 
     setUploadedPhotos(newPhotos);
     setPhotoPreviews(newPreviews);
     setValue('photos', newPhotos);
+    trigger('photos'); // Trigger validation for photos field
   };
 
   // Submit material to backend
   const submitMaterial = async () => {
     if (uploadedPhotos.length === 0) return;
+    
+    setLoading({ creating: true });
     
     try {
       // Get current form data
@@ -236,9 +249,9 @@ export default function StandaloneMaterialRegistration({ onComplete, supplierId 
           condition: formData.condition,
           location: formData.location,
           pricing: {
-            expectedPrice: formData.expectedPrice,
-            minimumPrice: formData.minimumPrice,
-            negotiable: formData.negotiable || true,
+            expectedPrice: 150,
+            minimumPrice: 150,
+            negotiable: true,
             currency: "LKR"
           },
           specifications: formData.specifications,
@@ -287,6 +300,8 @@ export default function StandaloneMaterialRegistration({ onComplete, supplierId 
     } catch (error) {
       console.error('Submission failed:', error);
       return null;
+    } finally {
+      setLoading({ creating: false });
     }
   };
 
@@ -323,8 +338,7 @@ export default function StandaloneMaterialRegistration({ onComplete, supplierId 
       case 1: return ['photos'];
       case 2: return ['deliveryMethod'];
       case 3: return ['location'];
-      case 4: return ['expectedPrice', 'minimumPrice', 'negotiable'];
-      case 5: return ['specifications'];
+      case 4: return ['specifications'];
       default: return [];
     }
   };
@@ -344,15 +358,27 @@ export default function StandaloneMaterialRegistration({ onComplete, supplierId 
       const supplierId = result.supplierId || 'SUPPLIER_MOCK';
       const workflowId = result.workflowId || 'WORKFLOW_PENDING';
       
+      // Store supplier ID in localStorage for fetching materials later
+      if (supplierId) {
+        localStorage.setItem('supplierId', supplierId);
+      }
+      
       // Call completion callback only on success
       console.log('📋 Material submitted successfully:', data);
       console.log('📊 Submission result:', result);
       
       onComplete?.(data, result);
       
+      // Navigate to materials page after 2 seconds
+      setTimeout(() => {
+        router.push('/supplier/materials');
+      }, 2000);
+      
     } catch (error) {
       console.error('❌ Failed to submit material:', error);
       console.error('Failed to submit material. Please try again.');
+    } finally {
+      setLoading({ creating: false });
     }
   };
 
@@ -435,7 +461,7 @@ export default function StandaloneMaterialRegistration({ onComplete, supplierId 
       </div>
 
       {/* Form Content */}
-      <form onSubmit={handleSubmit(onSubmit)}>
+      <form onSubmit={(e) => e.preventDefault()}>
         <AnimatePresence mode="wait">
           <motion.div
             key={currentStep}
@@ -640,18 +666,8 @@ export default function StandaloneMaterialRegistration({ onComplete, supplierId 
               />
             )}
 
-            {/* Pricing Step */}
-            {currentStep === 4 && (
-              <PricingStep
-                register={register}
-                control={control}
-                errors={errors}
-                watchedCondition={watchedCondition}
-              />
-            )}
-
             {/* Specifications Step */}
-            {currentStep === 5 && (
+            {currentStep === 4 && (
               <SpecificationsStep
                 register={register}
                 control={control}
@@ -667,7 +683,7 @@ export default function StandaloneMaterialRegistration({ onComplete, supplierId 
 
 
             {/* Review Step */}
-            {currentStep === 6 && (
+            {currentStep === 5 && (
               <ReviewStep
                 data={getValues()}
                 photoPreviews={photoPreviews}
@@ -704,8 +720,13 @@ export default function StandaloneMaterialRegistration({ onComplete, supplierId 
               </button>
             ) : (
               <button
-                type="submit"
+                type="button"
                 disabled={loading.creating || !isValid}
+                onClick={(e) => {
+                  e.preventDefault();
+                  console.log('Submit clicked - loading:', loading.creating, 'isValid:', isValid);
+                  handleSubmit(onSubmit)();
+                }}
                 className="inline-flex items-center px-6 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading.creating ? (
@@ -939,7 +960,7 @@ function LocationStep({ register, control, errors, setValue, deliveryMethod }: a
   const handleUseCurrentLocation = () => {
     if ('geolocation' in navigator && deliveryMethod === 'agent_visit') {
       navigator.geolocation.getCurrentPosition(
-        (position) => {
+        async (position) => {
           const coords = {
             lat: position.coords.latitude,
             lng: position.coords.longitude
@@ -950,6 +971,9 @@ function LocationStep({ register, control, errors, setValue, deliveryMethod }: a
             latitude: coords.lat,
             longitude: coords.lng
           });
+          
+          // Also fetch address for current location
+          await handleMapClick(coords.lat, coords.lng);
         },
         (error) => {
           console.error('Error getting location:', error);
@@ -960,9 +984,62 @@ function LocationStep({ register, control, errors, setValue, deliveryMethod }: a
   };
 
   // Handle map click for agent visit location
-  const handleMapClick = (lat: number, lng: number) => {
+  const handleMapClick = async (lat: number, lng: number) => {
     setMarkerPosition({ lat, lng });
     setValue('location.coordinates', { latitude: lat, longitude: lng });
+    
+    // Perform reverse geocoding to get address details
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`
+      );
+      
+      if (response.ok) {
+        const data = await response.json();
+        
+        // Extract address components
+        const address = data.address || {};
+        const displayName = data.display_name || '';
+        
+        // Build full address
+        let fullAddress = '';
+        const addressParts = [];
+        
+        if (address.house_number) addressParts.push(address.house_number);
+        if (address.road) addressParts.push(address.road);
+        if (address.neighbourhood) addressParts.push(address.neighbourhood);
+        if (address.suburb) addressParts.push(address.suburb);
+        if (address.city || address.town || address.village) {
+          addressParts.push(address.city || address.town || address.village);
+        }
+        
+        fullAddress = addressParts.join(', ') || displayName;
+        
+        // Update form fields
+        setValue('location.address', fullAddress);
+        
+        // Set postal code if available
+        if (address.postcode) {
+          setValue('location.postalCode', address.postcode);
+        }
+        
+        // Set city
+        if (address.city || address.town || address.village) {
+          setValue('location.city', address.city || address.town || address.village);
+        }
+        
+        // Set district and province if available in Sri Lanka
+        if (address.state_district) {
+          setValue('location.district', address.state_district);
+        }
+        if (address.state) {
+          setValue('location.province', address.state);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching address:', error);
+      // Continue without address - coordinates are still saved
+    }
   };
 
   // Initialize warehouse coordinates on mount or delivery method change
@@ -1232,75 +1309,6 @@ function LocationStep({ register, control, errors, setValue, deliveryMethod }: a
   );
 }
 
-function PricingStep({ register, control, errors, watchedCondition }: any) {
-  return (
-    <div className="space-y-6">
-      <div>
-        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
-          Pricing Information
-        </h3>
-
-        <div className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Expected Price (LKR) *
-              </label>
-              <input
-                {...register('expectedPrice', { valueAsNumber: true })}
-                type="number"
-                min="0"
-                step="0.01"
-                placeholder="0.00"
-                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-              />
-              {errors.expectedPrice && (
-                <p className="mt-1 text-sm text-red-600">{errors.expectedPrice.message}</p>
-              )}
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Minimum Price (LKR) *
-              </label>
-              <input
-                {...register('minimumPrice', { valueAsNumber: true })}
-                type="number"
-                min="0"
-                step="0.01"
-                placeholder="0.00"
-                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-              />
-              {errors.minimumPrice && (
-                <p className="mt-1 text-sm text-red-600">{errors.minimumPrice.message}</p>
-              )}
-            </div>
-          </div>
-
-          <div>
-            <Controller
-              name="negotiable"
-              control={control}
-              render={({ field }) => (
-                <label className="flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={field.value}
-                    onChange={field.onChange}
-                    className="rounded border-gray-300 text-emerald-600 shadow-sm focus:border-emerald-300 focus:ring focus:ring-emerald-200 focus:ring-opacity-50"
-                  />
-                  <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">
-                    Price is negotiable
-                  </span>
-                </label>
-              )}
-            />
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 function SpecificationsStep({ register, control, errors, tags, tagInput, onTagInputChange, onAddTag, onRemoveTag }: any) {
   return (
@@ -1428,12 +1436,6 @@ function ReviewStep({ data, photoPreviews, deliveryMethod }: any) {
                 <dt className="text-gray-600 dark:text-gray-400">Quantity</dt>
                 <dd className="font-medium text-gray-900 dark:text-white">
                   {data.quantity} {data.unit}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-gray-600 dark:text-gray-400">Expected Price</dt>
-                <dd className="font-medium text-gray-900 dark:text-white">
-                  LKR {data.expectedPrice?.toLocaleString()}
                 </dd>
               </div>
               <div>

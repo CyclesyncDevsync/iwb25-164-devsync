@@ -27,6 +27,11 @@ org = "ballerinax"
 name = "postgresql"
 version = "1.16.1"
 
+[[dependency]]
+org = "ballerinax"
+name = "newsapi"
+version = "1.5.1"
+
 [[platform.java17.dependency]]
 groupId = "org.postgresql"
 artifactId = "postgresql"
