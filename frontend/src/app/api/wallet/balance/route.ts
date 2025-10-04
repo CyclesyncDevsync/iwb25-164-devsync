@@ -4,10 +4,16 @@ const WALLET_API_URL = process.env.NEXT_PUBLIC_WALLET_API_URL || 'http://localho
 
 export async function GET(request: NextRequest) {
   try {
+    // Debug: Log cookies for wallet API
+    console.log('=== WALLET API DEBUG ===');
+    console.log('Wallet cookies:', request.cookies.getAll().map(c => ({ name: c.name, hasValue: !!c.value })));
+
     // Get ID token from HTTP-only cookie
     const idToken = request.cookies.get('asgardeo_id_token')?.value;
-    
+    console.log('Wallet ID Token found:', idToken ? 'Yes' : 'No');
+
     if (!idToken) {
+      console.log('Wallet: No asgardeo_id_token cookie found');
       return NextResponse.json(
         { error: 'Unauthorized', message: 'Please login to access wallet features' },
         { status: 401 }
