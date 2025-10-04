@@ -3,11 +3,11 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { format } from 'date-fns';
+import { ChatModal } from './ChatModal';
 import {
   XMarkIcon,
   MapPinIcon,
   ClockIcon,
-  CurrencyDollarIcon,
   ScaleIcon,
   PhotoIcon,
   DocumentTextIcon,
@@ -15,7 +15,9 @@ import {
   TruckIcon,
   BuildingOfficeIcon,
   CheckCircleIcon,
-  XCircleIcon
+  XCircleIcon,
+  PhoneIcon,
+  ChatBubbleLeftRightIcon
 } from '@heroicons/react/24/outline';
 
 interface MaterialDetailsModalProps {
@@ -28,10 +30,10 @@ export function MaterialDetailsModal({ assignment, isOpen, onClose }: MaterialDe
   const [analyzingPhoto, setAnalyzingPhoto] = useState<number | null>(null);
   const [photoAnalysisResults, setPhotoAnalysisResults] = useState<{[key: number]: any}>({});
   const [isReviewing, setIsReviewing] = useState(false);
-  const [reviewNotes, setReviewNotes] = useState('');
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [toastType, setToastType] = useState<'success' | 'error'>('success');
+  const [showChatModal, setShowChatModal] = useState(false);
 
   if (!isOpen || !assignment) return null;
 
@@ -61,37 +63,57 @@ export function MaterialDetailsModal({ assignment, isOpen, onClose }: MaterialDe
     setTimeout(() => setShowToast(false), 3000);
   };
 
-  const handleAccept = () => {
+  const handleTakeAppointment = async () => {
     setIsReviewing(true);
-    // Simulate API call
-    setTimeout(() => {
-      showNotification('Material supply has been accepted successfully!', 'success');
-      setIsReviewing(false);
-      // Update the assignment status locally
-      if (assignment) {
-        assignment.status = 'completed';
+    
+    try {
+      // Get the auth token first
+      const authResponse = await fetch('/api/auth/me');
+      if (!authResponse.ok) {
+        showNotification('Failed to get authentication token', 'error');
+        setIsReviewing(false);
+        return;
       }
-      setTimeout(() => onClose(), 1500);
-    }, 1000);
+      
+      const authData = await authResponse.json();
+      const idToken = authData.idToken;
+      
+      // Update the submission status in the backend
+      const response = await fetch(`/backend/material-submissions/${assignment.materialId}/status`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${idToken}`
+        },
+        body: JSON.stringify({
+          submission_status: 'in_progress',
+          additional_details: JSON.stringify({
+            startedAt: new Date().toISOString(),
+            startedBy: authData.userId || authData.sub
+          })
+        }),
+      });
+
+      if (response.ok) {
+        showNotification('Appointment taken successfully! Please contact the supplier.', 'success');
+        // Update the assignment status locally
+        if (assignment) {
+          assignment.status = 'in-progress';
+        }
+        setTimeout(() => onClose(), 1500);
+      } else {
+        console.error('Failed to update assignment status:', response.status);
+        showNotification('Failed to update assignment status. Please try again.', 'error');
+      }
+    } catch (error) {
+      console.error('Error updating assignment status:', error);
+      showNotification('An error occurred. Please try again.', 'error');
+    } finally {
+      setIsReviewing(false);
+    }
   };
 
-  const handleReject = () => {
-    if (!reviewNotes.trim()) {
-      showNotification('Please provide a reason for rejection', 'error');
-      return;
-    }
-    setIsReviewing(true);
-    // Simulate API call
-    setTimeout(() => {
-      showNotification('Material supply has been rejected', 'error');
-      setIsReviewing(false);
-      // Update the assignment status locally
-      if (assignment) {
-        assignment.status = 'rejected';
-      }
-      setTimeout(() => onClose(), 1500);
-    }, 1000);
-  };
+  // Removed reject functionality - agents should contact suppliers before making rejection decisions
 
   const analyzePhoto = async (photo: string, index: number) => {
     setAnalyzingPhoto(index);
@@ -209,16 +231,6 @@ export function MaterialDetailsModal({ assignment, isOpen, onClose }: MaterialDe
                 <div>{getStatusBadge(assignment.status)}</div>
               </div>
               <div className="flex justify-between">
-                <span className="text-sm text-gray-500 dark:text-gray-400">Priority:</span>
-                <span className={`text-sm font-medium px-2 py-1 rounded-full ${
-                  assignment.urgency === 'high' ? 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400' :
-                  assignment.urgency === 'medium' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400' :
-                  'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
-                }`}>
-                  {assignment.urgency} priority
-                </span>
-              </div>
-              <div className="flex justify-between">
                 <span className="text-sm text-gray-500 dark:text-gray-400">Assigned:</span>
                 <span className="text-sm font-medium text-gray-900 dark:text-white">
                   {format(new Date(assignment.assignedAt), 'PPP')}
@@ -240,13 +252,6 @@ export function MaterialDetailsModal({ assignment, isOpen, onClose }: MaterialDe
                   </span>
                 </div>
               )}
-              <div className="flex justify-between">
-                <span className="text-sm text-gray-500 dark:text-gray-400">Estimated Time:</span>
-                <div className="flex items-center text-sm font-medium text-gray-900 dark:text-white">
-                  <ClockIcon className="w-4 h-4 mr-1" />
-                  {assignment.estimatedTime} minutes
-                </div>
-              </div>
             </div>
           </div>
 
@@ -260,10 +265,6 @@ export function MaterialDetailsModal({ assignment, isOpen, onClose }: MaterialDe
               <div>
                 <span className="text-sm text-gray-500 dark:text-gray-400">Supplier Name:</span>
                 <p className="text-sm font-medium text-gray-900 dark:text-white">{assignment.supplierName}</p>
-              </div>
-              <div>
-                <span className="text-sm text-gray-500 dark:text-gray-400">Supplier ID:</span>
-                <p className="text-sm font-medium text-gray-900 dark:text-white">{assignment.supplierId}</p>
               </div>
             </div>
           </div>
@@ -332,74 +333,114 @@ export function MaterialDetailsModal({ assignment, isOpen, onClose }: MaterialDe
             </div>
           </div>
 
-          {/* Pricing Information */}
-          <div className="space-y-4">
-            <div className="flex items-center gap-2">
-              <CurrencyDollarIcon className="w-5 h-5 text-agent-DEFAULT" />
-              <h3 className="text-lg font-medium text-gray-900 dark:text-white">Pricing</h3>
-            </div>
-            <div className="space-y-3">
-              <div className="flex justify-between">
-                <span className="text-sm text-gray-500 dark:text-gray-400">Expected Price:</span>
-                <span className="text-sm font-medium text-gray-900 dark:text-white">
-                  ${assignment.materialDetails.expectedPrice?.toLocaleString() || 'N/A'}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-sm text-gray-500 dark:text-gray-400">Minimum Price:</span>
-                <span className="text-sm font-medium text-gray-900 dark:text-white">
-                  ${assignment.materialDetails.minimumPrice?.toLocaleString() || 'N/A'}
-                </span>
-              </div>
-            </div>
-          </div>
 
           {/* Location Information */}
           <div className="space-y-4 md:col-span-2">
             <div className="flex items-center gap-2">
-              <MapPinIcon className="w-5 h-5 text-agent-DEFAULT" />
-              <h3 className="text-lg font-medium text-gray-900 dark:text-white">Location Details</h3>
+              {assignment.materialDetails.deliveryMethod === 'drop_off' ? (
+                <BuildingOfficeIcon className="w-5 h-5 text-agent-DEFAULT" />
+              ) : (
+                <MapPinIcon className="w-5 h-5 text-agent-DEFAULT" />
+              )}
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+                {assignment.materialDetails.deliveryMethod === 'drop_off' ? 'Drop-off Location' : 'Pickup Location'}
+              </h3>
             </div>
             <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4">
               <div className="space-y-3">
-                <div>
-                  <span className="text-sm text-gray-500 dark:text-gray-400">Address:</span>
-                  <p className="text-sm font-medium text-gray-900 dark:text-white">{assignment.materialLocation.address}</p>
-                </div>
-                {assignment.materialLocation.city && (
-                  <div>
-                    <span className="text-sm text-gray-500 dark:text-gray-400">City:</span>
-                    <p className="text-sm font-medium text-gray-900 dark:text-white">{assignment.materialLocation.city}</p>
+                {/* Show warehouse info for drop-offs */}
+                {assignment.materialDetails.deliveryMethod === 'drop_off' && assignment.warehouse ? (
+                  <>
+                    {assignment.warehouse.name && (
+                      <div>
+                        <span className="text-sm text-gray-500 dark:text-gray-400">Warehouse Name:</span>
+                        <p className="text-sm font-medium text-gray-900 dark:text-white">{assignment.warehouse.name}</p>
+                      </div>
+                    )}
+                    {assignment.warehouse.address && (
+                      <div>
+                        <span className="text-sm text-gray-500 dark:text-gray-400">Warehouse Address:</span>
+                        <p className="text-sm font-medium text-gray-900 dark:text-white">{assignment.warehouse.address}</p>
+                      </div>
+                    )}
+                    {assignment.warehouse.phone && (
+                      <div>
+                        <span className="text-sm text-gray-500 dark:text-gray-400">Phone:</span>
+                        <p className="text-sm font-medium text-gray-900 dark:text-white">{assignment.warehouse.phone}</p>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    {/* Show material location for agent visits */}
+                    <div>
+                      <span className="text-sm text-gray-500 dark:text-gray-400">Address:</span>
+                      <p className="text-sm font-medium text-gray-900 dark:text-white">{assignment.materialLocation.address}</p>
+                    </div>
+                    {assignment.materialLocation.city && (
+                      <div>
+                        <span className="text-sm text-gray-500 dark:text-gray-400">City:</span>
+                        <p className="text-sm font-medium text-gray-900 dark:text-white">{assignment.materialLocation.city}</p>
+                      </div>
+                    )}
+                    {assignment.materialLocation.district && (
+                      <div>
+                        <span className="text-sm text-gray-500 dark:text-gray-400">District:</span>
+                        <p className="text-sm font-medium text-gray-900 dark:text-white">{assignment.materialLocation.district}</p>
+                      </div>
+                    )}
+                    {assignment.materialLocation.province && (
+                      <div>
+                        <span className="text-sm text-gray-500 dark:text-gray-400">Province:</span>
+                        <p className="text-sm font-medium text-gray-900 dark:text-white">{assignment.materialLocation.province}</p>
+                      </div>
+                    )}
+                    {assignment.materialLocation.postalCode && (
+                      <div>
+                        <span className="text-sm text-gray-500 dark:text-gray-400">Postal Code:</span>
+                        <p className="text-sm font-medium text-gray-900 dark:text-white">{assignment.materialLocation.postalCode}</p>
+                      </div>
+                    )}
+                  </>
+                )}
+                
+                {/* Show coordinates */}
+                {(assignment.materialLocation.latitude && assignment.materialLocation.longitude) && (
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <span className="text-gray-500 dark:text-gray-400">Latitude:</span>
+                      <p className="font-medium text-gray-900 dark:text-white">{assignment.materialLocation.latitude.toFixed(6)}</p>
+                    </div>
+                    <div>
+                      <span className="text-gray-500 dark:text-gray-400">Longitude:</span>
+                      <p className="font-medium text-gray-900 dark:text-white">{assignment.materialLocation.longitude.toFixed(6)}</p>
+                    </div>
                   </div>
                 )}
-                {assignment.materialLocation.district && (
-                  <div>
-                    <span className="text-sm text-gray-500 dark:text-gray-400">District:</span>
-                    <p className="text-sm font-medium text-gray-900 dark:text-white">{assignment.materialLocation.district}</p>
+                
+                {/* Map */}
+                {(assignment.materialLocation.latitude && assignment.materialLocation.longitude) && (
+                  <div className="mt-4">
+                    <div className="h-48 bg-gray-200 dark:bg-gray-700 rounded-lg overflow-hidden">
+                      <iframe
+                        width="100%"
+                        height="100%"
+                        frameBorder="0"
+                        style={{ border: 0 }}
+                        src={`https://www.openstreetmap.org/export/embed.html?bbox=${assignment.materialLocation.longitude - 0.002},${assignment.materialLocation.latitude - 0.002},${assignment.materialLocation.longitude + 0.002},${assignment.materialLocation.latitude + 0.002}&marker=${assignment.materialLocation.latitude},${assignment.materialLocation.longitude}&layer=mapnik`}
+                        allowFullScreen
+                      ></iframe>
+                    </div>
+                    <a
+                      href={`https://www.openstreetmap.org/?mlat=${assignment.materialLocation.latitude}&mlon=${assignment.materialLocation.longitude}#map=16/${assignment.materialLocation.latitude}/${assignment.materialLocation.longitude}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 mt-2 inline-block"
+                    >
+                      View larger map →
+                    </a>
                   </div>
                 )}
-                {assignment.materialLocation.province && (
-                  <div>
-                    <span className="text-sm text-gray-500 dark:text-gray-400">Province:</span>
-                    <p className="text-sm font-medium text-gray-900 dark:text-white">{assignment.materialLocation.province}</p>
-                  </div>
-                )}
-                {assignment.materialLocation.postalCode && (
-                  <div>
-                    <span className="text-sm text-gray-500 dark:text-gray-400">Postal Code:</span>
-                    <p className="text-sm font-medium text-gray-900 dark:text-white">{assignment.materialLocation.postalCode}</p>
-                  </div>
-                )}
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <span className="text-gray-500 dark:text-gray-400">Latitude:</span>
-                    <p className="font-medium text-gray-900 dark:text-white">{assignment.materialLocation.latitude}</p>
-                  </div>
-                  <div>
-                    <span className="text-gray-500 dark:text-gray-400">Longitude:</span>
-                    <p className="font-medium text-gray-900 dark:text-white">{assignment.materialLocation.longitude}</p>
-                  </div>
-                </div>
                 <div className="flex justify-center pt-2">
                   <button
                     onClick={() => {
@@ -504,61 +545,7 @@ export function MaterialDetailsModal({ assignment, isOpen, onClose }: MaterialDe
             </div>
           )}
 
-          {/* Warehouse Information */}
-          {(assignment.warehouse?.name || assignment.warehouse?.address || assignment.warehouse?.phone) && (
-            <div className="space-y-4 md:col-span-2">
-              <div className="flex items-center gap-2">
-                <BuildingOfficeIcon className="w-5 h-5 text-agent-DEFAULT" />
-                <h3 className="text-lg font-medium text-gray-900 dark:text-white">Warehouse Details</h3>
-              </div>
-              <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4">
-                <div className="space-y-3">
-                  {assignment.warehouse.name && (
-                    <div>
-                      <span className="text-sm text-gray-500 dark:text-gray-400">Warehouse Name:</span>
-                      <p className="text-sm font-medium text-gray-900 dark:text-white">{assignment.warehouse.name}</p>
-                    </div>
-                  )}
-                  {assignment.warehouse.address && (
-                    <div>
-                      <span className="text-sm text-gray-500 dark:text-gray-400">Address:</span>
-                      <p className="text-sm font-medium text-gray-900 dark:text-white">{assignment.warehouse.address}</p>
-                    </div>
-                  )}
-                  {assignment.warehouse.phone && (
-                    <div>
-                      <span className="text-sm text-gray-500 dark:text-gray-400">Phone:</span>
-                      <p className="text-sm font-medium text-gray-900 dark:text-white">{assignment.warehouse.phone}</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
 
-          {/* Transaction Info */}
-          {(assignment.transactionId || assignment.workflowId) && (
-            <div className="space-y-4 md:col-span-2">
-              <div className="flex items-center gap-2">
-                <DocumentTextIcon className="w-5 h-5 text-agent-DEFAULT" />
-                <h3 className="text-lg font-medium text-gray-900 dark:text-white">Transaction Details</h3>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                {assignment.transactionId && (
-                  <div>
-                    <span className="text-sm text-gray-500 dark:text-gray-400">Transaction ID:</span>
-                    <p className="text-sm font-medium text-gray-900 dark:text-white font-mono">{assignment.transactionId}</p>
-                  </div>
-                )}
-                {assignment.workflowId && (
-                  <div>
-                    <span className="text-sm text-gray-500 dark:text-gray-400">Workflow ID:</span>
-                    <p className="text-sm font-medium text-gray-900 dark:text-white font-mono">{assignment.workflowId}</p>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
 
           {/* Material Photos */}
           {assignment.photos && Array.isArray(assignment.photos) && assignment.photos.length > 0 && (
@@ -678,40 +665,8 @@ export function MaterialDetailsModal({ assignment, isOpen, onClose }: MaterialDe
             </div>
           )}
 
-          {/* Notes */}
-          {assignment.notes && (
-            <div className="space-y-4 md:col-span-2">
-              <div className="flex items-center gap-2">
-                <DocumentTextIcon className="w-5 h-5 text-agent-DEFAULT" />
-                <h3 className="text-lg font-medium text-gray-900 dark:text-white">Notes</h3>
-              </div>
-              <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4">
-                <p className="text-sm text-gray-900 dark:text-white">{assignment.notes}</p>
-              </div>
-            </div>
-          )}
         </div>
 
-        {/* Review Section */}
-        {assignment.status === 'pending' && (
-          <div className="mt-6 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg md:col-span-2">
-            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-3">Review Material Supply</h3>
-            <div className="space-y-3">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Review Notes (Required for rejection)
-                </label>
-                <textarea
-                  value={reviewNotes}
-                  onChange={(e) => setReviewNotes(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:ring-agent-DEFAULT focus:border-agent-DEFAULT dark:bg-gray-700 dark:text-white"
-                  rows={3}
-                  placeholder="Add any notes about this material supply..."
-                />
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* Action Buttons */}
         <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
@@ -723,29 +678,45 @@ export function MaterialDetailsModal({ assignment, isOpen, onClose }: MaterialDe
               {assignment.status === 'pending' ? (
                 <>
                   <button
-                    onClick={handleReject}
-                    disabled={isReviewing}
-                    className="px-6 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+                    onClick={onClose}
+                    className="px-6 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600 rounded-lg transition-colors"
                   >
-                    {isReviewing ? (
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
-                    ) : (
-                      <XCircleIcon className="w-4 h-4 mr-2" />
-                    )}
-                    Reject
+                    Close
                   </button>
                   <button
-                    onClick={handleAccept}
+                    onClick={handleTakeAppointment}
                     disabled={isReviewing}
-                    className="px-6 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+                    className="px-6 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
                   >
                     {isReviewing ? (
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
                     ) : (
                       <CheckCircleIcon className="w-4 h-4 mr-2" />
                     )}
-                    Accept
+                    Take the Appointment
                   </button>
+                </>
+              ) : assignment.status === 'in-progress' ? (
+                <>
+                  <div className="flex items-center gap-2 text-orange-600 dark:text-orange-400">
+                    <PhoneIcon className="w-5 h-5" />
+                    <span className="font-medium">Please contact the supplier to proceed with the appointment.</span>
+                  </div>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => setShowChatModal(true)}
+                      className="px-6 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors flex items-center"
+                    >
+                      <ChatBubbleLeftRightIcon className="w-4 h-4 mr-2" />
+                      Chat with Supplier
+                    </button>
+                    <button
+                      onClick={onClose}
+                      className="px-6 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600 rounded-lg transition-colors"
+                    >
+                      Close
+                    </button>
+                  </div>
                 </>
               ) : (
                 <button
@@ -780,6 +751,17 @@ export function MaterialDetailsModal({ assignment, isOpen, onClose }: MaterialDe
           <span className="font-medium">{toastMessage}</span>
         </motion.div>
       )}
+
+      {/* Chat Modal */}
+      <ChatModal
+        isOpen={showChatModal}
+        onClose={() => setShowChatModal(false)}
+        assignment={assignment}
+        supplierName={assignment.supplierName || 'Supplier'}
+        supplierId={assignment.supplierId}
+        materialTitle={assignment.materialDetails.title}
+        materialId={assignment.materialId}
+      />
     </div>
   );
 }

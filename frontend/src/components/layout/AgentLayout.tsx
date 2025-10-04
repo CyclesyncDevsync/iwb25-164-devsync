@@ -45,7 +45,7 @@ const AgentLayout: React.FC<AgentLayoutProps> = ({ children }) => {
       current: cleanPathname === '/agent'
     },
     {
-      name: 'Verify Materials',
+      name: 'Assigned Tasks',
       href: '/agent/verify',
       icon: DocumentCheckIcon,
       current: cleanPathname.startsWith('/agent/verify')
@@ -410,6 +410,7 @@ const AgentLayout: React.FC<AgentLayoutProps> = ({ children }) => {
         <main className="flex-1">
           {children}
         </main>
+
 
       </div>
 

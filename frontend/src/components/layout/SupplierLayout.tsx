@@ -17,12 +17,14 @@ import {
   UserCircleIcon,
   XMarkIcon,
   ArrowRightOnRectangleIcon
+  ChatBubbleLeftRightIcon
 } from '@heroicons/react/24/outline';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAppSelector, useAppDispatch } from '../../hooks/redux';
 import { logout } from '../../store/slices/authSlice';
 import { useNotifications } from '../../hooks/useNotifications';
 import { SupplierType } from '../../types/supplier';
+import { useAuth } from '../../hooks/useAuth';
 
 interface SupplierLayoutProps {
   children: React.ReactNode;
@@ -38,6 +40,47 @@ const SupplierLayout: React.FC<SupplierLayoutProps> = ({ children }) => {
 
   // Clean pathname by removing query parameters
   const cleanPathname = pathname?.split('?')[0] || '';
+
+  const { user } = useAuth();
+  const [unreadMessageCount, setUnreadMessageCount] = useState(0);
+
+  // Fetch unread message count
+  useEffect(() => {
+    const fetchUnreadCount = async () => {
+      if (!user?.asgardeoId && !user?.sub) return;
+
+      try {
+        const authResponse = await fetch('/api/auth/me');
+        if (!authResponse.ok) return;
+
+        const authData = await authResponse.json();
+        const idToken = authData.idToken;
+        const supplierId = authData.user?.asgardeoId || authData.user?.sub || authData.userId;
+
+        const response = await fetch(`/backend/chat/rooms/supplier/${supplierId}/unread-count`, {
+          headers: {
+            'Authorization': `Bearer ${idToken}`
+          }
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setUnreadMessageCount(data.unread_count || 0);
+        }
+      } catch (error) {
+        console.error('Error fetching unread count:', error);
+      }
+    };
+
+    // Fetch initially
+    fetchUnreadCount();
+
+    // Poll every 10 seconds
+    const interval = setInterval(fetchUnreadCount, 10000);
+    return () => clearInterval(interval);
+  }, [user]);
+
+ 
 
   const navigationItems = useMemo(() => {
     const items = [

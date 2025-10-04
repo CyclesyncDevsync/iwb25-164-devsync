@@ -567,11 +567,3 @@ public type WarehouseStats record {|
     string address;
     int dropOffRequests;
 |};
-
-# Type for submission status update payload
-public type SubmissionStatusUpdate record {|
-    string submission_status;
-    string? agent_id?;
-    time:Utc? verification_date?;
-    string? additional_details?;
-|};
