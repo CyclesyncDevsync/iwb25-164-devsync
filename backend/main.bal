@@ -4,6 +4,9 @@ import Cyclesync.auth as _;
 import Cyclesync.auth;
 // The chatbot module will auto-register its services
 import Cyclesync.chatbot as _;
+
+// The chat module will auto-register its services
+import Cyclesync.chat as _;
 // The demand_prediction module will auto-register its services
 import Cyclesync.demand_prediction as _;
 // The quality_assessment module will auto-register its services
@@ -1427,7 +1430,7 @@ service /api/agent on server {
             LEFT JOIN users u ON ms.supplier_id = u.asgardeo_id
             WHERE ms.agent_id = ${agentId} 
             AND ms.agent_assigned = true
-            AND ms.submission_status = 'assigned'
+            AND ms.submission_status IN ('assigned', 'in_progress')
             ORDER BY ms.created_at DESC
         `;
 

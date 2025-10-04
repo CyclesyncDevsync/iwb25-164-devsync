@@ -44,7 +44,7 @@ const AgentLayout: React.FC<AgentLayoutProps> = ({ children }) => {
       current: cleanPathname === '/agent'
     },
     {
-      name: 'Verify Materials',
+      name: 'Assigned Tasks',
       href: '/agent/verify',
       icon: DocumentCheckIcon,
       current: cleanPathname.startsWith('/agent/verify')
@@ -266,7 +266,7 @@ const AgentLayout: React.FC<AgentLayoutProps> = ({ children }) => {
               >
                 <item.icon className="w-6 h-6 mb-1" />
                 <span className="text-xs">
-                  {item.name === 'Verify Materials' ? 'Verify' : 
+                  {item.name === 'Assigned Tasks' ? 'Tasks' : 
                    item.name === 'Task Map' ? 'Map' : 
                    item.name.split(' ')[0]}
                 </span>

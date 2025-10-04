@@ -30,6 +30,10 @@ const nextConfig: NextConfig = {
         source: '/backend/material-submissions/:path*',
         destination: 'http://localhost:8086/api/material-submissions/:path*',
       },
+      {
+        source: '/backend/chat/:path*',
+        destination: 'http://localhost:8087/api/chat/:path*',
+      },
     ];
   },
 };
