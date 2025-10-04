@@ -170,7 +170,7 @@ export default function TeamManagement() {
           title="Active Members"
           value={teamMembers.filter(m => m.isActive).length}
           subtitle="Currently active"
-          color="green"
+          color="emerald"
         />
         <TeamStatCard
           title="Admins"
@@ -259,13 +259,13 @@ interface TeamStatCardProps {
   title: string;
   value: number;
   subtitle: string;
-  color: 'blue' | 'green' | 'purple' | 'yellow';
+  color: 'blue' | 'emerald' | 'purple' | 'yellow';
 }
 
 function TeamStatCard({ title, value, subtitle, color }: TeamStatCardProps) {
   const colorClasses = {
     blue: 'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400',
-    green: 'bg-green-50 text-green-600 dark:bg-green-900/20 dark:text-green-400',
+    emerald: 'bg-emerald-50 text-emerald-600 dark:bg-emerald-900/20 dark:text-emerald-400',
     purple: 'bg-purple-50 text-purple-600 dark:bg-purple-900/20 dark:text-purple-400',
     yellow: 'bg-yellow-50 text-yellow-600 dark:bg-yellow-900/20 dark:text-yellow-400'
   };
@@ -315,7 +315,7 @@ function TeamMemberRow({ member, onEdit, onDelete, onToggleStatus }: TeamMemberR
       case TeamRole.MANAGER:
         return 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400';
       case TeamRole.OPERATOR:
-        return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400';
+        return 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/20 dark:text-emerald-400';
       case TeamRole.VIEWER:
         return 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400';
       default:
@@ -363,7 +363,7 @@ function TeamMemberRow({ member, onEdit, onDelete, onToggleStatus }: TeamMemberR
           className={`inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded ${
             member.isActive
               ? 'text-red-700 bg-red-100 hover:bg-red-200 dark:bg-red-900/20 dark:text-red-400'
-              : 'text-green-700 bg-green-100 hover:bg-green-200 dark:bg-green-900/20 dark:text-green-400'
+              : 'text-emerald-700 bg-emerald-100 hover:bg-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-400'
           }`}
         >
           {member.isActive ? 'Deactivate' : 'Activate'}
@@ -473,7 +473,7 @@ function AddMemberModal({ onClose, onAdd }: AddMemberModalProps) {
                       <ul className="text-xs text-gray-600 dark:text-gray-400 space-y-1">
                         {rolePermissions[formData.role].map(permission => (
                           <li key={permission} className="flex items-center">
-                            <CheckCircleIcon className="h-3 w-3 text-green-500 mr-1" />
+                            <CheckCircleIcon className="h-3 w-3 text-emerald-500 mr-1" />
                             {permission.replace(/_/g, ' ').toLowerCase()}
                           </li>
                         ))}
@@ -595,7 +595,7 @@ function EditMemberModal({ member, onClose, onUpdate }: EditMemberModalProps) {
                       <ul className="text-xs text-gray-600 dark:text-gray-400 space-y-1">
                         {rolePermissions[formData.role].map(permission => (
                           <li key={permission} className="flex items-center">
-                            <CheckCircleIcon className="h-3 w-3 text-green-500 mr-1" />
+                            <CheckCircleIcon className="h-3 w-3 text-emerald-500 mr-1" />
                             {permission.replace(/_/g, ' ').toLowerCase()}
                           </li>
                         ))}

@@ -16,7 +16,7 @@ export default function SupplierEnhancedMaterialsPage() {
   console.log('🔐 Current user:', user);
   console.log('🆔 User asgardeoId:', user?.asgardeoId);
 
-  const handleRegistrationComplete = (material: any, submissionResult: any) => {
+  const handleRegistrationComplete = () => {
     // Redirect to materials page immediately
     router.push('/supplier/materials');
   };
@@ -56,7 +56,7 @@ export default function SupplierEnhancedMaterialsPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
-            className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6"
+            className="bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden"
           >
             <StandaloneMaterialRegistration 
               onComplete={handleRegistrationComplete}
@@ -65,15 +65,28 @@ export default function SupplierEnhancedMaterialsPage() {
           </motion.div>
 
           {/* Info Box */}
-          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-            <h3 className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-2">
+          <div className="bg-gradient-to-r from-blue-50 to-emerald-50 dark:from-blue-900/20 dark:to-emerald-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-6">
+            <h3 className="text-base font-semibold text-blue-900 dark:text-blue-100 mb-3 flex items-center">
+              <SparklesIcon className="w-5 h-5 mr-2" />
               What happens after submission?
             </h3>
-            <ul className="text-sm text-blue-700 dark:text-blue-300 space-y-1">
-              <li>• Your photos will be analyzed by AI for quality assessment</li>
-              <li>• An agent will be automatically assigned based on your location</li>
-              <li>• You will receive updates throughout the verification process</li>
-              <li>• Once approved, your material will be listed in the marketplace</li>
+            <ul className="text-sm text-blue-700 dark:text-blue-300 space-y-2">
+              <li className="flex items-start">
+                <span className="w-2 h-2 bg-blue-600 rounded-full mt-2 mr-3 flex-shrink-0"></span>
+                Your photos will be analyzed by AI for quality assessment
+              </li>
+              <li className="flex items-start">
+                <span className="w-2 h-2 bg-blue-600 rounded-full mt-2 mr-3 flex-shrink-0"></span>
+                An agent will be automatically assigned based on your location
+              </li>
+              <li className="flex items-start">
+                <span className="w-2 h-2 bg-blue-600 rounded-full mt-2 mr-3 flex-shrink-0"></span>
+                You will receive updates throughout the verification process
+              </li>
+              <li className="flex items-start">
+                <span className="w-2 h-2 bg-blue-600 rounded-full mt-2 mr-3 flex-shrink-0"></span>
+                Once approved, your material will be listed in the marketplace
+              </li>
             </ul>
           </div>
         </div>
