@@ -64,8 +64,8 @@ const WalletDashboard: React.FC<WalletDashboardProps> = ({ className = '' }) => 
     const labels = {
       [WalletType.BUYER]: 'Buyer Wallet',
       [WalletType.SUPPLIER]: 'Supplier Wallet',
-      [WalletType.ESCROW]: 'Escrow Wallet',
-      [WalletType.ADMIN]: 'Admin Wallet',
+      [WalletType.AGENT]: 'Agent Wallet',
+      [WalletType.ADMIN_SHARED]: 'Shared Admin Wallet',
     };
     return labels[type];
   };

@@ -62,28 +62,45 @@ export const fetchWallets = createAsyncThunk(
     // Mock API call - replace with actual API
     return new Promise<Wallet[]>((resolve) => {
       setTimeout(() => {
-        resolve([
-          {
-            id: '1',
-            userId: 'user1',
-            type: WalletType.BUYER,
-            balance: 25000,
-            currency: 'LKR',
-            isActive: true,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-          },
-          {
-            id: '2',
-            userId: 'user1',
-            type: WalletType.ESCROW,
-            balance: 5000,
-            currency: 'LKR',
-            isActive: true,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-          },
-        ]);
+        // Get user role from auth context (this should come from your auth state)
+        const userRole = localStorage.getItem('userRole') || 'buyer';
+
+        if (userRole === 'admin' || userRole === 'super_admin') {
+          // Admin and super_admin users get the shared wallet
+          resolve([
+            {
+              id: 'shared-admin-wallet',
+              userId: null, // null for shared wallet
+              type: WalletType.ADMIN_SHARED,
+              balance: 50000,
+              currency: 'LKR',
+              isActive: true,
+              isShared: true,
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+            },
+          ]);
+        } else {
+          // Other users get individual wallets based on their role
+          const walletType =
+            userRole === 'buyer' ? WalletType.BUYER :
+            userRole === 'supplier' ? WalletType.SUPPLIER :
+            userRole === 'agent' ? WalletType.AGENT :
+            WalletType.BUYER;
+
+          resolve([
+            {
+              id: '1',
+              userId: 'user1',
+              type: walletType,
+              balance: 25000,
+              currency: 'LKR',
+              isActive: true,
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+            },
+          ]);
+        }
       }, 1000);
     });
   }

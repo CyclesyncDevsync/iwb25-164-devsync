@@ -1,10 +1,11 @@
 export interface Wallet {
   id: string;
-  userId: string;
+  userId: string | null; // null for shared admin wallet
   type: WalletType;
   balance: number;
   currency: string;
   isActive: boolean;
+  isShared?: boolean; // true for shared admin wallet
   createdAt: string;
   updatedAt: string;
 }
@@ -12,8 +13,8 @@ export interface Wallet {
 export enum WalletType {
   BUYER = 'buyer',
   SUPPLIER = 'supplier',
-  ESCROW = 'escrow',
-  ADMIN = 'admin',
+  AGENT = 'agent',
+  ADMIN_SHARED = 'admin_shared', // Shared wallet for all admins and super_admins
 }
 
 export interface Transaction {
@@ -180,7 +181,7 @@ export const WALLET_THEMES: Record<WalletType, WalletTheme> = {
     text: '#065F46',
     border: '#6EE7B7',
   },
-  [WalletType.ESCROW]: {
+  [WalletType.AGENT]: {
     primary: '#F59E0B',
     secondary: '#D97706',
     accent: '#FCD34D',
@@ -188,7 +189,7 @@ export const WALLET_THEMES: Record<WalletType, WalletTheme> = {
     text: '#92400E',
     border: '#FDE68A',
   },
-  [WalletType.ADMIN]: {
+  [WalletType.ADMIN_SHARED]: {
     primary: '#8B5CF6',
     secondary: '#7C3AED',
     accent: '#A78BFA',

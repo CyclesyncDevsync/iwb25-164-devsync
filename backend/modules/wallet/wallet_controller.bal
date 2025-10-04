@@ -72,53 +72,49 @@ service /api/wallet on new http:Listener(8097) {
     resource function get balance(http:Request request) returns http:Response {
         http:Response response = new;
 
-        // Authenticate user
-        int|http:Response userResult = self.getAuthenticatedUserId(request);
-        if userResult is http:Response {
-            return userResult;
+        // Get auth context to check user role
+        auth:AuthContext|http:Response contextResult = self.getAuthContext(request);
+        if contextResult is http:Response {
+            return contextResult;
         }
-        int userId = userResult;
+        auth:AuthContext context = contextResult;
+        int userId = context.userId;
+        string userRole = context.role;
 
         do {
             var dbClient = check database_config:getDbClient();
 
-            // Get wallet for user
-            record {
-                string wallet_id;
-                int user_id;
-                decimal available_balance;
-                decimal frozen_balance;
-                decimal total_balance;
-                decimal daily_withdrawal_limit;
-                decimal daily_withdrawal_used;
-            }|error walletResult = dbClient->queryRow(`
-                SELECT 
-                    wallet_id::text as wallet_id, user_id, available_balance, frozen_balance, 
-                    (available_balance + frozen_balance) as total_balance,
-                    daily_withdrawal_limit, daily_withdrawal_used
-                FROM user_wallets 
-                WHERE user_id = ${userId}
-            `);
-
-            if walletResult is error {
-                // Create wallet if doesn't exist (let DB generate UUID)
-                var createResult = dbClient->execute(`
-                    INSERT INTO user_wallets (user_id, available_balance, frozen_balance)
-                    VALUES (${userId}, 0.00, 0.00)
-                    ON CONFLICT (user_id) DO NOTHING
+            // For admin and super_admin, get shared wallet
+            if userRole == "admin" || userRole == "super_admin" {
+                record {
+                    string wallet_id;
+                    decimal available_balance;
+                    decimal frozen_balance;
+                    decimal total_balance;
+                    decimal daily_withdrawal_limit;
+                    decimal daily_withdrawal_used;
+                    string wallet_type;
+                    boolean is_shared;
+                }|error walletResult = dbClient->queryRow(`
+                    SELECT
+                        wallet_id::text as wallet_id, available_balance, frozen_balance,
+                        (available_balance + frozen_balance) as total_balance,
+                        daily_withdrawal_limit, daily_withdrawal_used,
+                        wallet_type::text as wallet_type, is_shared
+                    FROM user_wallets
+                    WHERE wallet_type = 'admin_shared' AND is_shared = TRUE
                 `);
 
-                if createResult is error {
-                    log:printError("Failed to create wallet", createResult);
-                    response.statusCode = 500;
+                if walletResult is record {} {
+                    response.statusCode = 200;
                     response.setJsonPayload({
-                        "error": "Failed to create wallet",
-                        "message": createResult.message()
+                        "status": "success",
+                        "data": walletResult.toJson()
                     });
                     return response;
                 }
-
-                // Return default wallet - fetch the created wallet
+            } else {
+                // For other users, get their individual wallet
                 record {
                     string wallet_id;
                     int user_id;
@@ -127,43 +123,32 @@ service /api/wallet on new http:Listener(8097) {
                     decimal total_balance;
                     decimal daily_withdrawal_limit;
                     decimal daily_withdrawal_used;
-                }|error newWalletResult = dbClient->queryRow(`
-                    SELECT 
-                        wallet_id::text as wallet_id, user_id, available_balance, frozen_balance, 
+                    string wallet_type;
+                }|error walletResult = dbClient->queryRow(`
+                    SELECT
+                        wallet_id::text as wallet_id, user_id, available_balance, frozen_balance,
                         (available_balance + frozen_balance) as total_balance,
-                        daily_withdrawal_limit, daily_withdrawal_used
-                    FROM user_wallets 
+                        daily_withdrawal_limit, daily_withdrawal_used,
+                        wallet_type::text as wallet_type
+                    FROM user_wallets
                     WHERE user_id = ${userId}
                 `);
 
-                if newWalletResult is record {} {
+                if walletResult is record {} {
                     response.statusCode = 200;
                     response.setJsonPayload({
                         "status": "success",
-                        "data": newWalletResult.toJson()
+                        "data": walletResult.toJson()
                     });
-                } else {
-                    response.statusCode = 200;
-                    response.setJsonPayload({
-                        "status": "success",
-                        "data": {
-                            "wallet_id": "generated",
-                            "user_id": userId,
-                            "available_balance": 0.00,
-                            "frozen_balance": 0.00,
-                            "total_balance": 0.00,
-                            "daily_withdrawal_limit": 10000.00,
-                            "daily_withdrawal_used": 0.00
-                        }
-                    });
+                    return response;
                 }
-                return response;
             }
 
-            response.statusCode = 200;
+            // If no wallet found, return error
+            response.statusCode = 404;
             response.setJsonPayload({
-                "status": "success",
-                "data": walletResult.toJson()
+                "error": "Wallet not found",
+                "message": "User wallet does not exist. It should have been created automatically."
             });
 
         } on fail error e {
@@ -182,12 +167,14 @@ service /api/wallet on new http:Listener(8097) {
     resource function post recharge(http:Request request, @http:Payload json payload) returns http:Response {
         http:Response response = new;
 
-        // Get user ID for operations (all authenticated users allowed)
-        int|http:Response userResult = self.getUserIdForOperations(request);
-        if userResult is http:Response {
-            return userResult;
+        // Get auth context
+        auth:AuthContext|http:Response contextResult = self.getAuthContext(request);
+        if contextResult is http:Response {
+            return contextResult;
         }
-        int userId = userResult;
+        auth:AuthContext context = contextResult;
+        int userId = context.userId;
+        string userRole = context.role;
 
         do {
             var dbClient = check database_config:getDbClient();
@@ -204,54 +191,100 @@ service /api/wallet on new http:Listener(8097) {
                 return response;
             }
 
-            // Get current wallet balance
-            record {
-                string wallet_id;
-                decimal available_balance;
-            }|error walletResult = dbClient->queryRow(`
-                SELECT wallet_id::text as wallet_id, available_balance
-                FROM user_wallets 
-                WHERE user_id = ${userId}
-            `);
+            string walletId;
+            decimal balanceBefore;
+            decimal balanceAfter;
 
-            if walletResult is error {
-                response.statusCode = 404;
-                response.setJsonPayload({
-                    "error": "Wallet not found",
-                    "message": "User wallet does not exist"
-                });
-                return response;
-            }
+            // For admin and super_admin, use shared wallet
+            if userRole == "admin" || userRole == "super_admin" {
+                record {
+                    string wallet_id;
+                    decimal available_balance;
+                }|error walletResult = dbClient->queryRow(`
+                    SELECT wallet_id::text as wallet_id, available_balance
+                    FROM user_wallets
+                    WHERE wallet_type = 'admin_shared' AND is_shared = TRUE
+                `);
 
-            string walletId = walletResult.wallet_id;
-            decimal balanceBefore = walletResult.available_balance;
-            decimal balanceAfter = balanceBefore + amount;
+                if walletResult is error {
+                    response.statusCode = 404;
+                    response.setJsonPayload({
+                        "error": "Wallet not found",
+                        "message": "Shared admin wallet does not exist"
+                    });
+                    return response;
+                }
 
-            // Update wallet balance
-            var updateResult = dbClient->execute(`
-                UPDATE user_wallets 
-                SET available_balance = ${balanceAfter}, updated_at = CURRENT_TIMESTAMP
-                WHERE user_id = ${userId}
-            `);
+                walletId = walletResult.wallet_id;
+                balanceBefore = walletResult.available_balance;
+                balanceAfter = balanceBefore + amount;
 
-            if updateResult is error {
-                log:printError("Failed to update wallet balance", updateResult);
-                response.statusCode = 500;
-                response.setJsonPayload({
-                    "error": "Failed to update balance",
-                    "message": updateResult.message()
-                });
-                return response;
+                // Update shared wallet balance
+                var updateResult = dbClient->execute(`
+                    UPDATE user_wallets
+                    SET available_balance = ${balanceAfter}, updated_at = CURRENT_TIMESTAMP
+                    WHERE wallet_type = 'admin_shared' AND is_shared = TRUE
+                `);
+
+                if updateResult is error {
+                    log:printError("Failed to update shared wallet balance", updateResult);
+                    response.statusCode = 500;
+                    response.setJsonPayload({
+                        "error": "Failed to update balance",
+                        "message": updateResult.message()
+                    });
+                    return response;
+                }
+            } else {
+                // For other users, use individual wallet
+                record {
+                    string wallet_id;
+                    decimal available_balance;
+                }|error walletResult = dbClient->queryRow(`
+                    SELECT wallet_id::text as wallet_id, available_balance
+                    FROM user_wallets
+                    WHERE user_id = ${userId}
+                `);
+
+                if walletResult is error {
+                    response.statusCode = 404;
+                    response.setJsonPayload({
+                        "error": "Wallet not found",
+                        "message": "User wallet does not exist"
+                    });
+                    return response;
+                }
+
+                walletId = walletResult.wallet_id;
+                balanceBefore = walletResult.available_balance;
+                balanceAfter = balanceBefore + amount;
+
+                // Update wallet balance
+                var updateResult = dbClient->execute(`
+                    UPDATE user_wallets
+                    SET available_balance = ${balanceAfter}, updated_at = CURRENT_TIMESTAMP
+                    WHERE user_id = ${userId}
+                `);
+
+                if updateResult is error {
+                    log:printError("Failed to update wallet balance", updateResult);
+                    response.statusCode = 500;
+                    response.setJsonPayload({
+                        "error": "Failed to update balance",
+                        "message": updateResult.message()
+                    });
+                    return response;
+                }
             }
 
             // Create transaction record - cast wallet_id back to UUID
             var transactionResult = dbClient->execute(`
                 INSERT INTO wallet_transactions (
-                    wallet_id, user_id, type, amount, 
+                    wallet_id, user_id, type, amount,
                     balance_before, balance_after, status, description
                 ) VALUES (
                     ${walletId}::uuid, ${userId}, 'deposit', ${amount},
-                    ${balanceBefore}, ${balanceAfter}, 'completed', 
+                    ${balanceBefore}, ${balanceAfter}, 'completed',
                     'Wallet recharge'
                 )
             `);
@@ -289,12 +322,14 @@ service /api/wallet on new http:Listener(8097) {
     resource function post withdraw(http:Request request, @http:Payload json payload) returns http:Response {
         http:Response response = new;
 
-        // Get user ID for operations (all authenticated users allowed)
-        int|http:Response userResult = self.getUserIdForOperations(request);
-        if userResult is http:Response {
-            return userResult;
+        // Get auth context
+        auth:AuthContext|http:Response contextResult = self.getAuthContext(request);
+        if contextResult is http:Response {
+            return contextResult;
         }
-        int userId = userResult;
+        auth:AuthContext context = contextResult;
+        int userId = context.userId;
+        string userRole = context.role;
 
         do {
             var dbClient = check database_config:getDbClient();
@@ -311,72 +346,149 @@ service /api/wallet on new http:Listener(8097) {
                 return response;
             }
 
-            // Get current wallet balance
-            record {
-                string wallet_id;
-                decimal available_balance;
-                decimal daily_withdrawal_limit;
-                decimal daily_withdrawal_used;
-            }|error walletResult = dbClient->queryRow(`
-                SELECT wallet_id::text as wallet_id, available_balance, daily_withdrawal_limit, daily_withdrawal_used
-                FROM user_wallets 
-                WHERE user_id = ${userId}
-            `);
+            string walletId;
+            decimal balanceBefore;
+            decimal dailyLimit;
+            decimal dailyUsed;
+            decimal balanceAfter;
+            decimal newDailyUsed;
 
-            if walletResult is error {
-                response.statusCode = 404;
-                response.setJsonPayload({
-                    "error": "Wallet not found",
-                    "message": "User wallet does not exist"
-                });
-                return response;
-            }
+            // For admin and super_admin, use shared wallet
+            if userRole == "admin" || userRole == "super_admin" {
+                record {
+                    string wallet_id;
+                    decimal available_balance;
+                    decimal daily_withdrawal_limit;
+                    decimal daily_withdrawal_used;
+                }|error walletResult = dbClient->queryRow(`
+                    SELECT wallet_id::text as wallet_id, available_balance, daily_withdrawal_limit, daily_withdrawal_used
+                    FROM user_wallets
+                    WHERE wallet_type = 'admin_shared' AND is_shared = TRUE
+                `);
 
-            string walletId = walletResult.wallet_id;
-            decimal balanceBefore = walletResult.available_balance;
-            decimal dailyLimit = walletResult.daily_withdrawal_limit;
-            decimal dailyUsed = walletResult.daily_withdrawal_used;
+                if walletResult is error {
+                    response.statusCode = 404;
+                    response.setJsonPayload({
+                        "error": "Wallet not found",
+                        "message": "Shared admin wallet does not exist"
+                    });
+                    return response;
+                }
 
-            // Check sufficient balance
-            if amount > balanceBefore {
-                response.statusCode = 400;
-                response.setJsonPayload({
-                    "error": "Insufficient balance",
-                    "message": "Not enough available balance for withdrawal"
-                });
-                return response;
-            }
+                walletId = walletResult.wallet_id;
+                balanceBefore = walletResult.available_balance;
+                dailyLimit = walletResult.daily_withdrawal_limit;
+                dailyUsed = walletResult.daily_withdrawal_used;
 
-            // Check daily withdrawal limit
-            if (dailyUsed + amount) > dailyLimit {
-                response.statusCode = 400;
-                response.setJsonPayload({
-                    "error": "Daily limit exceeded",
-                    "message": "Withdrawal would exceed daily limit"
-                });
-                return response;
-            }
+                // Check sufficient balance
+                if amount > balanceBefore {
+                    response.statusCode = 400;
+                    response.setJsonPayload({
+                        "error": "Insufficient balance",
+                        "message": "Not enough available balance for withdrawal"
+                    });
+                    return response;
+                }
 
-            decimal balanceAfter = balanceBefore - amount;
-            decimal newDailyUsed = dailyUsed + amount;
+                // Check daily withdrawal limit
+                if (dailyUsed + amount) > dailyLimit {
+                    response.statusCode = 400;
+                    response.setJsonPayload({
+                        "error": "Daily limit exceeded",
+                        "message": "Withdrawal would exceed daily limit"
+                    });
+                    return response;
+                }
 
-            // Update wallet balance and daily usage
-            var updateResult = dbClient->execute(`
-                UPDATE user_wallets 
-                SET available_balance = ${balanceAfter}, 
-                    daily_withdrawal_used = ${newDailyUsed},
-                    updated_at = CURRENT_TIMESTAMP
-                WHERE user_id = ${userId}
-            `);
+                balanceAfter = balanceBefore - amount;
+                newDailyUsed = dailyUsed + amount;
 
-            if updateResult is error {
-                log:printError("Failed to update wallet balance", updateResult);
-                response.statusCode = 500;
-                response.setJsonPayload({
-                    "error": "Failed to update balance",
-                    "message": updateResult.message()
-                });
-                return response;
+                // Update shared wallet balance and daily usage
+                var updateResult = dbClient->execute(`
+                    UPDATE user_wallets
+                    SET available_balance = ${balanceAfter},
+                        daily_withdrawal_used = ${newDailyUsed},
+                        updated_at = CURRENT_TIMESTAMP
+                    WHERE wallet_type = 'admin_shared' AND is_shared = TRUE
+                `);
+
+                if updateResult is error {
+                    log:printError("Failed to update shared wallet balance", updateResult);
+                    response.statusCode = 500;
+                    response.setJsonPayload({
+                        "error": "Failed to update balance",
+                        "message": updateResult.message()
+                    });
+                    return response;
+                }
+            } else {
+                // For other users, use individual wallet
+                record {
+                    string wallet_id;
+                    decimal available_balance;
+                    decimal daily_withdrawal_limit;
+                    decimal daily_withdrawal_used;
+                }|error walletResult = dbClient->queryRow(`
+                    SELECT wallet_id::text as wallet_id, available_balance, daily_withdrawal_limit, daily_withdrawal_used
+                    FROM user_wallets
+                    WHERE user_id = ${userId}
+                `);
+
+                if walletResult is error {
+                    response.statusCode = 404;
+                    response.setJsonPayload({
+                        "error": "Wallet not found",
+                        "message": "User wallet does not exist"
+                    });
+                    return response;
+                }
+
+                walletId = walletResult.wallet_id;
+                balanceBefore = walletResult.available_balance;
+                dailyLimit = walletResult.daily_withdrawal_limit;
+                dailyUsed = walletResult.daily_withdrawal_used;
+
+                // Check sufficient balance
+                if amount > balanceBefore {
+                    response.statusCode = 400;
+                    response.setJsonPayload({
+                        "error": "Insufficient balance",
+                        "message": "Not enough available balance for withdrawal"
+                    });
+                    return response;
+                }
+
+                // Check daily withdrawal limit
+                if (dailyUsed + amount) > dailyLimit {
+                    response.statusCode = 400;
+                    response.setJsonPayload({
+                        "error": "Daily limit exceeded",
+                        "message": "Withdrawal would exceed daily limit"
+                    });
+                    return response;
+                }
+
+                balanceAfter = balanceBefore - amount;
+                newDailyUsed = dailyUsed + amount;
+
+                // Update wallet balance and daily usage
+                var updateResult = dbClient->execute(`
+                    UPDATE user_wallets
+                    SET available_balance = ${balanceAfter},
+                        daily_withdrawal_used = ${newDailyUsed},
+                        updated_at = CURRENT_TIMESTAMP
+                    WHERE user_id = ${userId}
+                `);
+
+                if updateResult is error {
+                    log:printError("Failed to update wallet balance", updateResult);
+                    response.statusCode = 500;
+                    response.setJsonPayload({
+                        "error": "Failed to update balance",
+                        "message": updateResult.message()
+                    });
+                    return response;
+                }
             }
 
             // Create transaction record - cast wallet_id back to UUID
@@ -555,6 +667,79 @@ service /api/wallet on new http:Listener(8097) {
             response.statusCode = 500;
             response.setJsonPayload({
                 "error": "Failed to initialize wallet",
+                "message": e.message()
+            });
+        }
+
+        return response;
+    }
+
+    # Initialize wallets for all existing users (admin endpoint - no auth required for setup)
+    resource function post initAllWallets() returns http:Response {
+        http:Response response = new;
+
+        do {
+            var dbClient = check database_config:getDbClient();
+
+            // Create shared admin wallet
+            _ = check dbClient->execute(`
+                INSERT INTO user_wallets (user_id, wallet_type, available_balance, frozen_balance, is_shared)
+                SELECT NULL, 'admin_shared'::wallet_type_enum, 0.00, 0.00, TRUE
+                WHERE NOT EXISTS (
+                    SELECT 1 FROM user_wallets WHERE wallet_type = 'admin_shared' AND is_shared = TRUE
+                )
+            `);
+
+            // Create wallets for buyers
+            _ = check dbClient->execute(`
+                INSERT INTO user_wallets (user_id, wallet_type, available_balance, frozen_balance, is_shared)
+                SELECT id, 'buyer'::wallet_type_enum, 0.00, 0.00, FALSE
+                FROM users WHERE role = 'buyer'
+                ON CONFLICT (user_id, wallet_type) DO NOTHING
+            `);
+
+            // Create wallets for suppliers
+            _ = check dbClient->execute(`
+                INSERT INTO user_wallets (user_id, wallet_type, available_balance, frozen_balance, is_shared)
+                SELECT id, 'supplier'::wallet_type_enum, 0.00, 0.00, FALSE
+                FROM users WHERE role = 'supplier'
+                ON CONFLICT (user_id, wallet_type) DO NOTHING
+            `);
+
+            // Create wallets for agents
+            _ = check dbClient->execute(`
+                INSERT INTO user_wallets (user_id, wallet_type, available_balance, frozen_balance, is_shared)
+                SELECT id, 'agent'::wallet_type_enum, 0.00, 0.00, FALSE
+                FROM users WHERE role = 'agent'
+                ON CONFLICT (user_id, wallet_type) DO NOTHING
+            `);
+
+            // Get wallet counts
+            record {
+                int admin_shared;
+                int buyer;
+                int supplier;
+                int agent;
+            }|error counts = dbClient->queryRow(`
+                SELECT
+                    (SELECT COUNT(*) FROM user_wallets WHERE wallet_type = 'admin_shared' AND is_shared = TRUE) as admin_shared,
+                    (SELECT COUNT(*) FROM user_wallets WHERE wallet_type = 'buyer') as buyer,
+                    (SELECT COUNT(*) FROM user_wallets WHERE wallet_type = 'supplier') as supplier,
+                    (SELECT COUNT(*) FROM user_wallets WHERE wallet_type = 'agent') as agent
+            `);
+
+            response.statusCode = 200;
+            response.setJsonPayload({
+                "status": "success",
+                "message": "Wallets initialized for all existing users",
+                "data": counts is record {} ? counts.toJson() : {}
+            });
+
+        } on fail error e {
+            log:printError("Failed to initialize wallets for all users", e);
+            response.statusCode = 500;
+            response.setJsonPayload({
+                "error": "Failed to initialize wallets",
                 "message": e.message()
             });
         }
