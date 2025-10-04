@@ -95,14 +95,14 @@ const AgentLayout: React.FC<AgentLayoutProps> = ({ children }) => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 lg:hidden"
+            className="fixed inset-0 z-[65] lg:hidden"
           >
             <div className="fixed inset-0 bg-black bg-opacity-50" onClick={closeSidebar} />
             <motion.div
               initial={{ x: -300 }}
               animate={{ x: 0 }}
               exit={{ x: -300 }}
-              className="fixed inset-y-0 left-0 w-64 bg-gradient-to-b from-white to-gray-50 dark:from-dark-surface dark:to-gray-900 shadow-2xl z-50"
+              className="fixed inset-y-0 left-0 w-64 bg-gradient-to-b from-white to-gray-50 dark:from-dark-surface dark:to-gray-900 shadow-2xl z-[70]"
             >
               {/* Mobile Header */}
               <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-agent-DEFAULT/10 to-agent-DEFAULT/5">

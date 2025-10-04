@@ -561,29 +561,29 @@ export default function MessagesModal({ isOpen, onClose }: MessagesModalProps) {
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-        {/* Backdrop */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          onClick={onClose}
-          className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-        />
+      {/* Backdrop - below navbar */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        onClick={onClose}
+        className="fixed inset-0 z-[75] bg-black/60 backdrop-blur-sm"
+      />
 
-        {/* Modal */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95, y: 20 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.95, y: 20 }}
-          className="relative w-full max-w-6xl h-[90vh] bg-white dark:bg-dark-surface rounded-2xl shadow-2xl overflow-hidden flex"
-        >
-          {/* Close Button - positioned over sidebar area only */}
+      {/* Modal - above navbar */}
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95, y: 20 }}
+        className="fixed inset-0 z-[85] flex items-center justify-center p-4 pointer-events-none"
+      >
+        <div className="relative w-full max-w-6xl h-[90vh] bg-white dark:bg-dark-surface rounded-2xl shadow-2xl overflow-hidden flex pointer-events-auto">
+          {/* Close Button - positioned in right corner with red color */}
           <button
             onClick={onClose}
-            className="absolute top-4 left-[calc(20rem-2rem)] z-20 p-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-full transition-colors shadow-lg"
+            className="absolute top-4 right-4 z-20 p-2 bg-red-500 hover:bg-red-600 rounded-full transition-colors shadow-lg"
           >
-            <XMarkIcon className="w-5 h-5 text-gray-600 dark:text-gray-300" />
+            <XMarkIcon className="w-5 h-5 text-white" />
           </button>
 
           {/* Conversations Sidebar */}
@@ -715,8 +715,8 @@ export default function MessagesModal({ isOpen, onClose }: MessagesModalProps) {
               </div>
             </div>
           )}
-        </motion.div>
-      </div>
+        </div>
+      </motion.div>
     </AnimatePresence>
   );
 }

@@ -164,7 +164,7 @@ export function getNavbarClasses(config: NavbarConfig): string {
   }
   
   // Z-index
-  classes += ' z-50';
+  classes += ' z-[60]';
   
   // Variant-specific classes
   switch (config.variant) {
