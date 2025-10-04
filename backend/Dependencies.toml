@@ -5,7 +5,7 @@
 
 [ballerina]
 dependencies-toml-version = "2"
-distribution-version = "2201.12.7"
+distribution-version = "2201.12.10"
 
 [[package]]
 org = "ballerina"
@@ -435,13 +435,8 @@ dependencies = [
 
 [[package]]
 org = "ballerinax"
-
-name = "googleapis.vision"
-version = "1.6.0"
-
 name = "newsapi"
 version = "1.5.1"
-
 dependencies = [
 	{org = "ballerina", name = "http"},
 	{org = "ballerina", name = "url"},
@@ -495,9 +490,7 @@ modules = [
 	{org = "hp", packageName = "Cyclesync", moduleName = "Cyclesync"},
 	{org = "hp", packageName = "Cyclesync", moduleName = "Cyclesync.agent_assignment"},
 	{org = "hp", packageName = "Cyclesync", moduleName = "Cyclesync.agent_review"},
-	{org = "hp", packageName = "Cyclesync", moduleName = "Cyclesync.appointment_scheduling.disabled"},
 	{org = "hp", packageName = "Cyclesync", moduleName = "Cyclesync.auction"},
-	{org = "hp", packageName = "Cyclesync", moduleName = "Cyclesync.auction_integration.disabled"},
 	{org = "hp", packageName = "Cyclesync", moduleName = "Cyclesync.auth"},
 	{org = "hp", packageName = "Cyclesync", moduleName = "Cyclesync.chat"},
 	{org = "hp", packageName = "Cyclesync", moduleName = "Cyclesync.chatbot"},
@@ -507,11 +500,8 @@ modules = [
 	{org = "hp", packageName = "Cyclesync", moduleName = "Cyclesync.dynamic_pricing"},
 	{org = "hp", packageName = "Cyclesync", moduleName = "Cyclesync.material_workflow"},
 	{org = "hp", packageName = "Cyclesync", moduleName = "Cyclesync.news"},
-	{org = "hp", packageName = "Cyclesync", moduleName = "Cyclesync.notification_system.disabled"},
 	{org = "hp", packageName = "Cyclesync", moduleName = "Cyclesync.notifications"},
-	{org = "hp", packageName = "Cyclesync", moduleName = "Cyclesync.payment_distribution.disabled"},
 	{org = "hp", packageName = "Cyclesync", moduleName = "Cyclesync.quality_assessment"},
-	{org = "hp", packageName = "Cyclesync", moduleName = "Cyclesync.wallet"},
-	{org = "hp", packageName = "Cyclesync", moduleName = "Cyclesync.warehouse_inventory.disabled"}
+	{org = "hp", packageName = "Cyclesync", moduleName = "Cyclesync.wallet"}
 ]
 
