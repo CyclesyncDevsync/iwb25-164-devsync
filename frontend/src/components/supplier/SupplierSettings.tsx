@@ -42,7 +42,7 @@ const Tab: React.FC<TabProps> = ({ id, label, icon: Icon, isActive, onClick }) =
     onClick={onClick}
     className={`flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors ${
       isActive
-        ? 'bg-green-100 text-green-700 border border-green-200'
+        ? 'bg-emerald-100 text-emerald-700 border border-emerald-200'
         : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
     }`}
   >
@@ -68,7 +68,7 @@ const Switch: React.FC<SwitchProps> = ({ checked, onChange, label, description }
       type="button"
       onClick={() => onChange(!checked)}
       className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-        checked ? 'bg-green-600' : 'bg-gray-200'
+        checked ? 'bg-emerald-600' : 'bg-gray-200'
       }`}
     >
       <span
@@ -448,7 +448,7 @@ export const SupplierSettingsComponent: React.FC = () => {
                           }
                         }
                       })}
-                      className="rounded border-gray-300 text-green-600 focus:ring-green-500"
+                      className="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
                     />
                     <span className="text-sm text-gray-600">Open</span>
                   </div>
@@ -553,7 +553,7 @@ export const SupplierSettingsComponent: React.FC = () => {
                     const newKey = 'sk_' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
                     updateApi({ apiKey: newKey });
                   }}
-                  className="px-4 py-2 bg-green-600 text-white text-sm rounded-md hover:bg-green-700"
+                  className="px-4 py-2 bg-emerald-600 text-white text-sm rounded-md hover:bg-emerald-700"
                 >
                   Generate
                 </button>
