@@ -97,32 +97,51 @@ const AuctionsPage = () => {
     }
   };
 
-  const placeBid = (auctionId: string, amount: number) => {
-    setAuctions(prev => prev.map(auction => 
-      auction.id === auctionId 
-        ? { 
-            ...auction, 
-            currentPrice: amount,
-            totalBids: auction.totalBids + 1,
-            isParticipating: true,
-            myHighestBid: amount,
-            myPosition: 1
-          }
-        : auction
-    ));
-    
-    setBidHistory(prev => [
-      { 
-        id: Date.now().toString(), 
-        amount, 
-        timestamp: 'Just now', 
-        bidder: 'You', 
-        isMyBid: true 
-      },
-      ...prev
-    ]);
-    
-    setBidAmount('');
+  const placeBid = async (auctionId: string, amount: number) => {
+    try {
+      const response = await fetch(`/api/bid`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include', // Include cookies for authentication
+        body: JSON.stringify({
+          auctionId: auctionId,
+          bid_amount: amount
+        })
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.status === 'success') {
+        // Update bid history
+        setBidHistory(prev => [
+          {
+            id: Date.now().toString(),
+            amount,
+            timestamp: 'Just now',
+            bidder: 'You',
+            isMyBid: true
+          },
+          ...prev
+        ]);
+
+        setBidAmount('');
+
+        // Refresh auctions from server to get updated data
+        dispatch(fetchAuctions({ page: 1, limit: 50 }));
+
+        // Trigger wallet balance refresh across the app
+        window.dispatchEvent(new CustomEvent('walletBalanceUpdate'));
+
+        alert('Bid placed successfully! Funds have been frozen in your wallet.');
+      } else {
+        alert(`Failed to place bid: ${data.message || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error('Error placing bid:', error);
+      alert('Failed to place bid. Please check your connection and try again.');
+    }
   };
 
   const enableAutoBid = (auctionId: string, maxAmount: number) => {

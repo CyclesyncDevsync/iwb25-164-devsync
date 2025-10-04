@@ -18,6 +18,17 @@ const WalletBalance: React.FC<WalletBalanceProps> = ({
 
   useEffect(() => {
     fetchBalance();
+
+    // Listen for wallet balance update events
+    const handleWalletUpdate = () => {
+      fetchBalance();
+    };
+
+    window.addEventListener('walletBalanceUpdate', handleWalletUpdate);
+
+    return () => {
+      window.removeEventListener('walletBalanceUpdate', handleWalletUpdate);
+    };
   }, []);
 
   const fetchBalance = async () => {
