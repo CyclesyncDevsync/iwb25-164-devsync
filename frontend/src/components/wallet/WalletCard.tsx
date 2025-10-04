@@ -31,9 +31,9 @@ const WalletCard: React.FC<WalletCardProps> = ({
         return CreditCardIcon;
       case WalletType.SUPPLIER:
         return BanknotesIcon;
-      case WalletType.ESCROW:
+      case WalletType.AGENT:
         return ShieldCheckIcon;
-      case WalletType.ADMIN:
+      case WalletType.ADMIN_SHARED:
         return UserGroupIcon;
       default:
         return CreditCardIcon;
@@ -46,10 +46,10 @@ const WalletCard: React.FC<WalletCardProps> = ({
         return 'Buyer Wallet';
       case WalletType.SUPPLIER:
         return 'Supplier Wallet';
-      case WalletType.ESCROW:
-        return 'Escrow Wallet';
-      case WalletType.ADMIN:
-        return 'Admin Wallet';
+      case WalletType.AGENT:
+        return 'Agent Wallet';
+      case WalletType.ADMIN_SHARED:
+        return wallet.isShared ? 'Shared Admin Wallet' : 'Admin Wallet';
       default:
         return 'Wallet';
     }
@@ -117,20 +117,29 @@ const WalletCard: React.FC<WalletCardProps> = ({
 
       {/* Wallet Type Specific Info */}
       <div className="space-y-2">
-        {wallet.type === WalletType.ESCROW && (
+        {wallet.type === WalletType.ADMIN_SHARED && wallet.isShared && (
           <div className="flex items-center justify-between text-sm">
-            <span className="opacity-70">Held Amount</span>
-            <span className="font-medium">
-              {showBalance ? formatCurrency(wallet.balance * 0.1, wallet.currency) : '••••'}
+            <span className="opacity-70">Shared Wallet</span>
+            <span className="font-medium text-purple-600 dark:text-purple-400">
+              All Admins
             </span>
           </div>
         )}
-        
+
         {wallet.type === WalletType.SUPPLIER && (
           <div className="flex items-center justify-between text-sm">
             <span className="opacity-70">Pending Earnings</span>
             <span className="font-medium">
               {showBalance ? formatCurrency(wallet.balance * 0.05, wallet.currency) : '••••'}
+            </span>
+          </div>
+        )}
+
+        {wallet.type === WalletType.AGENT && (
+          <div className="flex items-center justify-between text-sm">
+            <span className="opacity-70">Commission</span>
+            <span className="font-medium">
+              {showBalance ? formatCurrency(wallet.balance * 0.03, wallet.currency) : '••••'}
             </span>
           </div>
         )}
