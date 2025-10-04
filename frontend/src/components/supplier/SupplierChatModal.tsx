@@ -53,6 +53,7 @@ export function SupplierChatModal({
   const [newMessage, setNewMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isSending, setIsSending] = useState(false);
+  const [isInitializing, setIsInitializing] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
   const pollingInterval = useRef<NodeJS.Timeout | null>(null);
@@ -78,9 +79,17 @@ export function SupplierChatModal({
         const data = await response.json();
         setMessages(data.messages);
         markMessagesAsRead();
+        // Set initializing to false after first successful fetch
+        if (isInitializing) {
+          setIsInitializing(false);
+        }
       }
     } catch (error) {
       console.error('Error fetching messages:', error);
+      // Set initializing to false even on error to show error state
+      if (isInitializing) {
+        setIsInitializing(false);
+      }
     }
   };
 
@@ -259,7 +268,7 @@ export function SupplierChatModal({
 
           {/* Messages */}
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
-            {isLoading ? (
+            {isLoading || isInitializing ? (
               <div className="flex items-center justify-center h-full">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
               </div>

@@ -26,13 +26,16 @@ function SupplierMessagesContent() {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedRoom, setSelectedRoom] = useState<ChatRoom | null>(null);
   const [showChatModal, setShowChatModal] = useState(false);
-  const { user } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
 
   useEffect(() => {
-    fetchChatRooms();
-    // Poll for new messages every 10 seconds
-    const interval = setInterval(fetchChatRooms, 10000);
-    return () => clearInterval(interval);
+    // Only fetch if user is authenticated
+    if (user?.asgardeoId || user?.sub) {
+      fetchChatRooms();
+      // Poll for new messages every 10 seconds
+      const interval = setInterval(fetchChatRooms, 10000);
+      return () => clearInterval(interval);
+    }
   }, [user]);
 
   const fetchChatRooms = async () => {
@@ -46,7 +49,16 @@ function SupplierMessagesContent() {
       const authResponse = await fetch('/api/auth/me');
       if (!authResponse.ok) {
         console.error('Failed to get auth token:', authResponse.status);
-        setIsLoading(false);
+        // If auth fails, retry after a delay
+        if (authResponse.status === 401) {
+          setTimeout(() => {
+            if (user?.asgardeoId || user?.sub) {
+              fetchChatRooms();
+            }
+          }, 1000);
+        } else {
+          setIsLoading(false);
+        }
         return;
       }
 
@@ -99,7 +111,7 @@ function SupplierMessagesContent() {
         </p>
       </div>
 
-      {isLoading ? (
+      {authLoading || isLoading ? (
         <div className="flex justify-center items-center h-64">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
         </div>

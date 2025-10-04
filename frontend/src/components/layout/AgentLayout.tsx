@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { useNotifications } from '@/hooks/useNotifications';
+import { useAuth } from '@/hooks/useAuth';
 import {
   HomeIcon,
   DocumentCheckIcon,
@@ -25,7 +26,9 @@ interface AgentLayoutProps {
 const AgentLayout: React.FC<AgentLayoutProps> = ({ children }) => {
   const pathname = usePathname();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [unreadMessageCount, setUnreadMessageCount] = useState(0);
   const { unreadCount, isNotificationCenterOpen, toggleNotificationCenter } = useNotifications();
+  const { user } = useAuth();
 
   // Clean pathname by removing query parameters
   const cleanPathname = pathname.split('?')[0];
@@ -35,6 +38,42 @@ const AgentLayout: React.FC<AgentLayoutProps> = ({ children }) => {
     console.log('Current pathname:', pathname);
     console.log('Clean pathname:', cleanPathname);
   }, [pathname, cleanPathname]);
+
+  // Fetch unread message count
+  useEffect(() => {
+    const fetchUnreadCount = async () => {
+      if (!user?.asgardeoId && !user?.sub) return;
+
+      try {
+        const authResponse = await fetch('/api/auth/me');
+        if (!authResponse.ok) return;
+
+        const authData = await authResponse.json();
+        const idToken = authData.idToken;
+        const agentId = authData.user?.asgardeoId || authData.user?.sub || authData.userId;
+
+        const response = await fetch(`/backend/chat/rooms/agent/${agentId}/unread-count`, {
+          headers: {
+            'Authorization': `Bearer ${idToken}`
+          }
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setUnreadMessageCount(data.unread_count || 0);
+        }
+      } catch (error) {
+        console.error('Error fetching unread count:', error);
+      }
+    };
+
+    // Fetch initially
+    fetchUnreadCount();
+
+    // Poll every 10 seconds
+    const interval = setInterval(fetchUnreadCount, 10000);
+    return () => clearInterval(interval);
+  }, [user]);
 
   const navigationItems = [
     {
@@ -60,7 +99,7 @@ const AgentLayout: React.FC<AgentLayoutProps> = ({ children }) => {
       href: '/agent/messages',
       icon: ChatBubbleLeftRightIcon,
       current: cleanPathname.startsWith('/agent/messages'),
-      badge: 3 // Unread messages count
+      badge: unreadMessageCount
     },
     {
       name: 'Settings',
@@ -130,7 +169,7 @@ const AgentLayout: React.FC<AgentLayoutProps> = ({ children }) => {
                   >
                         <item.icon className={`w-5 h-5 mr-3 flex-shrink-0 ${item.current ? 'text-black dark:text-black' : 'text-gray-600 dark:text-gray-400 group-hover:text-gray-700 dark:group-hover:text-gray-300'}`} />
                         <span className={`flex-1 ${item.current ? 'text-black dark:text-black' : ''}`}>{item.name}</span>
-                    {item.badge && (
+                    {item.badge > 0 && (
                       <span className="bg-red-500 text-white text-xs rounded-full px-2 py-1 min-w-[20px] text-center">
                         {item.badge}
                       </span>
@@ -166,7 +205,7 @@ const AgentLayout: React.FC<AgentLayoutProps> = ({ children }) => {
               >
                 <item.icon className={`w-5 h-5 mr-3 flex-shrink-0 ${item.current ? 'text-black dark:text-black' : 'text-gray-600 dark:text-gray-400 group-hover:text-gray-700 dark:group-hover:text-gray-300'}`} />
                 <span className={`flex-1 ${item.current ? 'text-black dark:text-black' : ''}`}>{item.name}</span>
-                {item.badge && (
+                {item.badge > 0 && (
                   <span className="bg-red-500 text-white text-xs rounded-full px-2 py-1 min-w-[20px] text-center">
                     {item.badge}
                   </span>
