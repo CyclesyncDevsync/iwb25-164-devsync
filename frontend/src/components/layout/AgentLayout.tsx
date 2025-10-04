@@ -16,6 +16,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/hooks/useAuth';
+import MessagesModal from '@/components/agent/MessagesModal';
 
 interface AgentLayoutProps {
   children: React.ReactNode;
@@ -24,6 +25,7 @@ interface AgentLayoutProps {
 const AgentLayout: React.FC<AgentLayoutProps> = ({ children }) => {
   const pathname = usePathname();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isMessagesModalOpen, setIsMessagesModalOpen] = useState(false);
   const { user, logout } = useAuth();
 
   // Clean pathname by removing query parameters
@@ -151,41 +153,68 @@ const AgentLayout: React.FC<AgentLayoutProps> = ({ children }) => {
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: index * 0.1 }}
                   >
-                    <Link
-                      href={item.href}
-                      onClick={closeSidebar}
-                      className={`group flex items-center px-4 py-3 mb-2 text-sm font-medium rounded-xl transition-all duration-200 transform hover:scale-105 ${
-                        item.current
-                          ? 'bg-gradient-to-r from-agent-DEFAULT to-green-600 text-white shadow-lg shadow-agent-DEFAULT/25'
-                          : 'text-gray-700 dark:text-gray-300 hover:bg-gradient-to-r hover:from-gray-100 hover:to-gray-50 dark:hover:from-gray-800 dark:hover:to-gray-700 hover:shadow-md'
-                      }`}
-                    >
-                      <motion.div
-                        whileHover={{ rotate: 5 }}
-                        className={`w-5 h-5 mr-3 flex-shrink-0 ${
-                          item.current ? 'text-white' : 'text-gray-600 dark:text-gray-400 group-hover:text-agent-DEFAULT'
+                    {item.name === 'Messages' ? (
+                      <button
+                        onClick={() => {
+                          setIsMessagesModalOpen(true);
+                          closeSidebar();
+                        }}
+                        className={`group flex items-center w-full px-4 py-3 mb-2 text-sm font-medium rounded-xl transition-all duration-200 transform hover:scale-105 text-gray-700 dark:text-gray-300 hover:bg-gradient-to-r hover:from-gray-100 hover:to-gray-50 dark:hover:from-gray-800 dark:hover:to-gray-700 hover:shadow-md`}
+                      >
+                        <motion.div
+                          whileHover={{ rotate: 5 }}
+                          className="w-5 h-5 mr-3 flex-shrink-0 text-gray-600 dark:text-gray-400 group-hover:text-agent-DEFAULT"
+                        >
+                          <item.icon className="w-5 h-5" />
+                        </motion.div>
+                        <span className="flex-1">{item.name}</span>
+                        {item.badge && (
+                          <motion.span
+                            initial={{ scale: 0 }}
+                            animate={{ scale: 1 }}
+                            className="bg-red-500 text-white text-xs rounded-full px-2 py-1 min-w-[20px] text-center shadow-sm"
+                          >
+                            {item.badge}
+                          </motion.span>
+                        )}
+                      </button>
+                    ) : (
+                      <Link
+                        href={item.href}
+                        onClick={closeSidebar}
+                        className={`group flex items-center px-4 py-3 mb-2 text-sm font-medium rounded-xl transition-all duration-200 transform hover:scale-105 ${
+                          item.current
+                            ? 'bg-gradient-to-r from-agent-DEFAULT to-green-600 text-white shadow-lg shadow-agent-DEFAULT/25'
+                            : 'text-gray-700 dark:text-gray-300 hover:bg-gradient-to-r hover:from-gray-100 hover:to-gray-50 dark:hover:from-gray-800 dark:hover:to-gray-700 hover:shadow-md'
                         }`}
                       >
-                        <item.icon className="w-5 h-5" />
-                      </motion.div>
-                      <span className="flex-1">{item.name}</span>
-                      {item.badge && (
-                        <motion.span
-                          initial={{ scale: 0 }}
-                          animate={{ scale: 1 }}
-                          className="bg-red-500 text-white text-xs rounded-full px-2 py-1 min-w-[20px] text-center shadow-sm"
-                        >
-                          {item.badge}
-                        </motion.span>
-                      )}
-                      {item.current && (
                         <motion.div
-                          initial={{ scale: 0 }}
-                          animate={{ scale: 1 }}
-                          className="w-2 h-2 bg-white rounded-full ml-2"
-                        />
-                      )}
-                    </Link>
+                          whileHover={{ rotate: 5 }}
+                          className={`w-5 h-5 mr-3 flex-shrink-0 ${
+                            item.current ? 'text-white' : 'text-gray-600 dark:text-gray-400 group-hover:text-agent-DEFAULT'
+                          }`}
+                        >
+                          <item.icon className="w-5 h-5" />
+                        </motion.div>
+                        <span className="flex-1">{item.name}</span>
+                        {item.badge && (
+                          <motion.span
+                            initial={{ scale: 0 }}
+                            animate={{ scale: 1 }}
+                            className="bg-red-500 text-white text-xs rounded-full px-2 py-1 min-w-[20px] text-center shadow-sm"
+                          >
+                            {item.badge}
+                          </motion.span>
+                        )}
+                        {item.current && (
+                          <motion.div
+                            initial={{ scale: 0 }}
+                            animate={{ scale: 1 }}
+                            className="w-2 h-2 bg-white rounded-full ml-2"
+                          />
+                        )}
+                      </Link>
+                    )}
                   </motion.div>
                 ))}
               </nav>
@@ -211,7 +240,7 @@ const AgentLayout: React.FC<AgentLayoutProps> = ({ children }) => {
       </AnimatePresence>
 
       {/* Desktop sidebar */}
-      <div className="hidden lg:flex lg:w-64 lg:flex-col lg:fixed lg:inset-y-0">
+  <div className="hidden lg:flex lg:w-64 lg:flex-col lg:fixed lg:inset-y-0 z-50">
         <div className="flex flex-col flex-grow bg-gradient-to-b from-white to-gray-50 dark:from-dark-surface dark:to-gray-900 border-r border-gray-200 dark:border-gray-700 shadow-xl">
           {/* Header with enhanced styling */}
           <div className="flex items-center h-16 px-4 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-agent-DEFAULT/10 to-agent-DEFAULT/5">
@@ -253,40 +282,64 @@ const AgentLayout: React.FC<AgentLayoutProps> = ({ children }) => {
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: index * 0.1 }}
               >
-                <Link
-                  href={item.href}
-                  className={`group flex items-center px-4 py-3 mb-2 text-sm font-medium rounded-xl transition-all duration-200 transform hover:scale-105 ${
-                    item.current
-                      ? 'bg-gradient-to-r from-agent-DEFAULT to-green-600 text-white shadow-lg shadow-agent-DEFAULT/25'
-                      : 'text-gray-700 dark:text-gray-300 hover:bg-gradient-to-r hover:from-gray-100 hover:to-gray-50 dark:hover:from-gray-800 dark:hover:to-gray-700 hover:shadow-md'
-                  }`}
-                >
-                  <motion.div
-                    whileHover={{ rotate: 5 }}
-                    className={`w-5 h-5 mr-3 flex-shrink-0 ${
-                      item.current ? 'text-white' : 'text-gray-600 dark:text-gray-400 group-hover:text-agent-DEFAULT'
+                {item.name === 'Messages' ? (
+                  <button
+                    onClick={() => setIsMessagesModalOpen(true)}
+                    className="group flex items-center w-full px-4 py-3 mb-2 text-sm font-medium rounded-xl transition-all duration-200 transform hover:scale-105 text-gray-700 dark:text-gray-300 hover:bg-gradient-to-r hover:from-gray-100 hover:to-gray-50 dark:hover:from-gray-800 dark:hover:to-gray-700 hover:shadow-md"
+                  >
+                    <motion.div
+                      whileHover={{ rotate: 5 }}
+                      className="w-5 h-5 mr-3 flex-shrink-0 text-gray-600 dark:text-gray-400 group-hover:text-agent-DEFAULT"
+                    >
+                      <item.icon className="w-5 h-5" />
+                    </motion.div>
+                    <span className="flex-1">{item.name}</span>
+                    {item.badge && (
+                      <motion.span
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        className="bg-red-500 text-white text-xs rounded-full px-2 py-1 min-w-[20px] text-center shadow-sm"
+                      >
+                        {item.badge}
+                      </motion.span>
+                    )}
+                  </button>
+                ) : (
+                  <Link
+                    href={item.href}
+                    className={`group flex items-center px-4 py-3 mb-2 text-sm font-medium rounded-xl transition-all duration-200 transform hover:scale-105 ${
+                      item.current
+                        ? 'bg-gradient-to-r from-agent-DEFAULT to-green-600 text-white shadow-lg shadow-agent-DEFAULT/25'
+                        : 'text-gray-700 dark:text-gray-300 hover:bg-gradient-to-r hover:from-gray-100 hover:to-gray-50 dark:hover:from-gray-800 dark:hover:to-gray-700 hover:shadow-md'
                     }`}
                   >
-                    <item.icon className="w-5 h-5" />
-                  </motion.div>
-                  <span className="flex-1">{item.name}</span>
-                  {item.badge && (
-                    <motion.span
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      className="bg-red-500 text-white text-xs rounded-full px-2 py-1 min-w-[20px] text-center shadow-sm"
-                    >
-                      {item.badge}
-                    </motion.span>
-                  )}
-                  {item.current && (
                     <motion.div
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      className="w-2 h-2 bg-white rounded-full ml-2"
-                    />
-                  )}
-                </Link>
+                      whileHover={{ rotate: 5 }}
+                      className={`w-5 h-5 mr-3 flex-shrink-0 ${
+                        item.current ? 'text-white' : 'text-gray-600 dark:text-gray-400 group-hover:text-agent-DEFAULT'
+                      }`}
+                    >
+                      <item.icon className="w-5 h-5" />
+                    </motion.div>
+                    <span className="flex-1">{item.name}</span>
+                    {item.badge && (
+                      <motion.span
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        className="bg-red-500 text-white text-xs rounded-full px-2 py-1 min-w-[20px] text-center shadow-sm"
+                      >
+                        {item.badge}
+                      </motion.span>
+                    )}
+                    {item.current && (
+                      <motion.div
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        className="w-2 h-2 bg-white rounded-full ml-2"
+                      />
+                    )}
+                  </Link>
+                )}
               </motion.div>
             ))}
           </nav>
@@ -307,7 +360,7 @@ const AgentLayout: React.FC<AgentLayoutProps> = ({ children }) => {
       </div>
 
       {/* Main content */}
-      <div className="lg:pl-64 flex flex-col flex-1">
+  <div className="lg:pl-64 flex flex-col flex-1 relative z-10">
         {/* Desktop header */}
         <div className="hidden lg:block bg-white dark:bg-dark-surface shadow-sm border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-between px-6 py-4">
@@ -352,6 +405,12 @@ const AgentLayout: React.FC<AgentLayoutProps> = ({ children }) => {
         </main>
 
       </div>
+
+      {/* Messages Modal */}
+      <MessagesModal 
+        isOpen={isMessagesModalOpen} 
+        onClose={() => setIsMessagesModalOpen(false)} 
+      />
     </div>
   );
 };

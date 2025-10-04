@@ -9,6 +9,7 @@ import AssignmentCard from '@/components/agent/AssignmentCard';
 import GPSTaskList from '@/components/agent/GPSTaskList';
 import { useAuth } from '@/hooks/useAuth';
 import WalletBalance from '@/components/shared/WalletBalance';
+import ClientFormattedDate from '@/components/common/ClientFormattedDate';
 
 interface BackendAssignment {
   assignmentId?: string;
@@ -233,12 +234,11 @@ const AgentDashboard = () => {
                 {/* Date Display */}
                 <div className="hidden sm:block">
                   <p className="text-sm font-medium text-gray-600 dark:text-gray-300">
-                    {new Date().toLocaleDateString('en-US', {
-                      weekday: 'long',
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric'
-                    })}
+                    <ClientFormattedDate
+                      date={Date.now()}
+                      locale="en-US"
+                      options={{ weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }}
+                    />
                   </p>
                 </div>
               </div>
