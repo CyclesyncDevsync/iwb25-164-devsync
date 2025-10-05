@@ -8,7 +8,8 @@ import ballerina/http;
 import ballerina/log;
 import ballerina/sql;
 
-// No additional imports needed - functions are available from the same package
+// Import auction scheduler for automatic auction end processing
+boolean schedulerInitialized = false;
 
 // Initialize auction service with database configuration
 @http:ServiceConfig {
@@ -54,12 +55,316 @@ service /api/auction on new http:Listener(8096) {
             return response;
         }
 
+        // Initialize auction end tracking scheduler (if not already initialized)
+        if !schedulerInitialized {
+            error? schedulerResult = initializeAuctionScheduler();
+            if schedulerResult is error {
+                log:printError("Failed to initialize auction scheduler", schedulerResult);
+                // Don't fail the whole init if scheduler fails - log warning only
+                log:printWarn("Auction scheduler not started - manual auction ending required");
+            } else {
+                schedulerInitialized = true;
+                log:printInfo("Auction scheduler initialized - automatic auction ending enabled");
+            }
+        }
+
         response.statusCode = 200;
         response.setJsonPayload({
             "status": "success",
-            "message": "Auction system database schema initialized successfully"
+            "message": "Auction system database schema initialized successfully",
+            "scheduler_active": schedulerInitialized
         });
         return response;
+    }
+
+    # Get all ended auctions to debug
+    resource function get endedAuctions() returns http:Response {
+        http:Response response = new;
+
+        do {
+            var dbClient = check database_config:getDbClient();
+
+            // Get all auctions that have ended (by time)
+            stream<record {
+                string auction_id;
+                string title;
+                string status;
+                decimal current_price;
+                int? highest_bidder_id;
+                string end_time;
+                int bid_count;
+            }, error?> auctionsStream = dbClient->query(`
+                SELECT
+                    auction_id,
+                    title,
+                    status,
+                    current_price,
+                    highest_bidder_id,
+                    end_time::text as end_time,
+                    bid_count
+                FROM auctions
+                WHERE end_time <= CURRENT_TIMESTAMP
+                ORDER BY end_time DESC
+                LIMIT 20
+            `);
+
+            record {
+                string auction_id;
+                string title;
+                string status;
+                decimal current_price;
+                int? highest_bidder_id;
+                string end_time;
+                int bid_count;
+            }[] auctions = [];
+
+            check auctionsStream.forEach(function(record {
+                        string auction_id;
+                        string title;
+                        string status;
+                        decimal current_price;
+                        int? highest_bidder_id;
+                        string end_time;
+                        int bid_count;
+                    } auction) {
+                auctions.push(auction);
+            });
+
+            json auctionsJson = auctions.toJson();
+            response.statusCode = 200;
+            response.setJsonPayload({
+                "status": "success",
+                "message": string `Found ${auctions.length()} ended auctions (by time)`,
+                "auctions": auctionsJson
+            });
+            return response;
+        } on fail error e {
+            log:printError("Error getting ended auctions", e);
+            response.statusCode = 500;
+            response.setJsonPayload({
+                "error": "Internal server error",
+                "message": e.message()
+            });
+            return response;
+        }
+    }
+
+    # Manual trigger to process specific auction by ID
+    resource function post processAuction/[string auctionId]() returns http:Response {
+        http:Response response = new;
+
+        log:printInfo(string `Manual trigger: Processing specific auction ${auctionId}`);
+
+        do {
+            var dbClient = check database_config:getDbClient();
+
+            // Get auction details
+            record {
+                string auction_id;
+                decimal current_price;
+                int? highest_bidder_id;
+                int supplier_id;
+                string status;
+                string? completed_at;
+            }|error auctionData = dbClient->queryRow(`
+                SELECT
+                    auction_id,
+                    current_price,
+                    highest_bidder_id,
+                    supplier_id,
+                    status,
+                    completed_at::text as completed_at
+                FROM auctions
+                WHERE auction_id = ${auctionId}::uuid
+            `);
+
+            if auctionData is error {
+                response.statusCode = 404;
+                response.setJsonPayload({
+                    "status": "error",
+                    "message": "Auction not found"
+                });
+                return response;
+            }
+
+            string winnerIdStr = auctionData.highest_bidder_id is int ? auctionData.highest_bidder_id.toString() : "none";
+            log:printInfo(string `Auction found: status=${auctionData.status}, completed_at=${auctionData.completed_at ?: "NULL"}, winner=${winnerIdStr}`);
+
+            // Check if already processed
+            if auctionData.completed_at is string {
+                response.statusCode = 400;
+                response.setJsonPayload({
+                    "status": "error",
+                    "message": "Auction already processed",
+                    "completed_at": auctionData.completed_at
+                });
+                return response;
+            }
+
+            // Process the auction
+            AuctionEndJob job = new();
+            error? processResult = job.processAuctionEnd(
+                auctionData.auction_id,
+                auctionData.current_price,
+                auctionData.highest_bidder_id,
+                auctionData.supplier_id
+            );
+
+            if processResult is error {
+                log:printError("Failed to process auction", processResult);
+                response.statusCode = 500;
+                response.setJsonPayload({
+                    "status": "error",
+                    "message": processResult.message()
+                });
+                return response;
+            }
+
+            response.statusCode = 200;
+            response.setJsonPayload({
+                "status": "success",
+                "message": "Auction processed successfully",
+                "auction_id": auctionId,
+                "final_price": auctionData.current_price,
+                "winner_id": auctionData.highest_bidder_id
+            });
+            return response;
+        } on fail error e {
+            log:printError("Error processing auction", e);
+            response.statusCode = 500;
+            response.setJsonPayload({
+                "status": "error",
+                "message": e.message()
+            });
+            return response;
+        }
+    }
+
+    # Manual trigger to process ended auctions immediately
+    resource function post processEndedAuctions() returns http:Response {
+        http:Response response = new;
+
+        log:printInfo("Manual trigger: Processing ended auctions");
+
+        json|error result = manualProcessEndedAuctions();
+
+        if result is error {
+            log:printError("Failed to process ended auctions", result);
+            response.statusCode = 500;
+            response.setJsonPayload({
+                "status": "error",
+                "message": result.message()
+            });
+            return response;
+        }
+
+        response.statusCode = 200;
+        response.setJsonPayload(result);
+        return response;
+    }
+
+    # Get auction status and winner details
+    resource function get auction/[string auctionId]/status() returns http:Response {
+        http:Response response = new;
+
+        do {
+            var dbClient = check database_config:getDbClient();
+
+            record {
+                string auction_id;
+                string title;
+                string status;
+                decimal current_price;
+                int? highest_bidder_id;
+                string? end_time;
+                int bid_count;
+            }|error auctionData = dbClient->queryRow(`
+                SELECT
+                    auction_id,
+                    title,
+                    status,
+                    current_price,
+                    highest_bidder_id,
+                    end_time::text as end_time,
+                    bid_count
+                FROM auctions
+                WHERE auction_id = ${auctionId}::uuid
+            `);
+
+            if auctionData is error {
+                response.statusCode = 404;
+                response.setJsonPayload({
+                    "error": "Auction not found",
+                    "message": auctionData.message()
+                });
+                return response;
+            }
+
+            // Get winner wallet info if there's a winner
+            json? winnerWalletData = ();
+            if auctionData.highest_bidder_id is int {
+                int winnerId = <int>auctionData.highest_bidder_id;
+
+                record {
+                    decimal available_balance;
+                    decimal frozen_balance;
+                    decimal total_balance;
+                }|error walletData = dbClient->queryRow(`
+                    SELECT
+                        available_balance,
+                        frozen_balance,
+                        total_balance
+                    FROM user_wallets
+                    WHERE user_id = ${winnerId}
+                    AND wallet_type = 'buyer'
+                `);
+
+                if walletData is record {|decimal available_balance; decimal frozen_balance; decimal total_balance;|} {
+                    winnerWalletData = {
+                        "user_id": winnerId,
+                        "available_balance": walletData.available_balance,
+                        "frozen_balance": walletData.frozen_balance,
+                        "total_balance": walletData.total_balance
+                    };
+                }
+            }
+
+            // Get admin wallet info
+            record {
+                decimal available_balance;
+            }|error adminWallet = dbClient->queryRow(`
+                SELECT available_balance
+                FROM user_wallets
+                WHERE wallet_type = 'admin_shared' AND is_shared = TRUE
+            `);
+
+            response.statusCode = 200;
+            response.setJsonPayload({
+                "status": "success",
+                "auction": {
+                    "auction_id": auctionData.auction_id,
+                    "title": auctionData.title,
+                    "status": auctionData.status,
+                    "current_price": auctionData.current_price,
+                    "highest_bidder_id": auctionData.highest_bidder_id,
+                    "end_time": auctionData.end_time,
+                    "bid_count": auctionData.bid_count
+                },
+                "winner_wallet": winnerWalletData,
+                "admin_wallet": adminWallet is record {|decimal available_balance;|} ? {
+                    "available_balance": adminWallet.available_balance
+                } : ()
+            });
+            return response;
+        } on fail error e {
+            log:printError("Error getting auction status", e);
+            response.statusCode = 500;
+            response.setJsonPayload({
+                "error": "Internal server error",
+                "message": e.message()
+            });
+            return response;
+        }
     }
 
     # Get all active auctions
@@ -89,12 +394,12 @@ service /api/auction on new http:Listener(8096) {
                 string[]? photos;
                 int supplier_id;
             }, error?> auctionStream = dbClient->query(`
-                SELECT 
+                SELECT
                     auction_id, title, description, category, sub_category,
                     quantity, unit, starting_price, current_price, reserve_price,
                     status, start_time::text, end_time::text, bid_count, location, photos, supplier_id
-                FROM auctions 
-                WHERE status = 'active'
+                FROM auctions
+                WHERE status IN ('active', 'upcoming', 'ended')
                 ORDER BY created_at DESC
                 LIMIT 50
             `);

@@ -1,0 +1,189 @@
+╔══════════════════════════════════════════════════════════════╗
+║        DELIVERY MANAGEMENT - QUICK START GUIDE               ║
+╚══════════════════════════════════════════════════════════════╝
+
+📦 SETUP (One-time)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Windows:
+  > setup-delivery.bat
+
+Linux/Mac:
+  $ chmod +x setup-delivery.sh
+  $ ./setup-delivery.sh
+
+OR Manually:
+  $ psql -U postgres -d cyclesync -f backend/modules/delivery/postgres_schema.sql
+
+
+🚀 START SERVICES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Terminal 1 - Backend:
+  $ cd backend
+  $ bal run
+  ✓ Delivery API on port 9091
+
+Terminal 2 - Frontend:
+  $ cd frontend
+  $ npm run dev
+  ✓ Frontend on port 3000
+
+
+🔍 TEST PAGES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Buyer Orders:     http://localhost:3000/buyer/orders-with-delivery
+Supplier Orders:  http://localhost:3000/supplier/orders
+Test Page:        http://localhost:3000/test-delivery
+
+
+📋 SAMPLE DATA
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Order IDs in Database:
+
+  ord-2024-001
+    Status: In Transit
+    Driver: Rajesh Kumar (+91 98765 00001)
+    Vehicle: MH-12-AB-1234
+    Location: Pune Distribution Center
+
+  ord-2024-002
+    Status: Delivered
+    Driver: Amit Sharma (+91 98765 00002)
+    Vehicle: DL-10-CD-5678
+    Delivered: 3 days ago
+
+  ord-2024-003
+    Status: Delivered
+    Driver: Suresh Patel (+91 98765 00003)
+    Vehicle: KA-01-EF-9012
+    Delivered: 1 day ago
+
+
+🧪 HOW TO TEST
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. BUYER VIEW:
+   → Go to: http://localhost:3000/buyer/orders-with-delivery
+   → See orders with real-time delivery tracking
+   → Click "Track Order" to see full timeline
+
+2. SUPPLIER UPDATE:
+   → Go to: http://localhost:3000/supplier/orders
+   → Click any order → "Delivery Tracking" tab
+   → Update status (e.g., "Out for Delivery")
+   → Fill location and description
+   → Click "Update Status"
+
+3. SEE CHANGES IN BUYER:
+   → Refresh buyer page
+   → See updated status immediately!
+
+
+📡 API ENDPOINTS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Base URL: http://localhost:9091/delivery
+
+GET    /health                      - Health check
+GET    /{orderId}                   - Get delivery
+PATCH  /{orderId}/status            - Update status
+POST   /create                      - Create delivery
+GET    /supplier/{supplierId}       - Get all supplier deliveries
+
+
+🔄 UPDATE STATUS (CURL)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+curl -X PATCH http://localhost:9091/delivery/ord-2024-001/status \
+  -H "Content-Type: application/json" \
+  -d '{
+    "status": "out_for_delivery",
+    "location": "Near Customer Location",
+    "description": "Driver is 10 minutes away",
+    "updatedBy": "driver"
+  }'
+
+
+✨ FEATURES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✓ Real-time delivery tracking
+✓ 8 delivery statuses (pending → delivered)
+✓ Driver & vehicle information
+✓ Location tracking
+✓ Complete timeline history
+✓ Supplier can update status
+✓ Buyer sees changes immediately
+✓ No hardcoded data - all from PostgreSQL!
+
+
+🎯 WORKFLOW
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. Order created → Delivery tracking initialized
+2. Supplier updates: "Pickup Scheduled"
+3. Supplier updates: "Picked Up"
+4. Supplier updates: "In Transit"
+5. Supplier updates: "Out for Delivery"
+6. Supplier updates: "Delivered"
+7. Buyer sees each update in real-time!
+
+
+📂 KEY FILES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Database Schema:
+  backend/modules/delivery/postgres_schema.sql
+
+Backend Service:
+  backend/modules/delivery/delivery_service.bal
+  backend/modules/delivery/delivery_controller.bal
+
+Frontend Components:
+  frontend/src/components/delivery/DeliveryTracker.tsx
+  frontend/src/components/supplier/DeliveryStatusManager.tsx
+  frontend/src/components/buyer/OrderCardWithDelivery.tsx
+
+API Services:
+  frontend/src/services/deliveryService.ts
+  frontend/src/hooks/useDelivery.ts
+
+Test Pages:
+  frontend/src/app/test-delivery/page.tsx
+  frontend/src/app/buyer/orders-with-delivery/page.tsx
+
+
+🆘 TROUBLESHOOTING
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Backend won't start:
+  → Check port 9091 is free
+  → Verify PostgreSQL is running
+  → Check Config.toml credentials
+
+No data showing:
+  → Run setup script again
+  → Check: SELECT * FROM delivery_tracking;
+  → Verify API: curl http://localhost:9091/delivery/health
+
+CORS errors:
+  → Backend CORS is configured for localhost:3000
+  → Check delivery_controller.bal
+
+Status update fails:
+  → Check browser console for errors
+  → Verify order ID exists in database
+  → Check API response
+
+
+📞 READY TO GO!
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Your delivery management system is ready!
+
+Supplier can update → Buyer sees changes → All data from PostgreSQL
+
+No more hardcoded values! 🎉

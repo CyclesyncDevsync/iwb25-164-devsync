@@ -326,10 +326,14 @@ modules = [
 [[package]]
 org = "ballerina"
 name = "task"
-version = "2.7.0"
+version = "2.11.0"
 dependencies = [
 	{org = "ballerina", name = "jballerina.java"},
-	{org = "ballerina", name = "time"}
+	{org = "ballerina", name = "time"},
+	{org = "ballerina", name = "uuid"}
+]
+modules = [
+	{org = "ballerina", packageName = "task", moduleName = "task"}
 ]
 
 [[package]]
@@ -477,6 +481,7 @@ dependencies = [
 	{org = "ballerina", name = "lang.value"},
 	{org = "ballerina", name = "log"},
 	{org = "ballerina", name = "sql"},
+	{org = "ballerina", name = "task"},
 	{org = "ballerina", name = "time"},
 	{org = "ballerina", name = "uuid"},
 	{org = "ballerina", name = "websocket"},
@@ -495,6 +500,7 @@ modules = [
 	{org = "hp", packageName = "Cyclesync", moduleName = "Cyclesync.chatbot"},
 	{org = "hp", packageName = "Cyclesync", moduleName = "Cyclesync.database"},
 	{org = "hp", packageName = "Cyclesync", moduleName = "Cyclesync.database_config"},
+	{org = "hp", packageName = "Cyclesync", moduleName = "Cyclesync.delivery"},
 	{org = "hp", packageName = "Cyclesync", moduleName = "Cyclesync.demand_prediction"},
 	{org = "hp", packageName = "Cyclesync", moduleName = "Cyclesync.dynamic_pricing"},
 	{org = "hp", packageName = "Cyclesync", moduleName = "Cyclesync.material_workflow"},

@@ -546,6 +546,45 @@ export interface Order {
   documents: OrderDocument[];
   timeline: OrderTimeline[];
   rating?: OrderRating;
+  delivery?: DeliveryTracking;
+}
+
+export interface DeliveryTracking {
+  id: string;
+  orderId: string;
+  status: DeliveryStatus;
+  currentLocation?: string;
+  estimatedDeliveryDate?: Date;
+  actualDeliveryDate?: Date;
+  driverName?: string;
+  driverPhone?: string;
+  vehicleNumber?: string;
+  notes?: string;
+  updates: DeliveryUpdate[];
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface DeliveryUpdate {
+  id: string;
+  status: DeliveryStatus;
+  location: string;
+  timestamp: Date;
+  description: string;
+  updatedBy: string;
+  latitude?: number;
+  longitude?: number;
+}
+
+export enum DeliveryStatus {
+  PENDING = 'pending',
+  PICKUP_SCHEDULED = 'pickup_scheduled',
+  PICKED_UP = 'picked_up',
+  IN_TRANSIT = 'in_transit',
+  OUT_FOR_DELIVERY = 'out_for_delivery',
+  DELIVERED = 'delivered',
+  FAILED = 'failed',
+  RETURNED = 'returned'
 }
 
 export interface OrderDocument {

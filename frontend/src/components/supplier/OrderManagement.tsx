@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { deliveryService } from '../../services/deliveryService';
 import {
   ShoppingBagIcon,
   MagnifyingGlassIcon,
@@ -27,6 +28,7 @@ import {
   PaymentStatus,
   OrderDocumentType
 } from '../../types/supplier';
+import DeliveryStatusManager from './DeliveryStatusManager';
 
 export default function OrderManagement() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -36,177 +38,103 @@ export default function OrderManagement() {
   const [showOrderDetails, setShowOrderDetails] = useState(false);
 
   const dispatch = useAppDispatch();
-  const { profile, loading } = useAppSelector(state => state.supplier);
+  const { profile, loading: profileLoading } = useAppSelector(state => state.supplier);
+  const [loading, setLoading] = useState(true);
 
-  // Mock orders data - replace with actual API calls
-  const [orders] = useState<Order[]>([
-    {
-      id: '1',
-      orderNumber: 'ORD-2024-001',
-      materialId: 'mat-1',
-      material: {
-        id: 'mat-1',
-        title: 'High-Quality Aluminum Sheets',
-        category: 'metal' as any,
-        photos: [{ id: '1', url: '/api/placeholder/100/100', filename: 'aluminum.jpg', size: 1024, mimeType: 'image/jpeg', isMain: true, uploadedAt: new Date() }]
-      } as any,
-      buyerId: 'buyer-1',
-      buyerName: 'ABC Manufacturing Ltd',
-      buyerEmail: 'procurement@abcmfg.com',
-      buyerPhone: '+94 77 123 4567',
-      quantity: 500,
-      unitPrice: 250,
-      totalAmount: 125000,
-      status: OrderStatus.CONFIRMED,
-      paymentStatus: PaymentStatus.PAID,
-      paymentMethod: 'Bank Transfer',
-      createdAt: new Date('2024-08-15'),
-      updatedAt: new Date('2024-08-16'),
-      expectedPickupDate: new Date('2024-08-20'),
-      pickupLocation: {
-        address: '123 Industrial Road, Colombo 01',
-        city: 'Colombo',
-        district: 'Colombo',
-        province: 'Western'
-      },
-      specialInstructions: 'Please ensure materials are properly sorted and clean',
-      agentId: 'agent-1',
-      agentName: 'John Silva',
-      trackingNumber: 'TRK-2024-001',
-      documents: [],
-      timeline: [
-        {
-          id: '1',
-          status: OrderStatus.PENDING,
-          timestamp: new Date('2024-08-15T10:00:00'),
-          description: 'Order placed by buyer',
-          updatedBy: 'System'
-        },
-        {
-          id: '2',
-          status: OrderStatus.CONFIRMED,
-          timestamp: new Date('2024-08-15T11:30:00'),
-          description: 'Order confirmed by supplier',
-          updatedBy: 'Supplier'
-        }
-      ]
-    },
-    {
-      id: '2',
-      orderNumber: 'ORD-2024-002',
-      materialId: 'mat-2',
-      material: {
-        id: 'mat-2',
-        title: 'PET Plastic Bottles',
-        category: 'plastic' as any,
-        photos: [{ id: '2', url: '/api/placeholder/100/100', filename: 'plastic.jpg', size: 1024, mimeType: 'image/jpeg', isMain: true, uploadedAt: new Date() }]
-      } as any,
-      buyerId: 'buyer-2',
-      buyerName: 'Green Recycling Co.',
-      buyerEmail: 'orders@greenrecycling.lk',
-      buyerPhone: '+94 77 987 6543',
-      quantity: 1000,
-      unitPrice: 15,
-      totalAmount: 15000,
-      status: OrderStatus.READY_FOR_PICKUP,
-      paymentStatus: PaymentStatus.PENDING,
-      createdAt: new Date('2024-08-14'),
-      updatedAt: new Date('2024-08-17'),
-      expectedPickupDate: new Date('2024-08-19'),
-      pickupLocation: {
-        address: '456 Industrial Zone, Gampaha',
-        city: 'Gampaha',
-        district: 'Gampaha',
-        province: 'Western'
-      },
-      documents: [],
-      timeline: [
-        {
-          id: '3',
-          status: OrderStatus.PENDING,
-          timestamp: new Date('2024-08-14T09:00:00'),
-          description: 'Order placed by buyer',
-          updatedBy: 'System'
-        },
-        {
-          id: '4',
-          status: OrderStatus.CONFIRMED,
-          timestamp: new Date('2024-08-14T10:15:00'),
-          description: 'Order confirmed by supplier',
-          updatedBy: 'Supplier'
-        },
-        {
-          id: '5',
-          status: OrderStatus.PREPARING,
-          timestamp: new Date('2024-08-16T08:00:00'),
-          description: 'Materials being prepared for pickup',
-          updatedBy: 'Supplier'
-        },
-        {
-          id: '6',
-          status: OrderStatus.READY_FOR_PICKUP,
-          timestamp: new Date('2024-08-17T14:00:00'),
-          description: 'Materials ready for collection',
-          updatedBy: 'Supplier'
-        }
-      ]
-    },
-    {
-      id: '3',
-      orderNumber: 'ORD-2024-003',
-      materialId: 'mat-3',
-      material: {
-        id: 'mat-3',
-        title: 'Cardboard Boxes',
-        category: 'paper' as any,
-        photos: [{ id: '3', url: '/api/placeholder/100/100', filename: 'cardboard.jpg', size: 1024, mimeType: 'image/jpeg', isMain: true, uploadedAt: new Date() }]
-      } as any,
-      buyerId: 'buyer-3',
-      buyerName: 'EcoPackaging Solutions',
-      buyerEmail: 'purchase@ecopack.lk',
-      buyerPhone: '+94 77 555 7777',
-      quantity: 200,
-      unitPrice: 45,
-      totalAmount: 9000,
-      status: OrderStatus.COMPLETED,
-      paymentStatus: PaymentStatus.PAID,
-      paymentMethod: 'Digital Wallet',
-      createdAt: new Date('2024-08-10'),
-      updatedAt: new Date('2024-08-13'),
-      expectedPickupDate: new Date('2024-08-12'),
-      actualPickupDate: new Date('2024-08-12'),
-      pickupLocation: {
-        address: '789 Export Processing Zone, Katunayake',
-        city: 'Katunayake',
-        district: 'Gampaha',
-        province: 'Western'
-      },
-      documents: [],
-      timeline: [
-        {
-          id: '7',
-          status: OrderStatus.PENDING,
-          timestamp: new Date('2024-08-10T11:00:00'),
-          description: 'Order placed by buyer',
-          updatedBy: 'System'
-        },
-        {
-          id: '8',
-          status: OrderStatus.COMPLETED,
-          timestamp: new Date('2024-08-13T16:00:00'),
-          description: 'Order completed successfully',
-          updatedBy: 'System'
-        }
-      ],
-      rating: {
-        id: '1',
-        rating: 5,
-        comment: 'Excellent quality materials and prompt service!',
-        ratedAt: new Date('2024-08-13'),
-        ratedBy: 'buyer'
+  // Fetch orders from delivery data
+  const [orders, setOrders] = useState<Order[]>([]);
+
+  useEffect(() => {
+    const fetchOrders = async () => {
+      setLoading(true);
+      try {
+        // Fetch delivery data for known order IDs
+        const orderIds = ['ord-2024-001', 'ord-2024-002', 'ord-2024-003'];
+        const deliveryPromises = orderIds.map(id => deliveryService.getDeliveryByOrderId(id));
+        const deliveries = await Promise.all(deliveryPromises);
+
+        const ordersData: Order[] = deliveries
+          .filter(delivery => delivery !== null)
+          .map((delivery, index) => {
+            if (!delivery) return null;
+
+            const statusMap: any = {
+              'pending': OrderStatus.PENDING,
+              'pickup_scheduled': OrderStatus.CONFIRMED,
+              'picked_up': OrderStatus.PREPARING,
+              'in_transit': OrderStatus.IN_TRANSIT,
+              'out_for_delivery': OrderStatus.READY_FOR_PICKUP,
+              'delivered': OrderStatus.DELIVERED,
+              'failed': OrderStatus.CANCELLED,
+              'returned': OrderStatus.CANCELLED
+            };
+
+            const materialTitles = [
+              'High-Quality Aluminum Sheets',
+              'PET Plastic Bottles',
+              'Cardboard Boxes'
+            ];
+
+            const categories = ['metal', 'plastic', 'paper'];
+            const quantities = [500, 1000, 200];
+            const unitPrices = [250, 15, 45];
+
+            return {
+              id: delivery.orderId,
+              orderNumber: delivery.orderId.toUpperCase(),
+              materialId: `mat-${index + 1}`,
+              material: {
+                id: `mat-${index + 1}`,
+                title: materialTitles[index] || `Order ${delivery.orderId}`,
+                category: categories[index] as any,
+                photos: [{ id: `${index + 1}`, url: '/api/placeholder/100/100', filename: 'material.jpg', size: 1024, mimeType: 'image/jpeg', isMain: true, uploadedAt: new Date() }]
+              } as any,
+              buyerId: `buyer-${index + 1}`,
+              buyerName: delivery.driverName || `Buyer ${index + 1}`,
+              buyerEmail: `buyer${index + 1}@example.com`,
+              buyerPhone: delivery.driverPhone || '+00 00000 00000',
+              quantity: quantities[index] || 500,
+              unitPrice: unitPrices[index] || 100,
+              totalAmount: (quantities[index] || 500) * (unitPrices[index] || 100),
+              status: statusMap[delivery.status] || OrderStatus.PENDING,
+              paymentStatus: delivery.status === 'delivered' ? PaymentStatus.PAID : PaymentStatus.PENDING,
+              paymentMethod: delivery.status === 'delivered' ? 'Bank Transfer' : undefined,
+              createdAt: delivery.createdAt,
+              updatedAt: delivery.updatedAt,
+              expectedPickupDate: delivery.estimatedDeliveryDate,
+              actualPickupDate: delivery.actualDeliveryDate,
+              pickupLocation: {
+                address: delivery.currentLocation || '',
+                city: 'City',
+                district: 'District',
+                province: 'Province'
+              },
+              specialInstructions: delivery.notes,
+              agentId: 'agent-1',
+              agentName: delivery.driverName,
+              trackingNumber: delivery.id,
+              documents: [],
+              timeline: delivery.updates.map(update => ({
+                id: update.id,
+                status: statusMap[update.status] || OrderStatus.PENDING,
+                timestamp: update.timestamp,
+                description: update.description,
+                updatedBy: update.updatedBy
+              }))
+            };
+          })
+          .filter(order => order !== null) as Order[];
+
+        setOrders(ordersData);
+      } catch (error) {
+        console.error('Error fetching orders:', error);
+      } finally {
+        setLoading(false);
       }
-    }
-  ]);
+    };
+
+    fetchOrders();
+  }, []);
 
   const filteredOrders = orders.filter(order => {
     const matchesSearch = order.orderNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -584,7 +512,7 @@ interface OrderDetailsModalProps {
 }
 
 function OrderDetailsModal({ order, onClose, onUpdateStatus }: OrderDetailsModalProps) {
-  const [activeTab, setActiveTab] = useState<'details' | 'timeline' | 'documents'>('details');
+  const [activeTab, setActiveTab] = useState<'details' | 'timeline' | 'documents' | 'delivery'>('details');
 
   const getStatusColor = (status: OrderStatus) => {
     switch (status) {
@@ -694,6 +622,7 @@ function OrderDetailsModal({ order, onClose, onUpdateStatus }: OrderDetailsModal
             {[
               { id: 'details', name: 'Order Details' },
               { id: 'timeline', name: 'Timeline' },
+              { id: 'delivery', name: 'Delivery Tracking' },
               { id: 'documents', name: 'Documents' }
             ].map((tab) => (
               <button
@@ -891,6 +820,10 @@ function OrderDetailsModal({ order, onClose, onUpdateStatus }: OrderDetailsModal
                 </ul>
               </div>
             </div>
+          )}
+
+          {activeTab === 'delivery' && (
+            <DeliveryStatusManager orderId={order.id} />
           )}
 
           {activeTab === 'documents' && (

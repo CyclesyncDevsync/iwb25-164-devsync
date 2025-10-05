@@ -1,0 +1,10 @@
+[package]
+org = "cyclesync"
+name = "delivery_data_setup"
+version = "0.1.0"
+distribution = "2201.12.7"
+
+[[platform.java17.dependency]]
+groupId = "org.postgresql"
+artifactId = "postgresql"
+version = "42.7.2"

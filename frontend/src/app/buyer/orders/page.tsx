@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
+import {
   ShoppingBagIcon,
   TruckIcon,
   CheckCircleIcon,
@@ -15,9 +15,11 @@ import {
   CreditCardIcon,
   ExclamationTriangleIcon,
   EyeIcon,
-  ArrowDownTrayIcon
+  ArrowDownTrayIcon,
+  UserIcon
 } from '@heroicons/react/24/outline';
 import { StarIcon as StarSolidIcon } from '@heroicons/react/24/solid';
+import { deliveryService } from '../../../services/deliveryService';
 
 interface Order {
   id: string;
@@ -53,6 +55,15 @@ interface Order {
   canDispute: boolean;
   rating?: number;
   review?: string;
+  delivery?: {
+    status: string;
+    currentLocation: string;
+    estimatedDeliveryDate: string;
+    driverName?: string;
+    driverPhone?: string;
+    vehicleNumber?: string;
+    updates: DeliveryUpdate[];
+  };
 }
 
 interface DeliveryUpdate {
@@ -70,131 +81,96 @@ const OrdersPage = () => {
   const [rating, setRating] = useState(0);
   const [review, setReview] = useState('');
   const [showTrackingModal, setShowTrackingModal] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  const [orders, setOrders] = useState<Order[]>([
-    {
-      id: '1',
-      orderNumber: 'ORD-2024-001',
-      title: 'Premium Plastic Bottles - PET Grade A',
-      category: 'Plastic',
-      quantity: 500,
-      unit: 'kg',
-      totalAmount: 7500,
-      status: 'in_transit',
-      orderDate: '2024-01-10',
-      expectedDelivery: '2024-01-16',
-      supplier: {
-        name: 'EcoRecycle Ltd.',
-        rating: 4.8,
-        contact: '+91 98765 43210',
-        address: 'Mumbai, Maharashtra'
-      },
-      tracking: {
-        status: 'In Transit',
-        location: 'Pune Distribution Center',
-        lastUpdate: '2 hours ago',
-        estimatedArrival: 'Tomorrow, 2:00 PM'
-      },
-      payment: {
-        method: 'UPI',
-        status: 'paid',
-        transactionId: 'TXN123456789'
-      },
-      images: ['/api/placeholder/400/300'],
-      canRate: false,
-      canDispute: true
-    },
-    {
-      id: '2',
-      orderNumber: 'ORD-2024-002',
-      title: 'Mixed Paper Waste - Office Grade',
-      category: 'Paper',
-      quantity: 200,
-      unit: 'kg',
-      totalAmount: 1600,
-      status: 'delivered',
-      orderDate: '2024-01-05',
-      expectedDelivery: '2024-01-12',
-      actualDelivery: '2024-01-11',
-      supplier: {
-        name: 'Paper Solutions',
-        rating: 4.2,
-        contact: '+91 98765 43211',
-        address: 'Delhi, NCR'
-      },
-      tracking: {
-        status: 'Delivered',
-        location: 'Your Location',
-        lastUpdate: '3 days ago',
-        estimatedArrival: 'Delivered'
-      },
-      payment: {
-        method: 'Bank Transfer',
-        status: 'paid',
-        transactionId: 'TXN123456790'
-      },
-      images: ['/api/placeholder/400/300'],
-      canRate: true,
-      canDispute: false,
-      rating: 4
-    },
-    {
-      id: '3',
-      orderNumber: 'ORD-2024-003',
-      title: 'Aluminum Scrap - Food Grade',
-      category: 'Metal',
-      quantity: 100,
-      unit: 'kg',
-      totalAmount: 8500,
-      status: 'confirmed',
-      orderDate: '2024-01-14',
-      expectedDelivery: '2024-01-20',
-      supplier: {
-        name: 'Metro Metals',
-        rating: 4.6,
-        contact: '+91 98765 43212',
-        address: 'Bangalore, Karnataka'
-      },
-      tracking: {
-        status: 'Order Confirmed',
-        location: 'Supplier Warehouse',
-        lastUpdate: '1 day ago',
-        estimatedArrival: 'Jan 20, 3:00 PM'
-      },
-      payment: {
-        method: 'Credit Card',
-        status: 'paid',
-        transactionId: 'TXN123456791'
-      },
-      images: ['/api/placeholder/400/300'],
-      canRate: false,
-      canDispute: false
-    }
-  ]);
+  const [orders, setOrders] = useState<Order[]>([]);
 
-  const deliveryUpdates: DeliveryUpdate[] = [
-    {
-      id: '1',
-      status: 'In Transit',
-      location: 'Pune Distribution Center',
-      timestamp: '2024-01-15 14:30',
-      description: 'Package is on the way to your location'
-    },
-    {
-      id: '2',
-      status: 'Shipped',
-      location: 'Mumbai Warehouse',
-      timestamp: '2024-01-14 09:15',
-      description: 'Package has been shipped from supplier'
-    },
-    {
-      id: '3',
-      status: 'Confirmed',
-      location: 'Supplier Location',
-      timestamp: '2024-01-10 16:45',
-      description: 'Order confirmed and being prepared'
-    }
-  ];
+  useEffect(() => {
+    const fetchOrders = async () => {
+      setLoading(true);
+      try {
+        // Fetch delivery data for known order IDs
+        const orderIds = ['ord-2024-001', 'ord-2024-002', 'ord-2024-003'];
+        const deliveryPromises = orderIds.map(id => deliveryService.getDeliveryByOrderId(id));
+        const deliveries = await Promise.all(deliveryPromises);
+
+        const ordersData: Order[] = deliveries
+          .filter(delivery => delivery !== null)
+          .map(delivery => {
+            if (!delivery) return null;
+
+            const statusMap: any = {
+              'pending': 'confirmed',
+              'pickup_scheduled': 'confirmed',
+              'picked_up': 'in_transit',
+              'in_transit': 'in_transit',
+              'out_for_delivery': 'in_transit',
+              'delivered': 'delivered',
+              'failed': 'cancelled',
+              'returned': 'cancelled'
+            };
+
+            return {
+              id: delivery.orderId,
+              orderNumber: delivery.orderId.toUpperCase(),
+              title: `Order ${delivery.orderId}`,
+              category: 'Materials',
+              quantity: 500,
+              unit: 'kg',
+              totalAmount: 7500,
+              status: statusMap[delivery.status] || 'confirmed',
+              orderDate: delivery.createdAt.toISOString().split('T')[0],
+              expectedDelivery: delivery.estimatedDeliveryDate?.toISOString().split('T')[0] || '',
+              actualDelivery: delivery.actualDeliveryDate?.toISOString().split('T')[0],
+              supplier: {
+                name: delivery.driverName || 'Supplier Name',
+                rating: 4.5,
+                contact: delivery.driverPhone || '+00 00000 00000',
+                address: delivery.currentLocation || 'Location'
+              },
+              tracking: {
+                status: delivery.status.replace('_', ' ').toUpperCase(),
+                location: delivery.currentLocation || '',
+                lastUpdate: delivery.updatedAt.toLocaleString(),
+                estimatedArrival: delivery.estimatedDeliveryDate?.toLocaleString() || ''
+              },
+              payment: {
+                method: 'Bank Transfer',
+                status: 'paid' as const,
+                transactionId: `TXN${delivery.id.slice(0, 12)}`
+              },
+              images: ['/api/placeholder/400/300'],
+              canRate: delivery.status === 'delivered',
+              canDispute: delivery.status !== 'delivered' && delivery.status !== 'cancelled',
+              delivery: {
+                status: delivery.status,
+                currentLocation: delivery.currentLocation || '',
+                estimatedDeliveryDate: delivery.estimatedDeliveryDate?.toISOString() || '',
+                driverName: delivery.driverName,
+                driverPhone: delivery.driverPhone,
+                vehicleNumber: delivery.vehicleNumber,
+                updates: delivery.updates.map(update => ({
+                  id: update.id,
+                  status: update.status,
+                  location: update.location,
+                  timestamp: update.timestamp.toISOString(),
+                  description: update.description
+                }))
+              }
+            };
+          })
+          .filter(order => order !== null) as Order[];
+
+        setOrders(ordersData);
+      } catch (error) {
+        console.error('Error fetching orders:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchOrders();
+  }, []);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -351,22 +327,66 @@ const OrdersPage = () => {
                     </div>
                   </div>
 
-                  {/* Tracking Bar */}
-                  {order.status === 'in_transit' && (
-                    <div className="mb-4 p-3 bg-yellow-50 rounded-lg">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm font-medium text-yellow-800">
-                          {order.tracking.status}
-                        </span>
-                        <span className="text-sm text-yellow-600">
-                          ETA: {order.tracking.estimatedArrival}
+                  {/* Enhanced Delivery Tracking Bar */}
+                  {order.status === 'in_transit' && order.delivery && (
+                    <div className="mb-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-2">
+                          <TruckIcon className="h-5 w-5 text-blue-600" />
+                          <span className="text-sm font-semibold text-blue-900">
+                            {order.delivery.status.replace('_', ' ').toUpperCase()}
+                          </span>
+                        </div>
+                        <span className="text-sm text-blue-700 font-medium">
+                          ETA: {new Date(order.delivery.estimatedDeliveryDate).toLocaleDateString()}
                         </span>
                       </div>
-                      <div className="flex items-center gap-2 text-sm text-yellow-700">
-                        <MapPinIcon className="h-4 w-4" />
-                        <span>{order.tracking.location}</span>
-                        <span>•</span>
-                        <span>Updated {order.tracking.lastUpdate}</span>
+
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2 text-sm text-blue-800">
+                          <MapPinIcon className="h-4 w-4" />
+                          <span className="font-medium">Current Location:</span>
+                          <span>{order.delivery.currentLocation}</span>
+                        </div>
+
+                        {order.delivery.driverName && (
+                          <div className="flex items-center gap-2 text-sm text-blue-700">
+                            <UserIcon className="h-4 w-4" />
+                            <span>Driver: {order.delivery.driverName}</span>
+                            {order.delivery.driverPhone && (
+                              <>
+                                <span>•</span>
+                                <PhoneIcon className="h-4 w-4" />
+                                <span>{order.delivery.driverPhone}</span>
+                              </>
+                            )}
+                          </div>
+                        )}
+
+                        {order.delivery.vehicleNumber && (
+                          <div className="flex items-center gap-2 text-sm text-blue-700">
+                            <TruckIcon className="h-4 w-4" />
+                            <span>Vehicle: {order.delivery.vehicleNumber}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Show delivery info for delivered orders too */}
+                  {order.status === 'delivered' && order.delivery && (
+                    <div className="mb-4 p-3 bg-green-50 rounded-lg border border-green-200">
+                      <div className="flex items-center gap-2 text-sm text-green-800">
+                        <CheckCircleIcon className="h-5 w-5 text-green-600" />
+                        <span className="font-medium">
+                          Delivered on {new Date(order.actualDelivery!).toLocaleDateString()}
+                        </span>
+                        {order.delivery.driverName && (
+                          <>
+                            <span>•</span>
+                            <span>by {order.delivery.driverName}</span>
+                          </>
+                        )}
                       </div>
                     </div>
                   )}
@@ -655,9 +675,42 @@ const OrdersPage = () => {
                     <p className="font-medium">{selectedOrder.title}</p>
                   </div>
 
+                  {/* Delivery Information */}
+                  {selectedOrder.delivery && (
+                    <div className="mb-6 p-4 bg-blue-50 rounded-lg">
+                      <h4 className="font-medium text-blue-900 mb-3">Delivery Information</h4>
+                      <div className="grid grid-cols-2 gap-3 text-sm">
+                        {selectedOrder.delivery.driverName && (
+                          <div>
+                            <span className="text-blue-700">Driver:</span>
+                            <p className="text-blue-900 font-medium">{selectedOrder.delivery.driverName}</p>
+                          </div>
+                        )}
+                        {selectedOrder.delivery.driverPhone && (
+                          <div>
+                            <span className="text-blue-700">Phone:</span>
+                            <p className="text-blue-900 font-medium">{selectedOrder.delivery.driverPhone}</p>
+                          </div>
+                        )}
+                        {selectedOrder.delivery.vehicleNumber && (
+                          <div>
+                            <span className="text-blue-700">Vehicle:</span>
+                            <p className="text-blue-900 font-medium">{selectedOrder.delivery.vehicleNumber}</p>
+                          </div>
+                        )}
+                        {selectedOrder.delivery.currentLocation && (
+                          <div>
+                            <span className="text-blue-700">Current Location:</span>
+                            <p className="text-blue-900 font-medium">{selectedOrder.delivery.currentLocation}</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
                   {/* Tracking Timeline */}
                   <div className="space-y-4">
-                    {deliveryUpdates.map((update, index) => (
+                    {(selectedOrder.delivery?.updates || deliveryUpdates).map((update, index) => (
                       <div key={update.id} className="flex items-start gap-3">
                         <div className={`w-3 h-3 rounded-full mt-1 ${
                           index === 0 ? 'bg-blue-500' : 'bg-gray-300'
