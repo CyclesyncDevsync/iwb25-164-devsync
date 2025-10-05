@@ -70,7 +70,7 @@ const WalletBalance: React.FC<WalletBalanceProps> = ({
     <div className={`bg-white rounded-lg shadow-sm border p-6 ${className}`}>
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <WalletIcon className="h-6 w-6 text-indigo-600" />
+          <WalletIcon className="h-6 w-6 text-emerald-600" />
           <h3 className="text-lg font-semibold text-gray-900">Wallet Balance</h3>
         </div>
         <button
@@ -83,7 +83,7 @@ const WalletBalance: React.FC<WalletBalanceProps> = ({
       </div>
 
       <div className="mb-4">
-        <p className="text-3xl font-bold text-indigo-600">
+        <p className="text-3xl font-bold text-emerald-600">
           {loading ? 'Loading...' : 
            balance !== null ? `Rs.${balance.toLocaleString()}` : 'Rs.0'}
         </p>
@@ -94,7 +94,7 @@ const WalletBalance: React.FC<WalletBalanceProps> = ({
         <div className="space-y-2">
           <Link 
             href="/wallet"
-            className="block w-full px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-center font-medium"
+            className="block w-full px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 text-center font-medium"
           >
             Manage Wallet
           </Link>

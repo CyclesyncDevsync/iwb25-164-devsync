@@ -10,9 +10,10 @@ export default function Loading({ progress = 0 }: LoadingProps) {
   const radius = 35;
   const circumference = 2 * Math.PI * radius;
   // Ensure progress is a valid number between 0 and 100
-  const validProgress = isNaN(progress)
-    ? 0
-    : Math.min(Math.max(progress, 0), 100);
+  const validProgress =
+    typeof progress === "number" && !isNaN(progress)
+      ? Math.min(Math.max(progress, 0), 100)
+      : 0;
   const strokeDashoffset =
     circumference - (validProgress / 100) * circumference;
 

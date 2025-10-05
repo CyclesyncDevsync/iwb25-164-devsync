@@ -90,9 +90,9 @@ const WalletManagement: React.FC = () => {
           setError(errorData.message || 'Failed to fetch wallet data');
         }
       }
-    } catch (err) {
+    } catch (error) {
       setError('Unable to connect to wallet service. Please try again later.');
-      console.error('Wallet fetch error:', err);
+      console.error('Wallet fetch error:', error);
     } finally {
       setLoading(false);
     }
@@ -119,9 +119,9 @@ const WalletManagement: React.FC = () => {
         setTransactions([]);
         console.warn('Failed to fetch transactions');
       }
-    } catch (err) {
+    } catch (error) {
       setTransactions([]);
-      console.error('Transactions fetch error:', err);
+      console.error('Transactions fetch error:', error);
     }
   };
 
@@ -286,7 +286,7 @@ const WalletManagement: React.FC = () => {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-                <WalletIcon className="h-8 w-8" />
+                <WalletIcon className="h-8 w-8 text-emerald-600" />
                 Wallet Management
               </h1>
               <p className="text-gray-600">Manage your balance and transactions</p>
@@ -335,7 +335,7 @@ const WalletManagement: React.FC = () => {
               <h2 className="text-xl font-semibold">Balance Overview</h2>
               <button
                 onClick={fetchWalletData}
-                className="text-purple-600 hover:text-purple-700"
+                className="text-emerald-600 hover:text-emerald-700"
               >
                 Refresh
               </button>
@@ -373,7 +373,7 @@ const WalletManagement: React.FC = () => {
             <div className="space-y-3">
               <button
                 onClick={() => setShowDepositModal(true)}
-                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700"
               >
                 <PlusIcon className="h-5 w-5" />
                 Recharge Wallet

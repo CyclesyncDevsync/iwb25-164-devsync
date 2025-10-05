@@ -178,6 +178,14 @@ const AuctionsPage = () => {
     dispatch(fetchAuctions({ page: 1, limit: 20 }));
   }, [dispatch]);
 
+  // Debug: Log all auctions and their status
+  useEffect(() => {
+    console.log('Total auctions fetched:', auctions.length);
+    auctions.forEach(auction => {
+      console.log(`Auction: ${auction.title}, Status: ${auction.status}, Display Status: ${getAuctionDisplayStatus(auction)}, End Time: ${auction.endTime}`);
+    });
+  }, [auctions]);
+
   // Real-time timer updates
   useEffect(() => {
     const interval = setInterval(() => {

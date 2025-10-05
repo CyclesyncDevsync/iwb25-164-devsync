@@ -209,14 +209,17 @@ service /api/auction on new http:Listener(8096) {
         return response;
     }
 
-    # Get all active auctions 
-    resource function get auctions() returns http:Response {
+    # Get all active auctions
+    resource function get auctions(int page = 1, int 'limit = 50) returns http:Response {
         http:Response response = new;
 
         do {
             var dbClient = check database_config:getDbClient();
 
-            // Query active auctions with basic information
+            // Calculate offset for pagination
+            int offset = (page - 1) * 'limit;
+
+            // Query all auctions (not just active ones)
             stream<record {
                 string auction_id;
                 string title;
@@ -236,14 +239,14 @@ service /api/auction on new http:Listener(8096) {
                 string[]? photos;
                 int supplier_id;
             }, error?> auctionStream = dbClient->query(`
-                SELECT 
+                SELECT
                     auction_id, title, description, category, sub_category,
                     quantity, unit, starting_price, current_price, reserve_price,
                     status, start_time::text, end_time::text, bid_count, location, photos, supplier_id
-                FROM auctions 
-                WHERE status = 'active'
+                FROM auctions
                 ORDER BY created_at DESC
-                LIMIT 50
+                LIMIT ${'limit}
+                OFFSET ${offset}
             `);
 
             record {
