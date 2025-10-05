@@ -13,6 +13,8 @@ import {
   ExclamationTriangleIcon,
   CheckCircleIcon
 } from '@heroicons/react/24/outline';
+import { DepositModal } from './index';
+import { WalletType } from '../../types/wallet';
 
 interface WalletData {
   wallet_id: string;
@@ -40,9 +42,8 @@ const WalletManagement: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
-  const [showRechargeModal, setShowRechargeModal] = useState(false);
+  const [showDepositModal, setShowDepositModal] = useState(false);
   const [showWithdrawModal, setShowWithdrawModal] = useState(false);
-  const [rechargeAmount, setRechargeAmount] = useState('');
   const [withdrawAmount, setWithdrawAmount] = useState('');
   const [processing, setProcessing] = useState(false);
 
@@ -124,34 +125,60 @@ const WalletManagement: React.FC = () => {
     }
   };
 
-  const handleRecharge = async () => {
-    if (!rechargeAmount || parseFloat(rechargeAmount) <= 0) return;
+  // Convert wallet data to format expected by DepositModal
+  const getWalletForModal = () => {
+    if (!wallet) return null;
     
+    let walletType: WalletType;
+    if (isAdmin) {
+      walletType = WalletType.ADMIN;
+    } else if (userRole === 'supplier') {
+      walletType = WalletType.SUPPLIER;
+    } else {
+      walletType = WalletType.BUYER;
+    }
+    
+    return {
+      id: wallet.wallet_id,
+      userId: wallet.user_id.toString(),
+      type: walletType,
+      balance: wallet.available_balance,
+      currency: 'LKR',
+      isActive: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+  };
+
+  const handleDeposit = async (data: { amount: number; paymentMethodId: string; note?: string }) => {
     setProcessing(true);
     try {
-      const response = await fetch('/api/wallet/recharge', {
-        method: 'POST',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          amount: parseFloat(rechargeAmount),
-          payment_method: 'bank_transfer'
-        })
-      });
+      // If using non-Stripe payment method, use the old recharge API
+      if (data.paymentMethodId !== 'stripe') {
+        const response = await fetch('/api/wallet/recharge', {
+          method: 'POST',
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            amount: data.amount,
+            payment_method: data.paymentMethodId,
+            note: data.note
+          })
+        });
 
-      if (response.ok) {
-        setShowRechargeModal(false);
-        setRechargeAmount('');
-        fetchWalletData();
-        fetchTransactions();
-      } else {
-        const errorData = await response.json();
-        setError(errorData.message || 'Recharge failed');
+        if (response.ok) {
+          fetchWalletData();
+          fetchTransactions();
+        } else {
+          const errorData = await response.json();
+          setError(errorData.message || 'Deposit failed');
+        }
       }
+      // Stripe payments are handled within the DepositModal component
     } catch (err) {
-      setError('Network error during recharge');
+      setError('Network error during deposit');
     } finally {
       setProcessing(false);
     }
@@ -345,7 +372,7 @@ const WalletManagement: React.FC = () => {
             <h3 className="text-lg font-semibold mb-4">Quick Actions</h3>
             <div className="space-y-3">
               <button
-                onClick={() => setShowRechargeModal(true)}
+                onClick={() => setShowDepositModal(true)}
                 className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700"
               >
                 <PlusIcon className="h-5 w-5" />
@@ -450,58 +477,19 @@ const WalletManagement: React.FC = () => {
         </div>
       </div>
 
-      {/* Recharge Modal */}
-      <AnimatePresence>
-        {showRechargeModal && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
-            onClick={() => setShowRechargeModal(false)}
-          >
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-white rounded-lg shadow-xl max-w-md w-full p-6"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <h3 className="text-lg font-semibold mb-4">Recharge Wallet</h3>
-              
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Amount (Rs.)
-                </label>
-                <input
-                  type="number"
-                  value={rechargeAmount}
-                  onChange={(e) => setRechargeAmount(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
-                  placeholder="Enter amount"
-                  min="1"
-                />
-              </div>
-
-              <div className="flex gap-3">
-                <button
-                  onClick={() => setShowRechargeModal(false)}
-                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleRecharge}
-                  disabled={processing || !rechargeAmount || parseFloat(rechargeAmount) <= 0}
-                  className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
-                >
-                  {processing ? 'Processing...' : 'Recharge'}
-                </button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* Deposit Modal */}
+      {showDepositModal && wallet && (
+        <DepositModal
+          wallet={getWalletForModal()!}
+          paymentMethods={[]} // Empty for now - could add saved payment methods later
+          onClose={() => setShowDepositModal(false)}
+          onDeposit={handleDeposit}
+          onRefresh={() => {
+            fetchWalletData();
+            fetchTransactions();
+          }}
+        />
+      )}
 
       {/* Withdraw Modal */}
       <AnimatePresence>

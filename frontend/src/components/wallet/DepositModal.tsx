@@ -2,12 +2,14 @@ import React, { useState } from 'react';
 import { XMarkIcon, CreditCardIcon, BanknotesIcon } from '@heroicons/react/24/outline';
 import { PaymentMethod, Wallet } from '../../types/wallet';
 import { CURRENCY_SYMBOLS, TRANSACTION_LIMITS } from '../../constants/wallet';
+import StripeDepositModal from './StripeDepositModal';
 
 interface DepositModalProps {
   wallet: Wallet;
   paymentMethods: PaymentMethod[];
   onClose: () => void;
   onDeposit: (data: { amount: number; paymentMethodId: string; note?: string }) => void;
+  onRefresh?: () => void;
 }
 
 const DepositModal: React.FC<DepositModalProps> = ({
@@ -15,12 +17,14 @@ const DepositModal: React.FC<DepositModalProps> = ({
   paymentMethods,
   onClose,
   onDeposit,
+  onRefresh,
 }) => {
   const [amount, setAmount] = useState('');
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('');
   const [note, setNote] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isProcessing, setIsProcessing] = useState(false);
+  const [showStripeModal, setShowStripeModal] = useState(false);
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
@@ -47,6 +51,12 @@ const DepositModal: React.FC<DepositModalProps> = ({
     
     if (!validateForm()) return;
 
+    // Handle Stripe payments differently
+    if (selectedPaymentMethod === 'stripe') {
+      setShowStripeModal(true);
+      return;
+    }
+
     setIsProcessing(true);
     try {
       await onDeposit({
@@ -62,6 +72,14 @@ const DepositModal: React.FC<DepositModalProps> = ({
     }
   };
 
+  const handleStripeSuccess = () => {
+    setShowStripeModal(false);
+    if (onRefresh) {
+      onRefresh();
+    }
+    onClose();
+  };
+
   const formatCurrency = (value: string) => {
     const num = parseFloat(value);
     return isNaN(num) ? '' : `${CURRENCY_SYMBOLS.LKR} ${num.toLocaleString()}`;
@@ -71,7 +89,7 @@ const DepositModal: React.FC<DepositModalProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white dark:bg-gray-800 rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
+      <div className={`bg-white dark:bg-gray-800 rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto transition-opacity ${showStripeModal ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
@@ -140,10 +158,43 @@ const DepositModal: React.FC<DepositModalProps> = ({
               Payment Method
             </label>
             <div className="space-y-2">
+              {/* Stripe Payment Option */}
+              <label
+                className={`flex items-center p-3 border rounded-lg cursor-pointer transition-colors ${
+                  selectedPaymentMethod === 'stripe'
+                    ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                    : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="paymentMethod"
+                  value="stripe"
+                  checked={selectedPaymentMethod === 'stripe'}
+                  onChange={(e) => setSelectedPaymentMethod(e.target.value)}
+                  className="sr-only"
+                />
+                <div className="flex items-center space-x-3 flex-1">
+                  <CreditCardIcon className="h-6 w-6 text-blue-500" />
+                  <div>
+                    <p className="font-medium text-gray-900 dark:text-white">
+                      Credit/Debit Card
+                    </p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                      Secure payment with Stripe • Visa, Mastercard, and more
+                    </p>
+                  </div>
+                </div>
+                <span className="text-xs bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400 px-2 py-1 rounded">
+                  Recommended
+                </span>
+              </label>
+
+              {/* Existing Payment Methods */}
               {paymentMethods.length === 0 ? (
-                <div className="text-center py-4 text-gray-500 dark:text-gray-400">
-                  <p>No payment methods available</p>
-                  <p className="text-sm">Add a payment method first</p>
+                <div className="text-center py-4 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-600 rounded-lg">
+                  <p>No saved payment methods</p>
+                  <p className="text-sm">Use card payment above or add a payment method</p>
                 </div>
               ) : (
                 paymentMethods.map((method) => (
@@ -238,11 +289,22 @@ const DepositModal: React.FC<DepositModalProps> = ({
               disabled={isProcessing || !amount || !selectedPaymentMethod}
               className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded-lg font-medium transition-colors"
             >
-              {isProcessing ? 'Processing...' : 'Deposit Funds'}
+              {isProcessing ? 'Processing...' : selectedPaymentMethod === 'stripe' ? 'Continue to Payment' : 'Deposit Funds'}
             </button>
           </div>
         </form>
       </div>
+
+      {/* Stripe Payment Modal */}
+      {showStripeModal && (
+        <StripeDepositModal
+          wallet={wallet}
+          onClose={() => setShowStripeModal(false)}
+          onSuccess={handleStripeSuccess}
+          initialAmount={amount}
+          initialNote={note}
+        />
+      )}
     </div>
   );
 };

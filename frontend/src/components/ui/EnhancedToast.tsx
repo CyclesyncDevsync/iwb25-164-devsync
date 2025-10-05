@@ -187,71 +187,235 @@ export function EnhancedToaster() {
   return (
     <Toaster
       position="top-right"
-      gutter={12}
+      gutter={16}
       containerStyle={{
         top: 80,
-        right: 20,
+        right: 24,
+        zIndex: 99999,
       }}
       toastOptions={{
-        duration: 4000,
+        duration: 5000,
         style: {
-          background: darkMode ? '#374151' : '#FFFFFF',
+          background: darkMode 
+            ? 'linear-gradient(135deg, #1f2937 0%, #374151 100%)' 
+            : 'linear-gradient(135deg, #ffffff 0%, #f9fafb 100%)',
           color: darkMode ? '#F9FAFB' : '#111827',
-          border: `1px solid ${darkMode ? '#4B5563' : '#E5E7EB'}`,
-          borderRadius: '12px',
-          padding: '16px',
-          fontSize: '14px',
-          fontWeight: '500',
-          maxWidth: '400px',
+          border: darkMode 
+            ? '1px solid rgba(75, 85, 99, 0.5)' 
+            : '1px solid rgba(229, 231, 235, 0.8)',
+          borderRadius: '16px',
+          padding: '20px 24px',
+          fontSize: '15px',
+          fontWeight: '600',
+          maxWidth: '450px',
+          minWidth: '350px',
+          backdropFilter: 'blur(12px)',
           boxShadow: darkMode 
-            ? '0 20px 40px rgba(0, 0, 0, 0.3)' 
-            : '0 20px 40px rgba(0, 0, 0, 0.1)',
+            ? '0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05)' 
+            : '0 25px 50px -12px rgba(0, 0, 0, 0.15), 0 8px 16px -8px rgba(0, 0, 0, 0.1)',
+        },
+        success: {
+          style: {
+            background: darkMode
+              ? 'linear-gradient(135deg, #065f46 0%, #047857 100%)'
+              : 'linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%)',
+            border: darkMode ? '1px solid #10b981' : '1px solid #6ee7b7',
+            color: darkMode ? '#d1fae5' : '#065f46',
+          },
+          iconTheme: {
+            primary: darkMode ? '#10b981' : '#059669',
+            secondary: darkMode ? '#065f46' : '#ecfdf5',
+          },
+        },
+        error: {
+          style: {
+            background: darkMode
+              ? 'linear-gradient(135deg, #991b1b 0%, #b91c1c 100%)'
+              : 'linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%)',
+            border: darkMode ? '1px solid #ef4444' : '1px solid #fca5a5',
+            color: darkMode ? '#fee2e2' : '#991b1b',
+          },
+          iconTheme: {
+            primary: darkMode ? '#ef4444' : '#dc2626',
+            secondary: darkMode ? '#991b1b' : '#fef2f2',
+          },
+        },
+        loading: {
+          style: {
+            background: darkMode
+              ? 'linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%)'
+              : 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)',
+            border: darkMode ? '1px solid #3b82f6' : '1px solid #93c5fd',
+            color: darkMode ? '#dbeafe' : '#1e3a8a',
+          },
         },
       }}
     >
       {(t) => (
         <motion.div
-          initial={{ opacity: 0, y: -50, scale: 0.3 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, y: -20, scale: 0.5 }}
+          initial={{ opacity: 0, x: 100, scale: 0.8, rotateZ: 5 }}
+          animate={{ opacity: 1, x: 0, scale: 1, rotateZ: 0 }}
+          exit={{ opacity: 0, x: 100, scale: 0.8, rotateZ: -5 }}
           transition={{
             type: "spring",
-            stiffness: 500,
-            damping: 30,
+            stiffness: 300,
+            damping: 20,
           }}
-          className="relative"
+          className="relative overflow-hidden group"
         >
-          <div className="flex items-center space-x-3">
+          {/* Background decorative element */}
+          <div className={`absolute inset-0 opacity-10 ${
+            t.type === 'success' 
+              ? 'bg-gradient-to-br from-emerald-400 to-emerald-600' 
+              : t.type === 'error'
+              ? 'bg-gradient-to-br from-red-400 to-red-600'
+              : 'bg-gradient-to-br from-blue-400 to-blue-600'
+          }`} />
+          
+          {/* Content container */}
+          <div className="relative flex items-start space-x-4">
+            {/* Icon with animated background */}
             {t.icon && (
-              <div className="flex-shrink-0">
-                {typeof t.icon === 'string' ? (
-                  <span className="text-lg">{t.icon}</span>
-                ) : (
-                  t.icon
-                )}
-              </div>
-            )}
-            <div className="flex-1">
-              {resolveValue(t.message, t)}
-            </div>
-            {t.type !== 'loading' && (
-              <button
-                onClick={() => toast.dismiss(t.id)}
-                className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-colors p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
+              <motion.div 
+                initial={{ scale: 0, rotate: -180 }}
+                animate={{ scale: 1, rotate: 0 }}
+                transition={{ 
+                  type: "spring", 
+                  stiffness: 500, 
+                  damping: 15,
+                  delay: 0.1 
+                }}
+                className={`flex-shrink-0 p-2.5 rounded-xl ${
+                  t.type === 'success'
+                    ? 'bg-emerald-500/20 ring-2 ring-emerald-500/30'
+                    : t.type === 'error'
+                    ? 'bg-red-500/20 ring-2 ring-red-500/30'
+                    : 'bg-blue-500/20 ring-2 ring-blue-500/30'
+                }`}
               >
-                <XMarkIcon className="w-4 h-4" />
-              </button>
+                {typeof t.icon === 'string' ? (
+                  <span className="text-3xl drop-shadow-2xl filter brightness-110">
+                    {t.icon}
+                  </span>
+                ) : (
+                  <div className="w-6 h-6">
+                    {t.icon}
+                  </div>
+                )}
+              </motion.div>
+            )}
+            
+            {/* Message content */}
+            <div className="flex-1 min-w-0 py-0.5">
+              <motion.div 
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.15 }}
+                className="font-bold text-base leading-snug tracking-wide"
+              >
+                {resolveValue(t.message, t)}
+              </motion.div>
+              
+              {/* Optional subtitle/timestamp */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.2 }}
+                className="text-xs opacity-70 mt-1"
+              >
+                {t.type === 'success' && 'Action completed successfully'}
+                {t.type === 'error' && 'Please try again'}
+                {t.type === 'loading' && 'Processing...'}
+              </motion.div>
+            </div>
+            
+            {/* Close button with enhanced hover effect */}
+            {t.type !== 'loading' && (
+              <motion.button
+                initial={{ opacity: 0, scale: 0 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.25 }}
+                onClick={() => toast.dismiss(t.id)}
+                className="flex-shrink-0 text-current opacity-50 hover:opacity-100 transition-all duration-300 p-2 rounded-xl hover:bg-black/10 dark:hover:bg-white/10 hover:rotate-90 hover:scale-110"
+              >
+                <XMarkIcon className="w-5 h-5 stroke-2" />
+              </motion.button>
             )}
           </div>
           
-          {/* Progress bar for timed toasts */}
+          {/* Animated progress bar with gradient */}
           {t.type !== 'loading' && (
             <motion.div
-              className="absolute bottom-0 left-0 h-1 bg-primary dark:bg-primary-light rounded-b-xl"
-              initial={{ width: '100%' }}
-              animate={{ width: '0%' }}
-              transition={{ duration: t.duration ? t.duration / 1000 : 4, ease: 'linear' }}
+              className={`absolute bottom-0 left-0 h-1.5 rounded-b-2xl ${
+                t.type === 'success' 
+                  ? 'bg-gradient-to-r from-emerald-400 via-emerald-500 to-emerald-600' 
+                  : t.type === 'error'
+                  ? 'bg-gradient-to-r from-red-400 via-red-500 to-red-600'
+                  : 'bg-gradient-to-r from-blue-400 via-blue-500 to-blue-600'
+              }`}
+              style={{
+                boxShadow: t.type === 'success'
+                  ? '0 0 20px rgba(16, 185, 129, 0.6), 0 0 40px rgba(16, 185, 129, 0.3)'
+                  : t.type === 'error'
+                  ? '0 0 20px rgba(239, 68, 68, 0.6), 0 0 40px rgba(239, 68, 68, 0.3)'
+                  : '0 0 20px rgba(59, 130, 246, 0.6), 0 0 40px rgba(59, 130, 246, 0.3)',
+              }}
+              initial={{ width: '100%', opacity: 1 }}
+              animate={{ width: '0%', opacity: 0.7 }}
+              transition={{ duration: t.duration ? t.duration / 1000 : 5, ease: 'linear' }}
             />
+          )}
+          
+          {/* Pulsing glow effect on hover */}
+          <motion.div
+            className={`absolute -inset-0.5 rounded-2xl opacity-0 group-hover:opacity-30 transition-opacity duration-300 blur-xl ${
+              t.type === 'success'
+                ? 'bg-emerald-500'
+                : t.type === 'error'
+                ? 'bg-red-500'
+                : 'bg-blue-500'
+            }`}
+          />
+          
+          {/* Shimmer effect overlay - enhanced */}
+          <motion.div
+            className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent pointer-events-none -skew-x-12"
+            initial={{ x: '-200%' }}
+            animate={{ x: '300%' }}
+            transition={{
+              duration: 2,
+              ease: 'easeInOut',
+              delay: 0.3,
+            }}
+          />
+          
+          {/* Subtle particle effect */}
+          {t.type === 'success' && (
+            <>
+              {[...Array(5)].map((_, i) => (
+                <motion.div
+                  key={i}
+                  className="absolute w-1 h-1 bg-emerald-400 rounded-full"
+                  initial={{ 
+                    x: '50%', 
+                    y: '50%', 
+                    scale: 0,
+                    opacity: 1 
+                  }}
+                  animate={{ 
+                    x: `${50 + (Math.random() - 0.5) * 100}%`,
+                    y: `${50 + (Math.random() - 0.5) * 100}%`,
+                    scale: [0, 1, 0],
+                    opacity: [1, 0.5, 0]
+                  }}
+                  transition={{
+                    duration: 1 + Math.random(),
+                    delay: Math.random() * 0.5,
+                    ease: 'easeOut'
+                  }}
+                />
+              ))}
+            </>
           )}
         </motion.div>
       )}

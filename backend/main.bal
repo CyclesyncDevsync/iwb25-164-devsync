@@ -21,6 +21,8 @@ import Cyclesync.news as _;
 import Cyclesync.auction as _;
 // The wallet module will auto-register its services
 import Cyclesync.wallet as _;
+// The payment module will auto-register its services
+import Cyclesync.payment as _;
 // The notifications module will auto-register its services
 import Cyclesync.notifications as _;
 // The scheduling module will auto-register its services

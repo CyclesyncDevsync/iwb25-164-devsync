@@ -60,10 +60,10 @@ export const SUPPORTED_CURRENCIES = ['LKR', 'USD'] as const;
 
 export const TRANSACTION_LIMITS = {
   MIN_DEPOSIT: 100, // LKR
-  MAX_DEPOSIT: 1000000, // LKR
+  MAX_DEPOSIT: 999999, // LKR (Stripe limit: 999,999.99 LKR)
   MIN_WITHDRAWAL: 500, // LKR
   MAX_WITHDRAWAL: 500000, // LKR
-  DAILY_LIMIT: 1000000, // LKR
+  DAILY_LIMIT: 999999, // LKR (Stripe limit per transaction)
   MONTHLY_LIMIT: 5000000, // LKR
 };
 
