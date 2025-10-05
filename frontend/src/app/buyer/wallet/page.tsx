@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { 
   WalletIcon, 
@@ -35,34 +35,28 @@ export default function WalletPage() {
   const [loading, setLoading] = useState(true);
   const [showDepositModal, setShowDepositModal] = useState(false);
   const [walletForModal, setWalletForModal] = useState<any>(null);
+  const hasProcessedPayment = useRef(false);
 
   useEffect(() => {
     // Check for payment status in URL
     const paymentStatus = searchParams.get('payment');
     const sessionId = searchParams.get('session_id');
     
-    if (paymentStatus === 'success' && sessionId) {
+    if (paymentStatus === 'success' && sessionId && !hasProcessedPayment.current) {
       // Verify the checkout session with backend
+      hasProcessedPayment.current = true;
       verifyCheckoutSession(sessionId);
-    } else if (paymentStatus === 'success') {
-      toast.success('Payment successful! Your wallet has been recharged.', {
-        duration: 5000,
-        icon: '✅'
-      });
-      // Remove query param from URL without refresh
-      window.history.replaceState({}, '', '/buyer/wallet');
-      // Refresh wallet data
-      fetchWalletData();
-    } else if (paymentStatus === 'cancelled') {
+    } else if (paymentStatus === 'cancelled' && !hasProcessedPayment.current) {
+      hasProcessedPayment.current = true;
       toast.error('Payment was cancelled.', {
         duration: 4000,
+        icon: '❌'
       });
       // Remove query param from URL without refresh
       window.history.replaceState({}, '', '/buyer/wallet');
-    }
-    
-    // Initial fetch if no payment status
-    if (!paymentStatus) {
+      fetchWalletData();
+    } else if (!paymentStatus) {
+      // Initial fetch if no payment status
       fetchWalletData();
     }
   }, [searchParams]);
@@ -83,11 +77,17 @@ export default function WalletPage() {
           // Create wallet object for modal
           setWalletForModal({
             id: balanceData.data.id || 1,
+            userId: balanceData.data.user_id || 1,
             user_id: balanceData.data.user_id || 1,
+            type: 'buyer', // Set wallet type for buyer
+            balance: balanceData.data.available_balance || 0,
             available_balance: balanceData.data.available_balance,
             frozen_balance: balanceData.data.frozen_balance,
             total_balance: balanceData.data.total_balance,
-            currency: 'LKR'
+            currency: 'LKR',
+            isActive: true,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
           });
         }
       }
@@ -125,7 +125,12 @@ export default function WalletPage() {
       const data = await response.json();
       
       if (response.ok && data.status === 'success') {
-        toast.success('Payment verified! Your wallet has been recharged.', {
+        // Show success message with amount if available
+        const message = data.data?.amount 
+          ? `Payment successful! LKR ${(data.data.amount / 100).toFixed(2)} added to your wallet.`
+          : 'Payment successful! Your wallet has been recharged.';
+        
+        toast.success(message, {
           duration: 5000,
           icon: '✅'
         });
