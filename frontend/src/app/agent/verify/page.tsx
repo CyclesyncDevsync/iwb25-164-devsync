@@ -85,6 +85,8 @@ const VerifyPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<TabType>("pending");
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [actionType, setActionType] = useState<string | null>(null); // Track which action is being performed
+  const [addedToAuction, setAddedToAuction] = useState<Set<string>>(new Set()); // Track assignments added to auction
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [selectedAssignmentForDetails, setSelectedAssignmentForDetails] =
     useState<Assignment | null>(null);
@@ -324,12 +326,14 @@ const VerifyPage = () => {
     additionalData?: any
   ) => {
     setActionLoading(assignmentId);
+    setActionType(newStatus); // Track which action is being performed
     try {
       // Get the auth token first
       const authResponse = await fetch("/api/auth/me");
       if (!authResponse.ok) {
         console.error("Failed to get auth token");
         setActionLoading(null);
+        setActionType(null);
         return;
       }
 
@@ -341,6 +345,7 @@ const VerifyPage = () => {
       if (!assignment) {
         console.error("Assignment not found");
         setActionLoading(null);
+        setActionType(null);
         return;
       }
 
@@ -414,6 +419,7 @@ const VerifyPage = () => {
       console.error("Error updating assignment status:", error);
     } finally {
       setActionLoading(null);
+      setActionType(null); // Clear the action type
     }
   };
 
@@ -496,10 +502,9 @@ const VerifyPage = () => {
   };
 
   const handleAddToAuction = async (assignment: Assignment) => {
-    // });
+    // Add to the set of assignments added to auction
+    setAddedToAuction((prev) => new Set(prev).add(assignment.id));
 
-    // if (response.ok) {
-    //   const result = await response.json();
     toast.success("Successfully added to auction!", {
       duration: 4000,
       position: "top-right",
@@ -1265,9 +1270,15 @@ const VerifyPage = () => {
                               )
                             }
                             disabled={actionLoading === assignment.id}
-                            className="flex-1 bg-green-600 text-white py-2 px-4 rounded-md text-sm font-medium hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                            className={`flex-1 bg-green-600 text-white py-2 px-4 rounded-md text-sm font-medium hover:bg-green-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center ${
+                              actionLoading === assignment.id &&
+                              actionType === "accepted"
+                                ? "scale-95 ring-2 ring-green-400"
+                                : ""
+                            }`}
                           >
-                            {actionLoading === assignment.id ? (
+                            {actionLoading === assignment.id &&
+                            actionType === "accepted" ? (
                               <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
                             ) : (
                               <>Accept</>
@@ -1285,9 +1296,15 @@ const VerifyPage = () => {
                               )
                             }
                             disabled={actionLoading === assignment.id}
-                            className="flex-1 bg-red-600 text-white py-2 px-4 rounded-md text-sm font-medium hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                            className={`flex-1 bg-red-600 text-white py-2 px-4 rounded-md text-sm font-medium hover:bg-red-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center ${
+                              actionLoading === assignment.id &&
+                              actionType === "rejected"
+                                ? "scale-95 ring-2 ring-red-400"
+                                : ""
+                            }`}
                           >
-                            {actionLoading === assignment.id ? (
+                            {actionLoading === assignment.id &&
+                            actionType === "rejected" ? (
                               <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
                             ) : (
                               <>Reject</>
@@ -1305,22 +1322,50 @@ const VerifyPage = () => {
                       {assignment.status === "accepted" && (
                         <div className="flex flex-col space-y-2 w-full">
                           <button
-                            onClick={() => handleAddToAuction(assignment)}
-                            className="flex-1 bg-purple-600 text-white py-2 px-4 rounded-md text-sm font-medium hover:bg-purple-700 transition-colors flex items-center justify-center gap-2"
+                            onClick={() =>
+                              !addedToAuction.has(assignment.id) &&
+                              handleAddToAuction(assignment)
+                            }
+                            disabled={addedToAuction.has(assignment.id)}
+                            className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all duration-200 flex items-center justify-center gap-2 ${
+                              addedToAuction.has(assignment.id)
+                                ? "bg-green-600 text-white cursor-default"
+                                : "bg-purple-600 text-white hover:bg-purple-700 cursor-pointer"
+                            }`}
                           >
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              className="h-5 w-5"
-                              viewBox="0 0 20 20"
-                              fill="currentColor"
-                            >
-                              <path
-                                fillRule="evenodd"
-                                d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
-                                clipRule="evenodd"
-                              />
-                            </svg>
-                            Add to Auction
+                            {addedToAuction.has(assignment.id) ? (
+                              <>
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  className="h-5 w-5"
+                                  viewBox="0 0 20 20"
+                                  fill="currentColor"
+                                >
+                                  <path
+                                    fillRule="evenodd"
+                                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                    clipRule="evenodd"
+                                  />
+                                </svg>
+                                Added to Auction
+                              </>
+                            ) : (
+                              <>
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  className="h-5 w-5"
+                                  viewBox="0 0 20 20"
+                                  fill="currentColor"
+                                >
+                                  <path
+                                    fillRule="evenodd"
+                                    d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
+                                    clipRule="evenodd"
+                                  />
+                                </svg>
+                                Add to Auction
+                              </>
+                            )}
                           </button>
                           <button
                             onClick={() => viewDetails(assignment)}
