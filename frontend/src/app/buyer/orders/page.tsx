@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
+import {
   ShoppingBagIcon,
   TruckIcon,
   CheckCircleIcon,
@@ -15,9 +15,11 @@ import {
   CreditCardIcon,
   ExclamationTriangleIcon,
   EyeIcon,
-  ArrowDownTrayIcon
+  ArrowDownTrayIcon,
+  CalendarIcon
 } from '@heroicons/react/24/outline';
 import { StarIcon as StarSolidIcon } from '@heroicons/react/24/solid';
+import { createDeliveryEventFromOrder, createCalendarEvent } from '../../../services/calendarService';
 
 interface Order {
   id: string;
@@ -70,6 +72,94 @@ const OrdersPage = () => {
   const [rating, setRating] = useState(0);
   const [review, setReview] = useState('');
   const [showTrackingModal, setShowTrackingModal] = useState(false);
+  const [calendarLoading, setCalendarLoading] = useState<string | null>(null);
+  const [showCalendarModal, setShowCalendarModal] = useState(false);
+  const [selectedCalendarOrder, setSelectedCalendarOrder] = useState<Order | null>(null);
+  const [customDate, setCustomDate] = useState('');
+  const [customTime, setCustomTime] = useState('10:00');
+
+  const openCalendarModal = (order: Order) => {
+    setSelectedCalendarOrder(order);
+    // Set default date to today
+    const today = new Date();
+    setCustomDate(today.toISOString().split('T')[0]);
+    setShowCalendarModal(true);
+  };
+
+  const addToCalendar = async () => {
+    if (!selectedCalendarOrder) return;
+
+    setCalendarLoading(selectedCalendarOrder.id);
+    try {
+      console.log('Creating calendar event for order:', selectedCalendarOrder);
+
+      // Create custom date/time
+      const [hours, minutes] = customTime.split(':');
+      const eventDate = new Date(customDate);
+      eventDate.setHours(parseInt(hours), parseInt(minutes), 0);
+
+      // Create end time (1 hour later)
+      const endDate = new Date(eventDate);
+      endDate.setHours(eventDate.getHours() + 1);
+
+      // Format dates
+      const formatDateTime = (date: Date) => {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        const hrs = String(date.getHours()).padStart(2, '0');
+        const mins = String(date.getMinutes()).padStart(2, '0');
+        const secs = String(date.getSeconds()).padStart(2, '0');
+        return `${year}-${month}-${day}T${hrs}:${mins}:${secs}`;
+      };
+
+      const calendarEvent = {
+        summary: `Delivery: ${selectedCalendarOrder.title}`,
+        description: `Order #${selectedCalendarOrder.orderNumber}\nQuantity: ${selectedCalendarOrder.quantity || 'N/A'} ${selectedCalendarOrder.unit || ''}\nSupplier: ${selectedCalendarOrder.supplier?.name || 'Unknown'}`,
+        startTime: formatDateTime(eventDate),
+        endTime: formatDateTime(endDate),
+        location: selectedCalendarOrder.supplier?.address || ''
+      };
+
+      console.log('Calendar event payload:', calendarEvent);
+
+      const response = await createCalendarEvent(calendarEvent);
+      console.log('Calendar API response:', response);
+
+      if (response.status === 'success') {
+        const formattedDate = eventDate.toLocaleDateString('en-US', {
+          weekday: 'long',
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric'
+        });
+        const formattedTime = eventDate.toLocaleTimeString('en-US', {
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+
+        alert(
+          `✅ Delivery reminder added to your Google Calendar!\n\n` +
+          `📦 Order: ${selectedCalendarOrder.title}\n` +
+          `📅 Date: ${formattedDate}\n` +
+          `🕐 Time: ${formattedTime}\n` +
+          `📍 Location: ${selectedCalendarOrder.supplier?.address || 'N/A'}\n\n` +
+          `Event ID: ${response.eventId}`
+        );
+
+        setShowCalendarModal(false);
+        setSelectedCalendarOrder(null);
+      } else {
+        alert(`Failed to add to calendar: ${response.message || 'Unknown error'}`);
+      }
+    } catch (error: any) {
+      console.error('Error adding to calendar:', error);
+      const errorMessage = error.message || 'Unknown error occurred';
+      alert(`Error adding to calendar:\n${errorMessage}\n\nCheck browser console for details.`);
+    } finally {
+      setCalendarLoading(null);
+    }
+  };
 
   const [orders, setOrders] = useState<Order[]>([
     {
@@ -394,6 +484,17 @@ const OrdersPage = () => {
                       </button>
                     )}
 
+                    {(order.status === 'confirmed' || order.status === 'in_transit') && (
+                      <button
+                        onClick={() => openCalendarModal(order)}
+                        disabled={calendarLoading === order.id}
+                        className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <CalendarIcon className="h-4 w-4 inline mr-1" />
+                        {calendarLoading === order.id ? 'Adding...' : 'Add to Calendar'}
+                      </button>
+                    )}
+
                     <button className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-sm font-medium">
                       <ChatBubbleLeftRightIcon className="h-4 w-4 inline mr-1" />
                       Contact Supplier
@@ -680,6 +781,107 @@ const OrdersPage = () => {
                       <span className="font-medium text-blue-900">Estimated Arrival</span>
                     </div>
                     <p className="text-blue-800">{selectedOrder.tracking.estimatedArrival}</p>
+                  </div>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Calendar Date Picker Modal */}
+        <AnimatePresence>
+          {showCalendarModal && selectedCalendarOrder && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+              onClick={() => setShowCalendarModal(false)}
+            >
+              <motion.div
+                initial={{ scale: 0.95, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.95, opacity: 0 }}
+                className="bg-white rounded-lg shadow-xl max-w-md w-full"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold text-gray-900">Add to Calendar</h3>
+                    <button
+                      onClick={() => setShowCalendarModal(false)}
+                      className="text-gray-400 hover:text-gray-600 text-2xl"
+                    >
+                      ×
+                    </button>
+                  </div>
+
+                  <div className="mb-4">
+                    <p className="text-sm text-gray-600 mb-2">
+                      <span className="font-medium">Order:</span> {selectedCalendarOrder.title}
+                    </p>
+                    <p className="text-sm text-gray-600 mb-4">
+                      <span className="font-medium">Expected Delivery:</span>{' '}
+                      {new Date(selectedCalendarOrder.expectedDelivery).toLocaleDateString()}
+                    </p>
+                  </div>
+
+                  <div className="space-y-4 mb-6">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Select Date
+                      </label>
+                      <input
+                        type="date"
+                        value={customDate}
+                        onChange={(e) => setCustomDate(e.target.value)}
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Select Time
+                      </label>
+                      <input
+                        type="time"
+                        value={customTime}
+                        onChange={(e) => setCustomTime(e.target.value)}
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                      />
+                    </div>
+
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                      <p className="text-sm text-green-800">
+                        <CalendarIcon className="h-4 w-4 inline mr-1" />
+                        Reminder will be added for:{' '}
+                        <span className="font-medium">
+                          {customDate && new Date(customDate + 'T' + customTime).toLocaleString('en-US', {
+                            weekday: 'short',
+                            month: 'short',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </span>
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => setShowCalendarModal(false)}
+                      className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={addToCalendar}
+                      disabled={!customDate || calendarLoading === selectedCalendarOrder.id}
+                      className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {calendarLoading === selectedCalendarOrder.id ? 'Adding...' : 'Add to Calendar'}
+                    </button>
                   </div>
                 </div>
               </motion.div>
