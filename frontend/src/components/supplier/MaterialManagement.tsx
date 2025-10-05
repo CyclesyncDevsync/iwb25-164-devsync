@@ -1,4 +1,5 @@
 'use client';
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -10,26 +11,18 @@ import {
   FunnelIcon,
   MagnifyingGlassIcon,
   PhotoIcon,
-  MapPinIcon,
-  TruckIcon,
   CurrencyDollarIcon,
   ClockIcon,
   CheckCircleIcon,
   XCircleIcon,
   ExclamationTriangleIcon,
-  ArrowPathIcon,
-  PauseCircleIcon,
   PencilIcon,
   ArchiveBoxIcon,
   UserIcon,
   ShieldCheckIcon
 } from '@heroicons/react/24/outline';
 import { useAppDispatch, useAppSelector } from '../../hooks/redux';
-import {
-  fetchSupplierMaterials,
-  setFilters,
-  setSelectedMaterial
-} from '../../store/slices/supplierSlice';
+import { setFilters } from '../../store/slices/supplierSlice';
 import {
   Material,
   MaterialStatus,
@@ -40,15 +33,16 @@ import { ViewMaterialModal } from './ViewMaterialModal';
 
 export default function MaterialManagement() {
   const { user } = useAuth();
+  const [gridDensity, setGridDensity] = useState<'comfortable' | 'compact' | 'dense'>('comfortable');
   const [searchTerm, setSearchTerm] = useState('');
   const [showFilters, setShowFilters] = useState(false);
-  const [backendMaterials, setBackendMaterials] = useState<any[]>([]);
+  const [backendMaterials, setBackendMaterials] = useState<Material[]>([]);
   const [isLoadingBackend, setIsLoadingBackend] = useState(true);
   const [showViewModal, setShowViewModal] = useState(false);
   const [materialToView, setMaterialToView] = useState<Material | null>(null);
 
   const dispatch = useAppDispatch();
-  const { materials, loading, pagination, filters } = useAppSelector(state => state.supplier);
+  const { pagination, filters } = useAppSelector((state: any) => state.supplier);
 
   useEffect(() => {
     // Fetch materials from the backend API
@@ -150,7 +144,7 @@ export default function MaterialManagement() {
           try {
             const errorData = await response.json();
             console.error('Error response:', errorData);
-          } catch (e) {
+          } catch {
             console.error('Could not parse error response');
           }
         }
@@ -176,8 +170,8 @@ export default function MaterialManagement() {
     // Implement search logic here
   };
 
-  const handleFilterChange = (newFilters: any) => {
-    dispatch(setFilters(newFilters));
+  const handleFilterChange = (newFilters: Record<string, unknown>) => {
+    dispatch(setFilters(newFilters as any));
   };
 
   // Use backend materials instead of Redux materials
@@ -187,24 +181,58 @@ export default function MaterialManagement() {
   );
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between">
-        <div>
+    <div className="space-y-6 px-4 sm:px-6 lg:px-8 py-6">
+      {/* Header card with quick stats */}
+      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm p-4 md:p-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div className="flex-1">
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white">My Materials</h2>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400 max-w-2xl">
             Manage your material listings and track their performance
           </p>
+          <div className="mt-3 flex items-center gap-4">
+            <div className="inline-flex items-center px-3 py-1.5 bg-emerald-50 dark:bg-emerald-900/20 rounded-full">
+              <CheckCircleIcon className="h-4 w-4 text-emerald-600 mr-2" />
+              <span className="text-sm font-medium text-emerald-700 dark:text-emerald-200">{backendMaterials.length} submissions</span>
+            </div>
+            <div className="inline-flex items-center px-3 py-1.5 bg-gray-50 dark:bg-gray-700/40 rounded-full">
+              <CurrencyDollarIcon className="h-4 w-4 text-gray-600 mr-2" />
+              <span className="text-sm text-gray-600 dark:text-gray-300">Est. value LKR {backendMaterials.reduce((s, m) => s + (m.pricing?.expectedPrice || 0), 0).toLocaleString()}</span>
+            </div>
+          </div>
         </div>
-        
-        <div className="mt-4 md:mt-0 flex items-center space-x-3">
-          <Link
-            href="/supplier/materials/new-enhanced"
-            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500"
-          >
-            <PlusIcon className="h-4 w-4 mr-2" />
-            Add Material
-          </Link>
+
+  <div className="flex items-center gap-3">
+          <div className="relative w-full max-w-md">
+            <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search materials..."
+              value={searchTerm}
+              onChange={(e) => handleSearch(e.target.value)}
+              className="pl-10 block w-full border border-gray-200 rounded-full shadow-sm focus:ring-emerald-500 focus:border-emerald-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+            />
+          </div>
+
+          <div className="flex items-center gap-2">
+            <select
+              aria-label="Grid density"
+              value={gridDensity}
+              onChange={(e) => setGridDensity(e.target.value as 'comfortable' | 'compact' | 'dense')}
+              className="rounded-full border border-gray-200 px-3 py-1 text-sm bg-white dark:bg-gray-700"
+            >
+              <option value="comfortable">Comfortable</option>
+              <option value="compact">Compact</option>
+              <option value="dense">Dense</option>
+            </select>
+
+            <Link
+              href="/supplier/materials/new-enhanced"
+              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-semibold rounded-full text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500"
+            >
+              <PlusIcon className="h-4 w-4 mr-2" />
+              Add Material
+            </Link>
+          </div>
         </div>
       </div>
 
@@ -251,37 +279,44 @@ export default function MaterialManagement() {
       </div>
 
       {/* Materials Grid */}
-      {isLoadingBackend ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[...Array(6)].map((_, index) => (
-            <MaterialCardSkeleton key={index} />
-          ))}
-        </div>
-      ) : filteredMaterials.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredMaterials.map((material) => (
-            <MaterialCard
-              key={material.id}
-              material={material}
-              onView={() => {
-                setMaterialToView(material);
-                setShowViewModal(true);
-              }}
-            />
-          ))}
-        </div>
-      ) : (
-        <EmptyState searchTerm={searchTerm} />
-      )}
+      {(() => {
+        const gridClass = gridDensity === 'comfortable'
+          ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'
+          : gridDensity === 'compact'
+          ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'
+          : 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3';
+
+        return isLoadingBackend ? (
+          <div className={gridClass}>
+            {[...Array(6)].map((_, index) => (
+              <MaterialCardSkeleton key={index} />
+            ))}
+          </div>
+        ) : filteredMaterials.length > 0 ? (
+          <div className={gridClass}>
+            {filteredMaterials.map((material) => (
+              <MaterialCard
+                key={material.id}
+                material={material}
+                gridDensity={gridDensity}
+                onView={() => {
+                  setMaterialToView(material);
+                  setShowViewModal(true);
+                }}
+              />
+            ))}
+          </div>
+        ) : (
+          <EmptyState searchTerm={searchTerm} />
+        );
+      })()}
 
       {/* Pagination */}
       {pagination.totalPages > 1 && (
         <Pagination
           currentPage={pagination.currentPage}
           totalPages={pagination.totalPages}
-          onPageChange={(page) => {
-            // Handle page change
-          }}
+          onPageChange={(page) => { console.log('page change', page); }}
         />
       )}
 
@@ -301,9 +336,10 @@ export default function MaterialManagement() {
 interface MaterialCardProps {
   material: Material;
   onView: () => void;
+  gridDensity?: 'comfortable' | 'compact' | 'dense';
 }
 
-function MaterialCard({ material, onView }: MaterialCardProps) {
+function MaterialCard({ material, onView, gridDensity = 'comfortable' }: MaterialCardProps) {
   const getStatusColor = (status: string) => {
     // Map backend statuses to colors
     switch (status) {
@@ -390,88 +426,87 @@ function MaterialCard({ material, onView }: MaterialCardProps) {
     }
   };
 
-  const mainPhoto = material.photos.find(photo => photo.isMain) || material.photos[0];
+  const mainPhoto = material.photos.find((photo: any) => photo.isMain) || material.photos[0];
+  // adjust styles slightly based on density
+  const densityClasses = gridDensity === 'compact' ? 'h-48' : gridDensity === 'dense' ? 'h-40' : 'h-56';
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-white dark:bg-gray-800 rounded-lg shadow-md hover:shadow-lg transition-shadow overflow-hidden"
+      className={`bg-white dark:bg-gray-800 rounded-2xl shadow-lg hover:shadow-2xl transition-transform transform hover:-translate-y-1 overflow-hidden relative`}
     >
-      {/* Header with status */}
-      <div className="p-4 flex items-center justify-end">
-        <div className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(material.status)}`}>
+      {/* Status badge overlay */}
+      <div className="absolute top-3 left-3 z-20">
+        <div className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium backdrop-blur-sm ${getStatusColor(material.status)}`}>
           {getStatusIcon(material.status)}
-          <span className="ml-1 capitalize">{material.status.replace('_', ' ')}</span>
+          <span className="ml-2 capitalize">{material.status.replace('_', ' ')}</span>
+        </div>
+      </div>
+
+      {/* Price ribbon */}
+      <div className="absolute top-3 right-3 z-20">
+        <div className="inline-flex items-center px-3 py-1 rounded-full bg-white/80 text-sm font-semibold text-gray-800 shadow-sm">
+          LKR {material.pricing.expectedPrice.toLocaleString()}
         </div>
       </div>
 
       {/* Image */}
-      <div className="relative h-48 bg-gray-200 dark:bg-gray-700">
+  <div className={`relative ${densityClasses} bg-gray-200 dark:bg-gray-700`}>
+        <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-80 pointer-events-none" />
         {mainPhoto ? (
           <img
             src={mainPhoto.url}
             alt={material.title}
-            className="w-full h-full object-cover"
+            loading="lazy"
+            className="w-full h-full object-cover transition-transform duration-500 transform hover:scale-105"
+            onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder.png'; }}
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
-            <PhotoIcon className="h-12 w-12 text-gray-400" />
+            <PhotoIcon className="h-14 w-14 text-gray-400" />
           </div>
         )}
-        
+
         {material.photos.length > 1 && (
-          <div className="absolute bottom-2 right-2 bg-black bg-opacity-50 text-white text-xs px-2 py-1 rounded">
+          <div className="absolute bottom-3 right-3 bg-black bg-opacity-60 text-white text-xs px-2 py-1 rounded">
             +{material.photos.length - 1} more
           </div>
         )}
       </div>
 
       {/* Content */}
-      <div className="p-4">
-        <h3 className="text-lg font-medium text-gray-900 dark:text-white truncate">
+      <div className="p-5">
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white truncate">
           {material.title}
         </h3>
-        
-        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400 line-clamp-2">
+
+        <p className="mt-2 text-sm text-gray-500 dark:text-gray-400 line-clamp-2">
           {material.description}
         </p>
 
-        <div className="mt-4 space-y-2">
-          <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
-            <span className="font-medium">{material.quantity} {material.unit}</span>
-            <span className="mx-2">•</span>
-            <span className="capitalize">{material.category}</span>
+        <div className="mt-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
+              <span className="font-medium">{material.quantity} {material.unit}</span>
+              <span className="mx-2">•</span>
+              <span className="capitalize">{material.category}</span>
+            </div>
           </div>
-          
-          <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
-            <CurrencyDollarIcon className="h-4 w-4 mr-1" />
-            <span>LKR {material.pricing.expectedPrice.toLocaleString()}</span>
-          </div>
-          
-          <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
-            <TruckIcon className="h-4 w-4 mr-1" />
-            <span className="capitalize">{material.deliveryMethod?.replace('_', ' ') || 'Not specified'}</span>
+
+          <div className="flex items-center gap-3">
+            <div className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getConditionColor(material.condition)}`}>
+              {material.condition ? material.condition.charAt(0).toUpperCase() + material.condition.slice(1) : 'Unknown'}
+            </div>
+            <button
+              onClick={onView}
+              className="inline-flex items-center px-3 py-1 border border-transparent text-sm font-medium rounded-full text-emerald-700 bg-emerald-50 hover:bg-emerald-100"
+            >
+              <EyeIcon className="h-4 w-4 mr-2" />
+              View
+            </button>
           </div>
         </div>
-
-        {/* Condition */}
-        <div className="mt-3">
-          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getConditionColor(material.condition)}`}>
-            {material.condition ? material.condition.charAt(0).toUpperCase() + material.condition.slice(1) : 'Unknown'}
-          </span>
-        </div>
-      </div>
-
-      {/* Actions */}
-      <div className="px-4 py-3 bg-gray-50 dark:bg-gray-700 border-t border-gray-200 dark:border-gray-600">
-        <button
-          onClick={onView}
-          className="w-full inline-flex justify-center items-center px-3 py-1 border border-gray-300 text-sm font-medium rounded text-gray-700 bg-white hover:bg-gray-50 dark:bg-gray-600 dark:text-gray-300 dark:border-gray-500 dark:hover:bg-gray-500"
-        >
-          <EyeIcon className="h-4 w-4 mr-1" />
-          View Details
-        </button>
       </div>
     </motion.div>
   );
