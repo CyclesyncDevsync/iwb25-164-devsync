@@ -56,7 +56,7 @@ export default function ChatBot({ className = '' }: ChatBotProps) {
       wsRef.current = new WebSocket('ws://localhost:8094/chat');
       
       wsRef.current.onopen = () => {
-        console.log('Connected to chatbot');
+        console.log('✅ Connected to chatbot service');
         setIsConnected(true);
       };
       
@@ -65,18 +65,19 @@ export default function ChatBot({ className = '' }: ChatBotProps) {
         handleServerMessage(data);
       };
       
-      wsRef.current.onerror = (error) => {
-        console.error('WebSocket error:', error);
+      wsRef.current.onerror = () => {
+        // Silently handle WebSocket errors - chatbot service may not be running
+        // This is expected if the chatbot backend is not started
         setIsConnected(false);
       };
       
       wsRef.current.onclose = () => {
-        console.log('Disconnected from chatbot');
+        console.log('⚠️ Chatbot service disconnected (backend may not be running)');
         setIsConnected(false);
         wsRef.current = null;
       };
     } catch (error) {
-      console.error('Failed to connect:', error);
+      // Silently handle connection errors - chatbot is optional
       setIsConnected(false);
     }
   };

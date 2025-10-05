@@ -49,6 +49,12 @@ const CircleMarker = dynamic(
   { ssr: false }
 );
 
+const MapRecenter = dynamic(
+  () =>
+    import("../ui/MapRecenter").then((mod) => ({ default: mod.MapRecenter })),
+  { ssr: false }
+);
+
 // Mock warehouse centers (used when no real data is available)
 const WAREHOUSE_CENTERS = [
   {
@@ -169,35 +175,66 @@ export function MaterialVerification() {
   const [photoAnalysisResults, setPhotoAnalysisResults] = useState<{
     [key: number]: any;
   }>({});
+  const [assigningAgentId, setAssigningAgentId] = useState<string | null>(null);
 
   useEffect(() => {
-    // Fetch agents first, then fetch submissions
+    // Fetch all data in parallel using cached APIs for faster loading
     const loadData = async () => {
-      console.log("Starting data load...");
-      let agentsList: Agent[] = [];
+      const startTime = performance.now();
+      console.log("⚡ Starting optimized data load with Redis caching...");
+      setLoading(true);
+
       try {
-        agentsList = await fetchAgents();
-        console.log("Agents fetched, count:", agentsList?.length || 0);
+        // Fetch all data in parallel (much faster!)
+        const [agentsList, submissionsData, statsData, warehouseData] =
+          await Promise.all([
+            fetchAgents(),
+            fetchCachedSubmissions(),
+            fetchCachedStatistics(),
+            fetchCachedWarehouseStats(),
+          ]);
+
+        const loadTime = performance.now() - startTime;
+        console.log(`✅ All data loaded in ${loadTime.toFixed(0)}ms`);
+        console.log("🏢 Warehouse data:", warehouseData);
+        console.log(
+          "📦 Submissions data:",
+          submissionsData?.length,
+          "submissions"
+        );
+        console.log("👥 Agents data:", agentsList?.length, "agents");
+
+        // Process submissions with agents
+        if (submissionsData && agentsList) {
+          processSubmissionsData(submissionsData, agentsList);
+        }
+
+        // Set statistics from cache
+        if (statsData) {
+          setStatistics(statsData);
+        }
+
+        // Set warehouse data from cache
+        if (warehouseData) {
+          console.log(
+            "✅ Setting warehouses:",
+            warehouseData.length,
+            "warehouses"
+          );
+          setWarehouses(warehouseData);
+        } else {
+          console.log("⚠️ No warehouse data, using mock data");
+          setWarehouses(WAREHOUSE_CENTERS);
+        }
       } catch (error) {
-        console.error("Error in fetchAgents:", error);
+        console.error("Error loading data:", error);
+      } finally {
+        setLoading(false);
       }
-
-      // Fetch submissions and pass the agents list directly
-      console.log("Now fetching submissions with agents:", agentsList.length);
-      await fetchMaterialSubmissionsWithAgents(agentsList);
     };
+
     loadData();
-    // fetchStatistics(); // Statistics are now calculated from actual data
   }, []);
-
-  // No need for re-processing since we pass agents directly now
-
-  // Recalculate warehouse stats when submissions change
-  useEffect(() => {
-    if (submissions.length > 0) {
-      fetchWarehouseStats();
-    }
-  }, [submissions.length]); // Only depend on length to avoid infinite loops
 
   const processSubmissionsData = (
     submissionsData: any[],
@@ -458,12 +495,22 @@ export function MaterialVerification() {
 
   // Update map center based on available data
   useEffect(() => {
+    console.log(
+      "🗺️ Map center update - Agent visits:",
+      agentVisitSubmissions.length
+    );
     if (agentVisitSubmissions.length > 0) {
       const validLocations = agentVisitSubmissions.filter(
         (s) => s.location_latitude && s.location_longitude
       );
+      console.log("📍 Valid agent visit locations:", validLocations.length);
       if (validLocations.length > 0) {
         const firstLocation = validLocations[0];
+        console.log(
+          "🎯 Setting map center to:",
+          firstLocation.location_latitude,
+          firstLocation.location_longitude
+        );
         setMapCenter([
           firstLocation.location_latitude!,
           firstLocation.location_longitude!,
@@ -493,6 +540,62 @@ export function MaterialVerification() {
           status.slice(1).replace("_", " ")}
       </span>
     );
+  };
+
+  // Cached fetch functions for faster loading
+  const fetchCachedSubmissions = async () => {
+    try {
+      const response = await fetch(
+        "/api/admin/material-verification/submissions"
+      );
+      if (response.ok) {
+        const result = await response.json();
+        if (result.cached) {
+          console.log("📦 Submissions loaded from Redis cache");
+        }
+        return result.data;
+      }
+      return null;
+    } catch (error) {
+      console.error("Failed to fetch cached submissions:", error);
+      return null;
+    }
+  };
+
+  const fetchCachedStatistics = async () => {
+    try {
+      const response = await fetch("/api/admin/material-verification/stats");
+      if (response.ok) {
+        const result = await response.json();
+        if (result.cached) {
+          console.log("📦 Statistics loaded from Redis cache");
+        }
+        return result.data;
+      }
+      return null;
+    } catch (error) {
+      console.error("Failed to fetch cached statistics:", error);
+      return null;
+    }
+  };
+
+  const fetchCachedWarehouseStats = async () => {
+    try {
+      const response = await fetch(
+        "/api/admin/material-verification/warehouse-stats"
+      );
+      if (response.ok) {
+        const result = await response.json();
+        if (result.cached) {
+          console.log("📦 Warehouse stats loaded from Redis cache");
+        }
+        return result.data;
+      }
+      return null;
+    } catch (error) {
+      console.error("Failed to fetch cached warehouse stats:", error);
+      return null;
+    }
   };
 
   const fetchStatistics = async () => {
@@ -658,6 +761,9 @@ export function MaterialVerification() {
     }
     console.log("Selected agent:", selectedAgent);
 
+    // Set loading state for this specific agent
+    setAssigningAgentId(agentId);
+
     try {
       console.log("Assigning agent via backend API:", {
         submissionId: selectedSubmissionForAgent.id,
@@ -740,6 +846,9 @@ export function MaterialVerification() {
           position: "top-right",
         }
       );
+    } finally {
+      // Clear loading state
+      setAssigningAgentId(null);
     }
   };
 
@@ -988,6 +1097,13 @@ export function MaterialVerification() {
         <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
           Material Collection Locations
         </h2>
+        {/* Debug Info */}
+        {!loading && (
+          <div className="text-xs text-gray-500 mb-2" suppressHydrationWarning>
+            Map: {warehouses.length} warehouses, {agentVisitSubmissions.length}{" "}
+            agent visits
+          </div>
+        )}
         <div className="h-[400px] rounded-lg overflow-hidden">
           <MapContainer
             key="material-verification-map"
@@ -995,10 +1111,21 @@ export function MaterialVerification() {
             zoom={8}
             style={{ height: "100%", width: "100%" }}
             scrollWheelZoom={true}
+            whenReady={() => {
+              console.log("🗺️ Map is ready! Center:", mapCenter);
+              console.log("📍 Warehouses to render:", warehouses.length);
+              console.log(
+                "📍 Agent visits to render:",
+                agentVisitSubmissions.length
+              );
+            }}
           >
+            <MapRecenter center={mapCenter} />
             <TileLayer
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+              url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+              subdomains="abcd"
+              maxZoom={20}
             />
 
             {/* Warehouse Centers */}
@@ -1418,57 +1545,99 @@ export function MaterialVerification() {
                 </div>
               ) : (
                 <div className="space-y-2 max-h-80 overflow-y-auto">
-                  {agents.map((agent) => (
-                    <div
-                      key={agent.id}
-                      onClick={(e) => assignAgent(agent.asgardeo_id, e)}
-                      className={`relative flex items-center p-4 rounded-lg cursor-pointer transition-all ${
-                        selectedSubmissionForAgent?.assigned_agent?.id ===
-                        agent.asgardeo_id
-                          ? "bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-500"
-                          : "hover:bg-gray-50 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-600"
-                      }`}
-                    >
-                      <div className="flex-shrink-0 mr-3">
-                        <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center">
-                          <span className="text-white font-medium">
-                            {agent.first_name.charAt(0)}
-                            {agent.last_name.charAt(0)}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="flex-1">
-                        <div className="font-medium text-gray-900 dark:text-white">
-                          {agent.first_name} {agent.last_name}
-                          {selectedSubmissionForAgent?.assigned_agent?.id ===
-                            agent.asgardeo_id && (
-                            <span className="ml-2 text-xs bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-200 px-2 py-0.5 rounded">
-                              Current
-                            </span>
-                          )}
-                        </div>
-                        <div className="text-sm text-gray-500 dark:text-gray-400">
-                          {agent.email}
-                        </div>
-                      </div>
-                      {agent.status === "approved" && (
-                        <div className="flex-shrink-0 ml-2">
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            className="h-5 w-5 text-green-500"
-                            viewBox="0 0 20 20"
-                            fill="currentColor"
+                  {agents.map((agent) => {
+                    const isCurrentAgent =
+                      selectedSubmissionForAgent?.assigned_agent?.id ===
+                      agent.asgardeo_id;
+                    const isAssigning = assigningAgentId === agent.asgardeo_id;
+
+                    return (
+                      <div
+                        key={agent.id}
+                        onClick={(e) =>
+                          !isAssigning && assignAgent(agent.asgardeo_id, e)
+                        }
+                        className={`relative flex items-center p-4 rounded-lg cursor-pointer transition-all duration-200 transform ${
+                          isAssigning
+                            ? "bg-blue-100 dark:bg-blue-900/30 border-2 border-blue-500 scale-95 cursor-wait"
+                            : isCurrentAgent
+                            ? "bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-500"
+                            : "hover:bg-gray-50 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-600 hover:scale-[1.02] active:scale-95"
+                        }`}
+                      >
+                        {isAssigning && (
+                          <div className="absolute inset-0 bg-blue-500 bg-opacity-10 rounded-lg flex items-center justify-center">
+                            <svg
+                              className="animate-spin h-6 w-6 text-blue-600 dark:text-blue-400"
+                              xmlns="http://www.w3.org/2000/svg"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                            >
+                              <circle
+                                className="opacity-25"
+                                cx="12"
+                                cy="12"
+                                r="10"
+                                stroke="currentColor"
+                                strokeWidth="4"
+                              ></circle>
+                              <path
+                                className="opacity-75"
+                                fill="currentColor"
+                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                              ></path>
+                            </svg>
+                          </div>
+                        )}
+                        <div className="flex-shrink-0 mr-3">
+                          <div
+                            className={`w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center transition-transform ${
+                              isAssigning ? "scale-110" : ""
+                            }`}
                           >
-                            <path
-                              fillRule="evenodd"
-                              d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                              clipRule="evenodd"
-                            />
-                          </svg>
+                            <span className="text-white font-medium">
+                              {agent.first_name.charAt(0)}
+                              {agent.last_name.charAt(0)}
+                            </span>
+                          </div>
                         </div>
-                      )}
-                    </div>
-                  ))}
+                        <div className="flex-1">
+                          <div className="font-medium text-gray-900 dark:text-white">
+                            {agent.first_name} {agent.last_name}
+                            {isCurrentAgent && (
+                              <span className="ml-2 text-xs bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-200 px-2 py-0.5 rounded">
+                                Current
+                              </span>
+                            )}
+                            {isAssigning && (
+                              <span className="ml-2 text-xs bg-blue-600 text-white px-2 py-0.5 rounded animate-pulse">
+                                Assigning...
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-sm text-gray-500 dark:text-gray-400">
+                            {agent.email}
+                          </div>
+                        </div>
+                        {agent.status === "approved" && !isAssigning && (
+                          <div className="flex-shrink-0 ml-2">
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              className="h-5 w-5 text-green-500"
+                              viewBox="0 0 20 20"
+                              fill="currentColor"
+                            >
+                              <path
+                                fillRule="evenodd"
+                                d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                                clipRule="evenodd"
+                              />
+                            </svg>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </div>

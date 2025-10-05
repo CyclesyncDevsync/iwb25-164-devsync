@@ -1,16 +1,21 @@
-'use client';
+"use client";
 
-import React from 'react';
+import React from "react";
 
 interface LoadingProps {
-  progress: number;
+  progress?: number;
 }
 
-export default function Loading({ progress }: LoadingProps) {
+export default function Loading({ progress = 0 }: LoadingProps) {
   const radius = 35;
   const circumference = 2 * Math.PI * radius;
-  const validProgress = typeof progress === 'number' && !isNaN(progress) ? progress : 0;
-  const strokeDashoffset = circumference - (validProgress / 100) * circumference;
+  // Ensure progress is a valid number between 0 and 100
+  const validProgress =
+    typeof progress === "number" && !isNaN(progress)
+      ? Math.min(Math.max(progress, 0), 100)
+      : 0;
+  const strokeDashoffset =
+    circumference - (validProgress / 100) * circumference;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-white dark:bg-slate-900">

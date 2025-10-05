@@ -2,19 +2,21 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Leaflet Map Styles */
+@import "leaflet/dist/leaflet.css";
 
 /* Global Variables */
 :root {
-  --color-primary: #00684A;
-  --color-primary-light: #47A16B;
-  --color-secondary: #001E2B;
-  --color-secondary-light: #F9FAFB;
-  
+  --color-primary: #00684a;
+  --color-primary-light: #47a16b;
+  --color-secondary: #001e2b;
+  --color-secondary-light: #f9fafb;
+
   /* Dark theme colors */
-  --color-dark-bg: #1F2937;
+  --color-dark-bg: #1f2937;
   --color-dark-surface: #374151;
-  --color-dark-border: #4B5563;
-  
+  --color-dark-border: #4b5563;
+
   /* Animation variables */
   --animate-duration: 0.3s;
   --animate-ease: cubic-bezier(0.4, 0, 0.2, 1);
@@ -22,80 +24,131 @@
 
 /* Dark mode variables */
 .dark {
-  --color-text-primary: #F9FAFB;
-  --color-text-secondary: #D1D5DB;
-  --color-text-muted: #9CA3AF;
-  --color-bg-primary: #1F2937;
+  --color-text-primary: #f9fafb;
+  --color-text-secondary: #d1d5db;
+  --color-text-muted: #9ca3af;
+  --color-bg-primary: #1f2937;
   --color-bg-secondary: #374151;
-  --color-bg-tertiary: #4B5563;
-  --color-border: #4B5563;
+  --color-bg-tertiary: #4b5563;
+  --color-border: #4b5563;
 }
 
 /* Light mode variables */
-.light, :root {
+.light,
+:root {
   --color-text-primary: #111827;
   --color-text-secondary: #374151;
-  --color-text-muted: #6B7280;
-  --color-bg-primary: #FFFFFF;
-  --color-bg-secondary: #F9FAFB;
-  --color-bg-tertiary: #F3F4F6;
-  --color-border: #E5E7EB;
+  --color-text-muted: #6b7280;
+  --color-bg-primary: #ffffff;
+  --color-bg-secondary: #f9fafb;
+  --color-bg-tertiary: #f3f4f6;
+  --color-border: #e5e7eb;
 }
 
 /* Custom Animations */
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes slideIn {
-  from { opacity: 0; transform: translateX(-10px); }
-  to { opacity: 1; transform: translateX(0); }
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 @keyframes pulse-slow {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.7; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
 }
 
 @keyframes float {
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-10px); }
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
 }
 
 @keyframes professional-pulse {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.8; transform: scale(1.05); }
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.05);
+  }
 }
 
 @keyframes gradient-shift {
-  0%, 100% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
 }
 
 @keyframes card-hover {
-  0% { transform: translateY(0px) scale(1); }
-  100% { transform: translateY(-8px) scale(1.02); }
+  0% {
+    transform: translateY(0px) scale(1);
+  }
+  100% {
+    transform: translateY(-8px) scale(1.02);
+  }
 }
 
 @keyframes grid-pattern {
-  0% { opacity: 0.3; }
-  50% { opacity: 0.1; }
-  100% { opacity: 0.3; }
+  0% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 0.1;
+  }
+  100% {
+    opacity: 0.3;
+  }
 }
 
 /* Background patterns */
 .bg-grid-pattern {
-  background-image: 
-    linear-gradient(to right, rgba(156, 163, 175, 0.1) 1px, transparent 1px),
+  background-image: linear-gradient(
+      to right,
+      rgba(156, 163, 175, 0.1) 1px,
+      transparent 1px
+    ),
     linear-gradient(to bottom, rgba(156, 163, 175, 0.1) 1px, transparent 1px);
   background-size: 20px 20px;
   animation: grid-pattern 4s ease-in-out infinite;
 }
 
 .dark .bg-grid-pattern {
-  background-image: 
-    linear-gradient(to right, rgba(75, 85, 99, 0.2) 1px, transparent 1px),
+  background-image: linear-gradient(
+      to right,
+      rgba(75, 85, 99, 0.2) 1px,
+      transparent 1px
+    ),
     linear-gradient(to bottom, rgba(75, 85, 99, 0.2) 1px, transparent 1px);
 }
 
@@ -127,9 +180,9 @@
 /* Smooth transitions for theme switching */
 * {
   transition: background-color var(--animate-duration) var(--animate-ease),
-              border-color var(--animate-duration) var(--animate-ease),
-              color var(--animate-duration) var(--animate-ease),
-              box-shadow var(--animate-duration) var(--animate-ease);
+    border-color var(--animate-duration) var(--animate-ease),
+    color var(--animate-duration) var(--animate-ease),
+    box-shadow var(--animate-duration) var(--animate-ease);
 }
 
 /* Focus styles */
@@ -176,7 +229,11 @@
 
 /* Custom button variants */
 .btn-gradient {
-  background: linear-gradient(135deg, var(--color-primary), var(--color-primary-light));
+  background: linear-gradient(
+    135deg,
+    var(--color-primary),
+    var(--color-primary-light)
+  );
   border: none;
   color: white;
   transition: all 0.3s ease;
@@ -197,31 +254,46 @@
 }
 
 @keyframes shake {
-  0%, 100% { transform: translateX(0); }
-  25% { transform: translateX(-5px); }
-  75% { transform: translateX(5px); }
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-5px);
+  }
+  75% {
+    transform: translateX(5px);
+  }
 }
 
 /* Loading states */
 .loading-shimmer {
-  background: linear-gradient(90deg, 
-    rgba(156, 163, 175, 0.1) 25%, 
-    rgba(156, 163, 175, 0.3) 50%, 
-    rgba(156, 163, 175, 0.1) 75%);
+  background: linear-gradient(
+    90deg,
+    rgba(156, 163, 175, 0.1) 25%,
+    rgba(156, 163, 175, 0.3) 50%,
+    rgba(156, 163, 175, 0.1) 75%
+  );
   background-size: 200% 100%;
   animation: shimmer 2s infinite;
 }
 
 .dark .loading-shimmer {
-  background: linear-gradient(90deg, 
-    rgba(75, 85, 99, 0.1) 25%, 
-    rgba(75, 85, 99, 0.3) 50%, 
-    rgba(75, 85, 99, 0.1) 75%);
+  background: linear-gradient(
+    90deg,
+    rgba(75, 85, 99, 0.1) 25%,
+    rgba(75, 85, 99, 0.3) 50%,
+    rgba(75, 85, 99, 0.1) 75%
+  );
 }
 
 @keyframes shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
 }
 
 /* Card hover effects */
@@ -244,7 +316,7 @@
 }
 
 .status-dot::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: 0;
@@ -268,23 +340,23 @@
 
 /* Role-based color utilities */
 .role-admin {
-  --role-color: #00684A;
-  --role-color-light: #47A16B;
+  --role-color: #00684a;
+  --role-color-light: #47a16b;
 }
 
 .role-agent {
-  --role-color: #0066CC;
-  --role-color-light: #60A5FA;
+  --role-color: #0066cc;
+  --role-color-light: #60a5fa;
 }
 
 .role-supplier {
-  --role-color: #10B981;
-  --role-color-light: #34D399;
+  --role-color: #10b981;
+  --role-color-light: #34d399;
 }
 
 .role-buyer {
-  --role-color: #8B5CF6;
-  --role-color-light: #A78BFA;
+  --role-color: #8b5cf6;
+  --role-color-light: #a78bfa;
 }
 
 /* Enhanced form styling */
@@ -302,7 +374,11 @@
 
 /* Enhanced typography */
 .heading-gradient {
-  background: linear-gradient(135deg, var(--color-primary), var(--color-primary-light));
+  background: linear-gradient(
+    135deg,
+    var(--color-primary),
+    var(--color-primary-light)
+  );
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -313,7 +389,7 @@
   .card-hover:hover {
     transform: none;
   }
-  
+
   .btn-gradient:hover {
     transform: none;
   }
@@ -324,7 +400,7 @@
   .no-print {
     display: none !important;
   }
-  
+
   * {
     background: white !important;
     color: black !important;
@@ -337,14 +413,12 @@
   .animate-float {
     animation: float 6s ease-in-out infinite;
   }
-  
+
   .animate-float-delay {
     animation: float 6s ease-in-out infinite;
     animation-delay: 2s;
   }
 }
-
-
 
 /* Animation delays for typing indicator */
 .delay-100 {
