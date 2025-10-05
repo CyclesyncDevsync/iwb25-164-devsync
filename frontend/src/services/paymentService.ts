@@ -58,6 +58,19 @@ export interface CreateCustomerRequest {
   };
 }
 
+export interface CreateCheckoutSessionRequest {
+  amount: number;
+  currency?: string;
+  successUrl?: string;
+  cancelUrl?: string;
+}
+
+export interface CheckoutSession {
+  url: string;
+  amount: number;
+  currency: string;
+}
+
 class PaymentService {
   private async getAuthHeaders() {
     // Get auth token from cookie (similar to other API services)
@@ -165,6 +178,37 @@ class PaymentService {
         error.response?.data?.message || 
         error.message || 
         'Failed to get payment intent'
+      );
+    }
+  }
+
+  async createCheckoutSession(data: CreateCheckoutSessionRequest): Promise<CheckoutSession> {
+    try {
+      const response = await axios.post(
+        '/api/payment/create-checkout-session',
+        data,
+        {
+          headers: await this.getAuthHeaders(),
+          withCredentials: true,
+        }
+      );
+
+      // Handle new format: { status: 'success', data: {...} }
+      if (response.data.status === 'success' && response.data.data) {
+        return response.data.data;
+      }
+      
+      // Error case
+      console.error('Checkout session creation failed:', response.data);
+      throw new Error(response.data.message || 'Failed to create checkout session');
+    } catch (error: any) {
+      console.error('Create checkout session error:', error);
+      console.error('Error response:', error.response?.data);
+      throw new Error(
+        error.response?.data?.message || 
+        error.response?.data?.error || 
+        error.message || 
+        'Failed to create checkout session'
       );
     }
   }

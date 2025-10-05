@@ -97,6 +97,185 @@ service /api/payment on new http:Listener(8098) {
         });
     }
 
+    # Create a Stripe Checkout Session
+    # + request - HTTP request with checkout details
+    # + return - Checkout session URL or error
+    resource function post 'create\-checkout\-session(http:Request request) returns json|http:Response {
+        log:printInfo("Received create checkout session request");
+        
+        // Authenticate user
+        auth:AuthContext|http:Unauthorized authResult = self.authMiddleware.authenticate(request);
+        if authResult is http:Unauthorized {
+            return createErrorResponse(401, "Unauthorized", "Authentication failed");
+        }
+        
+        auth:AuthContext userContext = authResult;
+        
+        // Parse request body
+        json|error payload = request.getJsonPayload();
+        if payload is error {
+            log:printError("Invalid request payload", 'error = payload);
+            return createErrorResponse(400, "Invalid request", "Invalid JSON payload");
+        }
+        
+        // Extract amount
+        json|error amountJson = trap payload.amount;
+        if amountJson is error || amountJson is () {
+            log:printError("Invalid amount - missing or invalid");
+            return createErrorResponse(400, "Invalid amount", "Amount is required");
+        }
+        
+        decimal|error amount = trap <decimal>amountJson;
+        if amount is error {
+            log:printError("Invalid amount - cannot convert to decimal", 'error = amount);
+            return createErrorResponse(400, "Invalid amount", "Amount must be a valid number");
+        }
+        
+        // Validate amount
+        if amount <= 0.0d {
+            return createErrorResponse(400, "Invalid amount", "Amount must be greater than 0");
+        }
+        
+        // Get currency (default to LKR)
+        string currency = "lkr";
+        json|error currencyJson = trap payload.currency;
+        if currencyJson is string {
+            currency = currencyJson.toLowerAscii();
+        }
+        
+        // Validate maximum amount based on currency
+        if currency == "lkr" && amount > 999999.0d {
+            return createErrorResponse(400, "Invalid amount", "Amount must not exceed 999,999.99 LKR");
+        }
+        
+        // Convert amount to smallest currency unit
+        int amountInSmallestUnit = <int>(amount * 100);
+        
+        // Get success and cancel URLs from request or use defaults
+        string successUrl = "http://localhost:3000/buyer/wallet?payment=success";
+        string cancelUrl = "http://localhost:3000/buyer/wallet?payment=cancelled";
+        
+        json|error successUrlJson = trap payload.successUrl;
+        if successUrlJson is string {
+            successUrl = successUrlJson;
+        }
+        
+        json|error cancelUrlJson = trap payload.cancelUrl;
+        if cancelUrlJson is string {
+            cancelUrl = cancelUrlJson;
+        }
+        
+        log:printInfo(string `Creating checkout session for user ${userContext.userId}: ${amount} ${currency} (${amountInSmallestUnit} smallest units)`);
+        
+        // Create checkout session
+        string|error checkoutUrl = createCheckoutSession(amountInSmallestUnit, currency, successUrl, cancelUrl);
+        if checkoutUrl is error {
+            log:printError("Failed to create checkout session", 'error = checkoutUrl);
+            return createErrorResponse(500, "Payment error", checkoutUrl.message());
+        }
+        
+        // Return success response with checkout URL
+        log:printInfo(string `Checkout session created for user ${userContext.userId}`);
+        return createSuccessResponse({
+            "url": checkoutUrl,
+            "amount": amountInSmallestUnit,
+            "currency": currency
+        });
+    }
+
+    # Verify and complete a checkout session
+    # + request - HTTP request with session ID
+    # + return - Payment completion response or error
+    resource function post 'verify\-checkout\-session(http:Request request) returns json|http:Response {
+        log:printInfo("Received verify checkout session request");
+        
+        // Authenticate user
+        auth:AuthContext|http:Unauthorized authResult = self.authMiddleware.authenticate(request);
+        if authResult is http:Unauthorized {
+            return createErrorResponse(401, "Unauthorized", "Authentication failed");
+        }
+        
+        auth:AuthContext userContext = authResult;
+        
+        // Parse request body
+        json|error payload = request.getJsonPayload();
+        if payload is error {
+            log:printError("Invalid request payload", 'error = payload);
+            return createErrorResponse(400, "Invalid request", "Invalid JSON payload");
+        }
+        
+        // Extract session ID
+        json|error sessionIdJson = trap payload.sessionId;
+        if sessionIdJson is error || sessionIdJson is () {
+            return createErrorResponse(400, "Invalid request", "Session ID is required");
+        }
+        
+        string sessionId = sessionIdJson.toString();
+        
+        // Retrieve checkout session from Stripe
+        json|error session = getCheckoutSession(sessionId);
+        if session is error {
+            log:printError("Failed to retrieve checkout session", 'error = session);
+            return createErrorResponse(500, "Payment error", session.message());
+        }
+        
+        // Check payment status
+        json|error paymentStatusJson = trap session.payment_status;
+        string paymentStatus = paymentStatusJson is string ? paymentStatusJson : "unknown";
+        
+        if paymentStatus != "paid" {
+            log:printError(string `Payment not completed. Status: ${paymentStatus}`);
+            return createErrorResponse(400, "Payment not completed", string `Payment status: ${paymentStatus}`);
+        }
+        
+        // Extract amount from session
+        json|error amountTotalJson = trap session.amount_total;
+        int amountInCents = amountTotalJson is int ? amountTotalJson : 0;
+        decimal amount = <decimal>amountInCents / 100.0d;
+        
+        // Update wallet
+        http:Client|error walletClientResult = new ("http://localhost:8097");
+        if walletClientResult is error {
+            log:printError("Failed to create wallet client", 'error = walletClientResult);
+            return createErrorResponse(500, "Internal error", "Failed to create wallet client");
+        }
+        
+        json walletPayload = {
+            "amount": amount,
+            "description": string `Wallet recharge via Stripe Checkout (Session: ${sessionId})`
+        };
+        
+        string|http:HeaderNotFoundError authHeaderResult = request.getHeader("Authorization");
+        if authHeaderResult is http:HeaderNotFoundError {
+            log:printError("Authorization header not found");
+            return createErrorResponse(401, "Unauthorized", "Authorization header not found");
+        }
+        
+        map<string|string[]> headers = {
+            "Authorization": authHeaderResult
+        };
+        
+        http:Response|error walletResponse = walletClientResult->post("/api/wallet/recharge", walletPayload, headers);
+        if walletResponse is error {
+            log:printError("Failed to call wallet API", 'error = walletResponse);
+            return createErrorResponse(500, "Wallet update failed", "Failed to call wallet API");
+        }
+        
+        if walletResponse.statusCode != 200 {
+            log:printError("Failed to update wallet");
+            return createErrorResponse(500, "Wallet update failed", "Failed to update wallet balance");
+        }
+        
+        log:printInfo(string `Wallet updated successfully for user ${userContext.userId}`);
+        
+        return createSuccessResponse({
+            "status": "succeeded",
+            "sessionId": sessionId,
+            "amount": amount,
+            "currency": "lkr"
+        });
+    }
+
     # Confirm a payment
     # + request - HTTP request with payment confirmation details
     # + return - Payment confirmation response or error
