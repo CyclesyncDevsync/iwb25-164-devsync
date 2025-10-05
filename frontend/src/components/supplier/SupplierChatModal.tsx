@@ -110,7 +110,7 @@ export function SupplierChatModal({
         },
         body: JSON.stringify({
           room_id: roomId,
-          reader_id: authData.user?.asgardeoId || authData.userId || authData.sub || user?.sub
+          reader_id: authData.user?.asgardeoId || authData.userId || authData.sub 
         })
       });
     } catch (error) {
@@ -143,7 +143,7 @@ export function SupplierChatModal({
         },
         body: JSON.stringify({
           room_id: roomId,
-          sender_id: authData.user?.asgardeoId || authData.userId || authData.sub || user?.sub,
+          sender_id: authData.user?.asgardeoId || authData.userId || authData.sub ,
           sender_type: 'supplier',
           message: {
             content: messageContent,

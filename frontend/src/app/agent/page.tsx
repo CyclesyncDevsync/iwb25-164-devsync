@@ -19,7 +19,7 @@ interface Assignment {
     coordinates: { lat: number; lng: number };
   };
   priority: 'high' | 'medium' | 'low';
-  status: 'pending' | 'in-progress' | 'completed';
+  status: 'pending' | 'in-progress' | 'completed' | 'accepted' | 'rejected' | 'scheduled';
   estimatedTime: number; // in minutes
   supplier: {
     name: string;
@@ -47,7 +47,7 @@ const AgentDashboard = () => {
 
   // Fetch assignments from backend
   const fetchAssignments = async () => {
-    const userId = user?.asgardeoId || user?.asgardeo_id;
+    const userId = user?.asgardeoId ;
     if (!userId) {
       console.log('No user ID available, skipping assignment fetch');
       return;
@@ -200,7 +200,7 @@ const AgentDashboard = () => {
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-lg font-medium text-gray-900 dark:text-white lg:hidden">
-                  Welcome back, {user?.name || 'Agent'}
+                  Welcome back, {user?.firstName || 'Agent'}
                 </h2>
                 <p className="text-sm text-gray-600 dark:text-gray-300 lg:text-base lg:font-medium lg:text-gray-900 lg:dark:text-white">
                   {new Date().toLocaleDateString('en-US', { 

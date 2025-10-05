@@ -41,7 +41,10 @@ export function MaterialDetailsModal({ assignment, isOpen, onClose }: MaterialDe
   console.log('Assignment photos:', assignment.photos);
   console.log('Assignment data:', assignment);
 
-  const getStatusBadge = (status: string) => {
+  type Status = 'pending' | 'in-progress' | 'completed' | 'rejected';
+
+
+  const getStatusBadge = (status: Status) => {
     const statusStyles = {
       pending: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400',
       'in-progress': 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400',
@@ -62,6 +65,7 @@ export function MaterialDetailsModal({ assignment, isOpen, onClose }: MaterialDe
     setShowToast(true);
     setTimeout(() => setShowToast(false), 3000);
   };
+
 
   const handleTakeAppointment = async () => {
     setIsReviewing(true);
@@ -181,11 +185,11 @@ export function MaterialDetailsModal({ assignment, isOpen, onClose }: MaterialDe
           [index]: { error: errorMessage, status: response.status }
         }));
       }
-    } catch (error) {
+    } catch (error:any) {
       console.error('Error analyzing photo:', error);
       setPhotoAnalysisResults(prev => ({
         ...prev,
-        [index]: { error: 'Analysis error', message: error.message }
+        [index]: { error: 'Analysis error', message: (error as any).message }
       }));
     } finally {
       setAnalyzingPhoto(null);
@@ -236,22 +240,8 @@ export function MaterialDetailsModal({ assignment, isOpen, onClose }: MaterialDe
                   {format(new Date(assignment.assignedAt), 'PPP')}
                 </span>
               </div>
-              {assignment.startedAt && (
-                <div className="flex justify-between">
-                  <span className="text-sm text-gray-500 dark:text-gray-400">Started:</span>
-                  <span className="text-sm font-medium text-gray-900 dark:text-white">
-                    {format(new Date(assignment.startedAt), 'PPP')}
-                  </span>
-                </div>
-              )}
-              {assignment.completedAt && (
-                <div className="flex justify-between">
-                  <span className="text-sm text-gray-500 dark:text-gray-400">Completed:</span>
-                  <span className="text-sm font-medium text-gray-900 dark:text-white">
-                    {format(new Date(assignment.completedAt), 'PPP')}
-                  </span>
-                </div>
-              )}
+            
+       
             </div>
           </div>
 
@@ -697,27 +687,21 @@ export function MaterialDetailsModal({ assignment, isOpen, onClose }: MaterialDe
                   </button>
                 </>
               ) : assignment.status === 'in-progress' ? (
-                <>
-                  <div className="flex items-center gap-2 text-orange-600 dark:text-orange-400">
-                    <PhoneIcon className="w-5 h-5" />
-                    <span className="font-medium">Please contact the supplier to proceed with the appointment.</span>
-                  </div>
-                  <div className="flex gap-3">
-                    <button
-                      onClick={() => setShowChatModal(true)}
-                      className="px-6 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors flex items-center"
-                    >
-                      <ChatBubbleLeftRightIcon className="w-4 h-4 mr-2" />
-                      Chat with Supplier
-                    </button>
-                    <button
-                      onClick={onClose}
-                      className="px-6 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600 rounded-lg transition-colors"
-                    >
-                      Close
-                    </button>
-                  </div>
-                </>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setShowChatModal(true)}
+                    className="px-6 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors flex items-center"
+                  >
+                    <ChatBubbleLeftRightIcon className="w-4 h-4 mr-2" />
+                    Chat with Supplier
+                  </button>
+                  <button
+                    onClick={onClose}
+                    className="px-6 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600 rounded-lg transition-colors"
+                  >
+                    Close
+                  </button>
+                </div>
               ) : (
                 <button
                   onClick={onClose}

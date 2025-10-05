@@ -42,7 +42,7 @@ const AgentLayout: React.FC<AgentLayoutProps> = ({ children }) => {
   // Fetch unread message count
   useEffect(() => {
     const fetchUnreadCount = async () => {
-      if (!user?.asgardeoId && !user?.sub) return;
+      if (!user?.asgardeoId) return;
 
       try {
         const authResponse = await fetch('/api/auth/me');
@@ -169,7 +169,7 @@ const AgentLayout: React.FC<AgentLayoutProps> = ({ children }) => {
                   >
                         <item.icon className={`w-5 h-5 mr-3 flex-shrink-0 ${item.current ? 'text-black dark:text-black' : 'text-gray-600 dark:text-gray-400 group-hover:text-gray-700 dark:group-hover:text-gray-300'}`} />
                         <span className={`flex-1 ${item.current ? 'text-black dark:text-black' : ''}`}>{item.name}</span>
-                    {item.badge > 0 && (
+                    {item.badge !== undefined && item.badge > 0 && (
                       <span className="bg-red-500 text-white text-xs rounded-full px-2 py-1 min-w-[20px] text-center">
                         {item.badge}
                       </span>
@@ -205,7 +205,7 @@ const AgentLayout: React.FC<AgentLayoutProps> = ({ children }) => {
               >
                 <item.icon className={`w-5 h-5 mr-3 flex-shrink-0 ${item.current ? 'text-black dark:text-black' : 'text-gray-600 dark:text-gray-400 group-hover:text-gray-700 dark:group-hover:text-gray-300'}`} />
                 <span className={`flex-1 ${item.current ? 'text-black dark:text-black' : ''}`}>{item.name}</span>
-                {item.badge > 0 && (
+                {item.badge !== undefined && item.badge > 0 && (
                   <span className="bg-red-500 text-white text-xs rounded-full px-2 py-1 min-w-[20px] text-center">
                     {item.badge}
                   </span>

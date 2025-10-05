@@ -75,7 +75,7 @@ export function ChatModal({
       
       // Get the proper agent ID from auth data
       // The user object has asgardeoId (camelCase), not asgardeo_id
-      const agentId = authData.user?.asgardeoId || authData.userId || authData.sub || user?.sub;
+      const agentId = authData.user?.asgardeoId || authData.userId || authData.sub ;
       
       if (!agentId || typeof agentId === 'number') {
         console.error('Invalid agent ID detected. Auth data:', authData);
@@ -177,7 +177,7 @@ export function ChatModal({
         },
         body: JSON.stringify({
           room_id: currentRoomId,
-          reader_id: authData.user?.asgardeoId || authData.userId || authData.sub || user?.sub
+          reader_id: authData.user?.asgardeoId || authData.userId || authData.sub 
         })
       });
     } catch (error) {
@@ -210,7 +210,7 @@ export function ChatModal({
         },
         body: JSON.stringify({
           room_id: roomId,
-          sender_id: authData.user?.asgardeoId || authData.userId || authData.sub || user?.sub,
+          sender_id: authData.user?.asgardeoId || authData.userId || authData.sub ,
           sender_type: 'agent',
           message: {
             content: messageContent,

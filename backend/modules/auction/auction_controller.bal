@@ -62,7 +62,154 @@ service /api/auction on new http:Listener(8096) {
         return response;
     }
 
-    # Get all active auctions
+    # Create a new auction
+    @http:ResourceConfig {
+        auth: {
+            scopes: ["auction:write"]
+        }
+    }
+    resource function post create(@http:Payload CreateAuctionRequest payload, http:Request request) returns http:Response|error {
+        http:Response response = new;
+        var dbClient = check database_config:getDbClient();
+        
+        // Validate authentication
+        auth:AuthContext|http:Unauthorized authResult = self.authMiddleware.authenticate(request);
+        if authResult is http:Unauthorized {
+            response.statusCode = 401;
+            response.setJsonPayload({"error": "Unauthorized", "message": "Invalid or missing authentication"});
+            return response;
+        }
+        auth:AuthContext authContext = authResult;
+
+        // Initialize auction service
+        AuctionService auctionService = new(dbClient);
+
+        // Convert request to internal format
+        
+        // Set and validate auction type
+        string[] validTypes = ["standard", "buy_it_now", "reserve", "dutch", "bulk"];
+        string auctionType = payload.auction_type is string ? payload.auction_type : "standard";
+        boolean isValid = false;
+        foreach string vType in validTypes {
+            if auctionType == vType {
+                isValid = true;
+                break;
+            }
+        }
+        if !isValid {
+            return error("Invalid auction type. Must be one of: standard, buy_it_now, reserve, dutch, bulk");
+        }
+        
+        if payload?.verification_details is () {
+            return error("Verification details are required");
+        }
+
+        // Extract and validate required fields first
+        string? materialId = payload?.material_id;
+        if materialId is () {
+            return error("Material ID is required");
+        }
+
+        string? workflowId = payload?.workflow_id;
+        if workflowId is () {
+            return error("Workflow ID is required");
+        }
+        
+        decimal? startingPrice = payload?.starting_price;
+        if startingPrice is () || startingPrice <= 0.0d {
+            return error("Starting price must be greater than 0");
+        }
+
+        string? title = payload?.title;
+        if title is () {
+            return error("Title is required");
+        }
+
+        string? description = payload?.description;
+        if description is () {
+            return error("Description is required");
+        }
+
+        string? category = payload?.category;
+        if category is () {
+            return error("Category is required");
+        }
+
+        decimal? quantity = payload?.quantity;
+        if quantity is () || quantity <= 0.0d {
+            return error("Quantity must be greater than 0");
+        }
+
+        string? unit = payload?.unit;
+        if unit is () {
+            return error("Unit is required");
+        }
+
+        // Extract and validate optional fields
+        string? subCategory = payload?.sub_category;
+        decimal? reservePrice = payload?.reserve_price;
+        decimal? bidIncrement = payload?.bid_increment;
+        int? durationDays = payload?.duration_days;
+        string[]? photosList = payload?.photos;
+        json? verificationDetails = payload?.verification_details;
+        string? agentNotes = payload?.agent_notes;
+        
+        // Get condition rating and quality score with defaults
+        int conditionRating = payload?.condition_rating ?: 3;  // Default to "Good"
+        int qualityScore = payload?.quality_score ?: 80;  // Default to 80%
+        
+        // Get authenticated user ID and validate
+        int userId = authContext.userId;
+        if userId <= 0 {
+            return error("Invalid user ID");
+        }
+        
+        // Convert request to internal format
+        AuctionCreationRequest creationRequest = {
+            materialId: materialId,
+            workflowId: workflowId,
+            supplierId: authContext.userId,  // Keep as integer to match database schema
+            title: title,
+            description: description,
+            category: category,
+            subCategory: subCategory ?: "",
+            quantity: <decimal>quantity,  // Ensure decimal type
+            unit: unit,
+            conditionRating: conditionRating,
+            qualityScore: qualityScore,
+            startingPrice: <decimal>startingPrice,  // Ensure decimal type
+            reservePrice: reservePrice is () ? startingPrice : <decimal>reservePrice,
+            bidIncrement: bidIncrement is () ? 100.0d : <decimal>bidIncrement,
+            durationDays: durationDays ?: 7,
+            auctionType: auctionType,  // Already validated and has default value
+            photos: photosList ?: [],
+            verificationDetails: verificationDetails ?: {},
+            agentNotes: agentNotes
+        };
+
+        // Create auction
+        string|error result = auctionService.createAuction(creationRequest);
+        if result is error {
+            log:printError("Failed to create auction", result);
+            response.statusCode = 500;
+            response.setJsonPayload({
+                "error": "Failed to create auction",
+                "message": result.message()
+            });
+            return response;
+        }
+
+        // Return success response
+        response.statusCode = 201;
+        response.setJsonPayload({
+            "status": "success",
+            "message": "Auction created successfully",
+            "auctionId": result
+        });
+        return response;
+    }
+
+    # Get all active auctions 
     resource function get auctions() returns http:Response {
         http:Response response = new;
 

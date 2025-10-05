@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import React, { useState, useEffect } from "react";
+import { motion } from "framer-motion";
 import {
   CalendarIcon,
   CurrencyDollarIcon,
@@ -10,8 +10,9 @@ import {
   CheckCircleIcon,
   ExclamationTriangleIcon,
   InformationCircleIcon,
-  ChartBarIcon
-} from '@heroicons/react/24/outline';
+  ChartBarIcon,
+} from "@heroicons/react/24/outline";
+import { enhancedToast } from "../../components/ui/EnhancedToast";
 
 interface MaterialData {
   materialId: string;
@@ -40,25 +41,34 @@ interface AuctionCreationInterfaceProps {
 export default function AuctionCreationInterface({
   materialData,
   supplierId,
-  onAuctionCreated
+  onAuctionCreated,
 }: AuctionCreationInterfaceProps) {
   const [isCreating, setIsCreating] = useState(false);
   const [showPriceAnalysis, setShowPriceAnalysis] = useState(false);
-  
+
   // Auction parameters
-  const [auctionType, setAuctionType] = useState<'standard' | 'dutch' | 'sealed'>('standard');
-  const [startingPrice, setStartingPrice] = useState(materialData.agentSuggestedPrice || materialData.expectedPrice * 0.7);
-  const [reservePrice, setReservePrice] = useState(materialData.agentSuggestedPrice || materialData.expectedPrice * 0.85);
-  const [bidIncrement, setBidIncrement] = useState(Math.round(startingPrice * 0.05));
+  const [auctionType, setAuctionType] = useState<
+    "standard" | "dutch" | "sealed"
+  >("standard");
+  const [startingPrice, setStartingPrice] = useState(
+    materialData.agentSuggestedPrice || materialData.expectedPrice * 0.7
+  );
+  const [reservePrice, setReservePrice] = useState(
+    materialData.agentSuggestedPrice || materialData.expectedPrice * 0.85
+  );
+  const [bidIncrement, setBidIncrement] = useState(
+    Math.round(startingPrice * 0.05)
+  );
   const [durationDays, setDurationDays] = useState(7);
-  const [description, setDescription] = useState('');
+  const [description, setDescription] = useState("");
   const [acceptTerms, setAcceptTerms] = useState(false);
 
   // Calculate fees and estimates
   const platformFeePercent = 5;
   const estimatedFinalPrice = (startingPrice + reservePrice) / 2;
   const platformFee = estimatedFinalPrice * (platformFeePercent / 100);
-  const netAmount = estimatedFinalPrice - platformFee - materialData.agentVisitCost;
+  const netAmount =
+    estimatedFinalPrice - platformFee - materialData.agentVisitCost;
 
   // Price recommendations
   const marketAnalysis = {
@@ -66,62 +76,57 @@ export default function AuctionCreationInterface({
     recentSales: [
       { price: materialData.expectedPrice * 0.92, daysAgo: 3 },
       { price: materialData.expectedPrice * 0.98, daysAgo: 7 },
-      { price: materialData.expectedPrice * 0.88, daysAgo: 10 }
+      { price: materialData.expectedPrice * 0.88, daysAgo: 10 },
     ],
-    demandLevel: materialData.qualityScore > 80 ? 'High' : materialData.qualityScore > 60 ? 'Medium' : 'Low',
-    recommendedDuration: materialData.qualityScore > 80 ? 5 : 7
+    demandLevel:
+      materialData.qualityScore > 80
+        ? "High"
+        : materialData.qualityScore > 60
+        ? "Medium"
+        : "Low",
+    recommendedDuration: materialData.qualityScore > 80 ? 5 : 7,
   };
 
   useEffect(() => {
     // Generate description based on material data
-    const qualityText = materialData.qualityScore > 80 ? 'excellent' : materialData.qualityScore > 60 ? 'good' : 'fair';
-    const autoDescription = `${materialData.title} in ${qualityText} condition. Verified quantity: ${materialData.verifiedQuantity} ${materialData.unit}. Quality score: ${materialData.qualityScore}/100. ${materialData.agentNotes || ''}`;
+    const qualityText =
+      materialData.qualityScore > 80
+        ? "excellent"
+        : materialData.qualityScore > 60
+        ? "good"
+        : "fair";
+    const autoDescription = `${
+      materialData.title
+    } in ${qualityText} condition. Verified quantity: ${
+      materialData.verifiedQuantity
+    } ${materialData.unit}. Quality score: ${materialData.qualityScore}/100. ${
+      materialData.agentNotes || ""
+    }`;
     setDescription(autoDescription);
   }, [materialData]);
 
   const handleCreateAuction = async () => {
     if (!acceptTerms) {
-      alert('Please accept the terms and conditions');
+      enhancedToast.warning("Please accept the terms and conditions");
       return;
     }
 
     setIsCreating(true);
 
     try {
-      const auctionData = {
-        materialId: materialData.materialId,
-        workflowId: materialData.workflowId,
-        supplierId,
-        title: materialData.title,
-        description,
-        category: materialData.category,
-        subCategory: materialData.subCategory,
-        quantity: materialData.verifiedQuantity,
-        unit: materialData.unit,
-        conditionRating: materialData.conditionRating,
-        qualityScore: materialData.qualityScore,
-        startingPrice,
-        reservePrice,
-        bidIncrement,
-        auctionType,
-        durationDays,
-        photos: materialData.photos,
-        verificationDetails: {
-          verifiedQuantity: materialData.verifiedQuantity,
-          qualityScore: materialData.qualityScore,
-          conditionRating: materialData.conditionRating
-        },
-        agentNotes: materialData.agentNotes
-      };
+      // Simulate a short delay for UX
+      await new Promise((resolve) => setTimeout(resolve, 800));
 
-      // Mock API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Generate a temporary ID
       const auctionId = `auction_${Date.now()}`;
-      
-      console.log('Auction created:', auctionData);
+
+      // Show success message
+      enhancedToast.success("Material added to auction successfully!");
+
       onAuctionCreated?.(auctionId);
     } catch (error) {
-      console.error('Error creating auction:', error);
+      console.error("Error creating auction:", error);
+      enhancedToast.error("Failed to create auction. Please try again later.");
     } finally {
       setIsCreating(false);
     }
@@ -146,26 +151,36 @@ export default function AuctionCreationInterface({
 
         {/* Material Summary */}
         <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-6">
-          <h3 className="font-medium text-gray-900 dark:text-white mb-4">Material Summary</h3>
+          <h3 className="font-medium text-gray-900 dark:text-white mb-4">
+            Material Summary
+          </h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
             <div>
               <span className="text-gray-500 dark:text-gray-400">Material</span>
-              <p className="font-medium text-gray-900 dark:text-white">{materialData.title}</p>
+              <p className="font-medium text-gray-900 dark:text-white">
+                {materialData.title}
+              </p>
             </div>
             <div>
-              <span className="text-gray-500 dark:text-gray-400">Verified Quantity</span>
+              <span className="text-gray-500 dark:text-gray-400">
+                Verified Quantity
+              </span>
               <p className="font-medium text-gray-900 dark:text-white">
                 {materialData.verifiedQuantity} {materialData.unit}
               </p>
             </div>
             <div>
-              <span className="text-gray-500 dark:text-gray-400">Quality Score</span>
+              <span className="text-gray-500 dark:text-gray-400">
+                Quality Score
+              </span>
               <p className="font-medium text-gray-900 dark:text-white">
                 {materialData.qualityScore}/100
               </p>
             </div>
             <div>
-              <span className="text-gray-500 dark:text-gray-400">Expected Price</span>
+              <span className="text-gray-500 dark:text-gray-400">
+                Expected Price
+              </span>
               <p className="font-medium text-gray-900 dark:text-white">
                 LKR {materialData.expectedPrice.toLocaleString()}
               </p>
@@ -174,7 +189,9 @@ export default function AuctionCreationInterface({
 
           {/* Photos Preview */}
           <div className="mt-4">
-            <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">Photos</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
+              Photos
+            </p>
             <div className="flex space-x-2 overflow-x-auto">
               {materialData.photos.slice(0, 5).map((photo, index) => (
                 <img
@@ -196,23 +213,23 @@ export default function AuctionCreationInterface({
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {[
               {
-                type: 'standard' as const,
-                name: 'Standard Auction',
-                description: 'Price increases with each bid',
-                icon: ChartBarIcon
+                type: "standard" as const,
+                name: "Standard Auction",
+                description: "Price increases with each bid",
+                icon: ChartBarIcon,
               },
               {
-                type: 'dutch' as const,
-                name: 'Dutch Auction',
-                description: 'Price decreases over time',
-                icon: ClockIcon
+                type: "dutch" as const,
+                name: "Dutch Auction",
+                description: "Price decreases over time",
+                icon: ClockIcon,
               },
               {
-                type: 'sealed' as const,
-                name: 'Sealed Bid',
-                description: 'Bidders submit one sealed bid',
-                icon: InformationCircleIcon
-              }
+                type: "sealed" as const,
+                name: "Sealed Bid",
+                description: "Bidders submit one sealed bid",
+                icon: InformationCircleIcon,
+              },
             ].map(({ type, name, description, icon: Icon }) => (
               <button
                 key={type}
@@ -220,15 +237,21 @@ export default function AuctionCreationInterface({
                 onClick={() => setAuctionType(type)}
                 className={`p-4 rounded-lg border-2 transition-colors text-left ${
                   auctionType === type
-                    ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20'
-                    : 'border-gray-300 dark:border-gray-600'
+                    ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20"
+                    : "border-gray-300 dark:border-gray-600"
                 }`}
               >
-                <Icon className={`w-6 h-6 mb-2 ${
-                  auctionType === type ? 'text-emerald-600' : 'text-gray-400'
-                }`} />
-                <h4 className="font-medium text-gray-900 dark:text-white">{name}</h4>
-                <p className="text-sm text-gray-600 dark:text-gray-400">{description}</p>
+                <Icon
+                  className={`w-6 h-6 mb-2 ${
+                    auctionType === type ? "text-emerald-600" : "text-gray-400"
+                  }`}
+                />
+                <h4 className="font-medium text-gray-900 dark:text-white">
+                  {name}
+                </h4>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  {description}
+                </p>
               </button>
             ))}
           </div>
@@ -248,31 +271,45 @@ export default function AuctionCreationInterface({
               </span>
             </div>
             <span className="text-blue-600">
-              {showPriceAnalysis ? 'Hide' : 'Show'}
+              {showPriceAnalysis ? "Hide" : "Show"}
             </span>
           </button>
 
           {showPriceAnalysis && (
             <div className="mt-4 space-y-3 text-sm">
               <div>
-                <span className="text-blue-700 dark:text-blue-300">Market Average:</span>
+                <span className="text-blue-700 dark:text-blue-300">
+                  Market Average:
+                </span>
                 <span className="ml-2 font-medium text-blue-900 dark:text-blue-100">
                   LKR {marketAnalysis.averagePrice.toLocaleString()}
                 </span>
               </div>
               <div>
-                <span className="text-blue-700 dark:text-blue-300">Demand Level:</span>
-                <span className={`ml-2 font-medium ${
-                  marketAnalysis.demandLevel === 'High' ? 'text-green-700' :
-                  marketAnalysis.demandLevel === 'Medium' ? 'text-yellow-700' : 'text-red-700'
-                }`}>
+                <span className="text-blue-700 dark:text-blue-300">
+                  Demand Level:
+                </span>
+                <span
+                  className={`ml-2 font-medium ${
+                    marketAnalysis.demandLevel === "High"
+                      ? "text-green-700"
+                      : marketAnalysis.demandLevel === "Medium"
+                      ? "text-yellow-700"
+                      : "text-red-700"
+                  }`}
+                >
                   {marketAnalysis.demandLevel}
                 </span>
               </div>
               <div>
-                <p className="text-blue-700 dark:text-blue-300 mb-1">Recent Sales:</p>
+                <p className="text-blue-700 dark:text-blue-300 mb-1">
+                  Recent Sales:
+                </p>
                 {marketAnalysis.recentSales.map((sale, index) => (
-                  <div key={index} className="flex justify-between text-blue-600 dark:text-blue-400">
+                  <div
+                    key={index}
+                    className="flex justify-between text-blue-600 dark:text-blue-400"
+                  >
                     <span>{sale.daysAgo} days ago</span>
                     <span>LKR {sale.price.toLocaleString()}</span>
                   </div>
@@ -284,8 +321,10 @@ export default function AuctionCreationInterface({
 
         {/* Pricing Settings */}
         <div className="space-y-4">
-          <h3 className="font-medium text-gray-900 dark:text-white">Pricing Settings</h3>
-          
+          <h3 className="font-medium text-gray-900 dark:text-white">
+            Pricing Settings
+          </h3>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -302,7 +341,8 @@ export default function AuctionCreationInterface({
               </div>
               {materialData.agentSuggestedPrice && (
                 <p className="text-xs text-gray-500 mt-1">
-                  Agent suggested: LKR {materialData.agentSuggestedPrice.toLocaleString()}
+                  Agent suggested: LKR{" "}
+                  {materialData.agentSuggestedPrice.toLocaleString()}
                 </p>
               )}
             </div>
@@ -348,7 +388,7 @@ export default function AuctionCreationInterface({
                   onChange={(e) => setDurationDays(Number(e.target.value))}
                   className="pl-10 w-full border-gray-300 rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500"
                 >
-                  {[3, 5, 7, 10, 14].map(days => (
+                  {[3, 5, 7, 10, 14].map((days) => (
                     <option key={days} value={days}>
                       {days} days
                     </option>
@@ -375,28 +415,38 @@ export default function AuctionCreationInterface({
 
         {/* Fee Summary */}
         <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-6">
-          <h3 className="font-medium text-gray-900 dark:text-white mb-4">Fee Summary</h3>
+          <h3 className="font-medium text-gray-900 dark:text-white mb-4">
+            Fee Summary
+          </h3>
           <div className="space-y-2 text-sm">
             <div className="flex justify-between">
-              <span className="text-gray-600 dark:text-gray-400">Estimated Sale Price</span>
+              <span className="text-gray-600 dark:text-gray-400">
+                Estimated Sale Price
+              </span>
               <span className="text-gray-900 dark:text-white">
                 LKR {estimatedFinalPrice.toLocaleString()}
               </span>
             </div>
             <div className="flex justify-between">
-              <span className="text-gray-600 dark:text-gray-400">Platform Fee ({platformFeePercent}%)</span>
+              <span className="text-gray-600 dark:text-gray-400">
+                Platform Fee ({platformFeePercent}%)
+              </span>
               <span className="text-gray-900 dark:text-white">
                 - LKR {platformFee.toLocaleString()}
               </span>
             </div>
             <div className="flex justify-between">
-              <span className="text-gray-600 dark:text-gray-400">Agent Visit Cost</span>
+              <span className="text-gray-600 dark:text-gray-400">
+                Agent Visit Cost
+              </span>
               <span className="text-gray-900 dark:text-white">
                 - LKR {materialData.agentVisitCost.toLocaleString()}
               </span>
             </div>
             <div className="border-t pt-2 mt-2 flex justify-between font-medium">
-              <span className="text-gray-900 dark:text-white">Estimated Net Amount</span>
+              <span className="text-gray-900 dark:text-white">
+                Estimated Net Amount
+              </span>
               <span className="text-emerald-600 dark:text-emerald-400">
                 LKR {netAmount.toLocaleString()}
               </span>
@@ -407,7 +457,8 @@ export default function AuctionCreationInterface({
             <div className="flex items-start">
               <ExclamationTriangleIcon className="w-5 h-5 text-yellow-600 mr-2 flex-shrink-0 mt-0.5" />
               <p className="text-yellow-700 dark:text-yellow-300">
-                The actual net amount will depend on the final auction price. Fees are only charged on successful sales.
+                The actual net amount will depend on the final auction price.
+                Fees are only charged on successful sales.
               </p>
             </div>
           </div>
@@ -423,8 +474,9 @@ export default function AuctionCreationInterface({
               className="mt-1 h-4 w-4 text-emerald-600 rounded focus:ring-emerald-500"
             />
             <span className="text-sm text-gray-700 dark:text-gray-300">
-              I agree to the auction terms and conditions, including the platform fee of {platformFeePercent}% 
-              and understand that the agent visit cost will be deducted from my payment.
+              I agree to the auction terms and conditions, including the
+              platform fee of {platformFeePercent}% and understand that the
+              agent visit cost will be deducted from my payment.
             </span>
           </label>
         </div>

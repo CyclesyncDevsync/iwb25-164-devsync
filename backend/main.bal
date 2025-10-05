@@ -23,6 +23,8 @@ import Cyclesync.auction as _;
 import Cyclesync.wallet as _;
 // The notifications module will auto-register its services
 import Cyclesync.notifications as _;
+// The scheduling module will auto-register its services
+import Cyclesync.scheduling as _;
 // The agent_assignment module will auto-register its services (commented out as in dev)
 // import Cyclesync.agent_assignment as _;
 
@@ -1372,7 +1374,7 @@ service /api/agent on server {
 
         postgresql:Client clientInstance = clientResult;
 
-        // Query to get material submissions assigned to this agent
+        // Query to get material submissions assigned to this agent with scheduled information
         sql:ParameterizedQuery query = `
             SELECT 
                 ms.id::text as assignment_id,
@@ -1425,12 +1427,48 @@ service /api/agent on server {
                 ms.updated_at,
                 COALESCE(u.first_name || ' ' || u.last_name, 'Unknown Supplier') as supplier_name,
                 u.email as supplier_email,
-                'medium' as urgency
+                'medium' as urgency,
+                -- Scheduled pickup information
+                sp.id as scheduled_pickup_id,
+                sp.pickup_date,
+                sp.pickup_time_slot,
+                sp.contact_person,
+                sp.contact_phone,
+                sp.alternate_phone,
+                sp.pickup_address as scheduled_pickup_address,
+                sp.landmark,
+                sp.access_instructions,
+                sp.estimated_weight as pickup_estimated_weight,
+                sp.packaging_available,
+                sp.special_requirements as pickup_special_requirements,
+                sp.status as pickup_status,
+                sp.confirmation_code as pickup_confirmation_code,
+                sp.created_at as pickup_created_at,
+                -- Scheduled dropoff information  
+                sd.id as scheduled_dropoff_id,
+                sd.dropoff_date,
+                sd.dropoff_time_slot,
+                sd.warehouse_name as scheduled_warehouse_name,
+                sd.warehouse_address as scheduled_warehouse_address,
+                sd.warehouse_phone as scheduled_warehouse_phone,
+                sd.transport_method,
+                sd.vehicle_type,
+                sd.vehicle_number,
+                sd.driver_name,
+                sd.driver_phone,
+                sd.estimated_arrival_time,
+                sd.estimated_weight as dropoff_estimated_weight,
+                sd.special_instructions as dropoff_special_instructions,
+                sd.status as dropoff_status,
+                sd.confirmation_code as dropoff_confirmation_code,
+                sd.created_at as dropoff_created_at
             FROM material_submissions ms
             LEFT JOIN users u ON ms.supplier_id = u.asgardeo_id
+            LEFT JOIN scheduled_pickups sp ON ms.id::text = sp.assignment_id AND sp.agent_id = ${agentId}
+            LEFT JOIN scheduled_dropoffs sd ON ms.id::text = sd.assignment_id
             WHERE ms.agent_id = ${agentId} 
             AND ms.agent_assigned = true
-            AND ms.submission_status IN ('assigned', 'in_progress')
+            AND ms.submission_status IN ('assigned', 'in_progress', 'scheduled', 'accepted','rejected')
             ORDER BY ms.created_at DESC
         `;
 
@@ -1493,6 +1531,53 @@ service /api/agent on server {
                     "agent_id": <json>row["agent_id"],
                     "verification_date": <json>row["verification_date"]
                 };
+                
+                // Add scheduled pickup information if available
+                if (row["scheduled_pickup_id"] != ()) {
+                    json pickupSchedule = {
+                        "id": <json>row["scheduled_pickup_id"],
+                        "pickup_date": <json>row["pickup_date"],
+                        "pickup_time_slot": <json>row["pickup_time_slot"],
+                        "contact_person": <json>row["contact_person"],
+                        "contact_phone": <json>row["contact_phone"],
+                        "alternate_phone": <json>row["alternate_phone"],
+                        "pickup_address": <json>row["scheduled_pickup_address"],
+                        "landmark": <json>row["landmark"],
+                        "access_instructions": <json>row["access_instructions"],
+                        "estimated_weight": <json>row["pickup_estimated_weight"],
+                        "packaging_available": <json>row["packaging_available"],
+                        "special_requirements": <json>row["pickup_special_requirements"],
+                        "status": <json>row["pickup_status"],
+                        "confirmation_code": <json>row["pickup_confirmation_code"],
+                        "created_at": <json>row["pickup_created_at"]
+                    };
+                    assignment["scheduled_pickup"] = pickupSchedule;
+                }
+                
+                // Add scheduled dropoff information if available
+                if (row["scheduled_dropoff_id"] != ()) {
+                    json dropoffSchedule = {
+                        "id": <json>row["scheduled_dropoff_id"],
+                        "dropoff_date": <json>row["dropoff_date"],
+                        "dropoff_time_slot": <json>row["dropoff_time_slot"],
+                        "warehouse_name": <json>row["scheduled_warehouse_name"],
+                        "warehouse_address": <json>row["scheduled_warehouse_address"],
+                        "warehouse_phone": <json>row["scheduled_warehouse_phone"],
+                        "transport_method": <json>row["transport_method"],
+                        "vehicle_type": <json>row["vehicle_type"],
+                        "vehicle_number": <json>row["vehicle_number"],
+                        "driver_name": <json>row["driver_name"],
+                        "driver_phone": <json>row["driver_phone"],
+                        "estimated_arrival_time": <json>row["estimated_arrival_time"],
+                        "estimated_weight": <json>row["dropoff_estimated_weight"],
+                        "special_instructions": <json>row["dropoff_special_instructions"],
+                        "status": <json>row["dropoff_status"],
+                        "confirmation_code": <json>row["dropoff_confirmation_code"],
+                        "created_at": <json>row["dropoff_created_at"]
+                    };
+                    assignment["scheduled_dropoff"] = dropoffSchedule;
+                }
+                
                 assignments.push(assignment);
             };
         

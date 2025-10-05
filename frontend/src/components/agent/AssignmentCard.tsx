@@ -21,7 +21,7 @@ interface Assignment {
     coordinates: { lat: number; lng: number };
   };
   priority: 'high' | 'medium' | 'low';
-  status: 'pending' | 'in-progress' | 'completed';
+  status: 'pending' | 'in-progress' | 'completed' | 'accepted' | 'rejected' | 'scheduled';
   estimatedTime: number;
   supplier: {
     name: string;

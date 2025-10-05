@@ -34,7 +34,7 @@ export default function SupplierLayout({ children }: SupplierLayoutProps) {
   // Fetch unread message count
   useEffect(() => {
     const fetchUnreadCount = async () => {
-      if (!user?.asgardeoId && !user?.sub) return;
+      if (!user?.asgardeoId) return;
 
       try {
         const authResponse = await fetch('/api/auth/me');
