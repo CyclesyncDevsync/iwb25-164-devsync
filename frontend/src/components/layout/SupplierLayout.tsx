@@ -13,18 +13,14 @@ import {
   MapPinIcon,
   UserGroupIcon,
   Cog6ToothIcon,
-  BellIcon,
   UserCircleIcon,
   XMarkIcon,
   ArrowRightOnRectangleIcon
-  ChatBubbleLeftRightIcon
 } from '@heroicons/react/24/outline';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAppSelector, useAppDispatch } from '../../hooks/redux';
 import { logout } from '../../store/slices/authSlice';
-import { useNotifications } from '../../hooks/useNotifications';
 import { SupplierType } from '../../types/supplier';
-import { useAuth } from '../../hooks/useAuth';
 
 interface SupplierLayoutProps {
   children: React.ReactNode;
@@ -35,52 +31,10 @@ const SupplierLayout: React.FC<SupplierLayoutProps> = ({ children }) => {
   const router = useRouter();
   const dispatch = useAppDispatch();
   const { profile } = useAppSelector((state: any) => state.supplier || {});
-  const { unreadCount = 0 } = useNotifications() || {};
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   // Clean pathname by removing query parameters
   const cleanPathname = pathname?.split('?')[0] || '';
-
-  const { user } = useAuth();
-  const [unreadMessageCount, setUnreadMessageCount] = useState(0);
-
-  // Fetch unread message count
-  useEffect(() => {
-    const fetchUnreadCount = async () => {
-      if (!user?.asgardeoId && !user?.sub) return;
-
-      try {
-        const authResponse = await fetch('/api/auth/me');
-        if (!authResponse.ok) return;
-
-        const authData = await authResponse.json();
-        const idToken = authData.idToken;
-        const supplierId = authData.user?.asgardeoId || authData.user?.sub || authData.userId;
-
-        const response = await fetch(`/backend/chat/rooms/supplier/${supplierId}/unread-count`, {
-          headers: {
-            'Authorization': `Bearer ${idToken}`
-          }
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          setUnreadMessageCount(data.unread_count || 0);
-        }
-      } catch (error) {
-        console.error('Error fetching unread count:', error);
-      }
-    };
-
-    // Fetch initially
-    fetchUnreadCount();
-
-    // Poll every 10 seconds
-    const interval = setInterval(fetchUnreadCount, 10000);
-    return () => clearInterval(interval);
-  }, [user]);
-
- 
 
   const navigationItems = useMemo(() => {
     const items = [
@@ -225,18 +179,6 @@ const SupplierLayout: React.FC<SupplierLayoutProps> = ({ children }) => {
                     </p>
                   </div>
                 </div>
-                <Link
-                  href="/supplier/notifications"
-                  onClick={closeSidebar}
-                  className="relative p-2 text-gray-400 hover:text-gray-500 dark:hover:text-gray-300"
-                >
-                  <BellIcon className="w-5 h-5" />
-                  {unreadCount > 0 && (
-                    <span className="absolute -top-1 -right-1 h-5 w-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
-                      {unreadCount > 99 ? '99+' : unreadCount}
-                    </span>
-                  )}
-                </Link>
               </div>
             </div>
 
@@ -329,17 +271,6 @@ const SupplierLayout: React.FC<SupplierLayoutProps> = ({ children }) => {
                   </p>
                 </div>
               </div>
-              <Link
-                href="/supplier/notifications"
-                className="relative p-2 text-gray-400 hover:text-gray-500 dark:hover:text-gray-300"
-              >
-                <BellIcon className="w-5 h-5" />
-                {unreadCount > 0 && (
-                  <span className="absolute -top-1 -right-1 h-5 w-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
-                    {unreadCount > 99 ? '99+' : unreadCount}
-                  </span>
-                )}
-              </Link>
             </div>
           </div>
 

@@ -262,6 +262,8 @@ export function Navbar() {
             {/* User Menu */}
             {navbarConfig.showUserMenu && (
               isAuthenticated ? (
+                // Hide profile menu for Supplier role
+                user?.role === USER_ROLES.SUPPLIER ? null : (
                 <div className="relative">
                   <button
                     onClick={() => setUserMenuOpen(!userMenuOpen)}
@@ -330,6 +332,7 @@ export function Navbar() {
                     )}
                   </AnimatePresence>
                 </div>
+                )
               ) : (
                 <div className="hidden md:flex items-center space-x-0 relative">
                   {/* Split Sign In + Role dropdown: primary signs in, chevron toggles role list */}
@@ -462,7 +465,31 @@ export function Navbar() {
                 {navbarConfig.showUserMenu && (
                   <div className="px-0 pt-6 border-t border-green-100 dark:border-slate-800 mt-6">
                     {isAuthenticated ? (
-                      <div className="space-y-4">
+                      // If supplier, show minimal mobile auth view (no Profile/Settings links)
+                      user?.role === USER_ROLES.SUPPLIER ? (
+                        <div className="space-y-4">
+                          <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-slate-800 dark:to-slate-700 rounded-xl p-4">
+                            <UserAvatar 
+                              user={user || undefined} 
+                              size="md" 
+                              showName 
+                              showEmail 
+                              className="py-2" 
+                            />
+                          </div>
+                          <button
+                            onClick={() => {
+                              logout();
+                              setMobileMenuOpen(false);
+                            }}
+                            className="flex items-center w-full px-4 py-3 text-sm text-red-600 dark:text-red-400 hover:bg-red-50/80 dark:hover:bg-red-900/20 rounded-xl transition-all duration-200"
+                          >
+                            <ArrowRightOnRectangleIcon className="w-5 h-5 mr-3" />
+                            Sign Out
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="space-y-4">
                         <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-slate-800 dark:to-slate-700 rounded-xl p-4">
                           <UserAvatar 
                             user={user || undefined} 
@@ -499,6 +526,7 @@ export function Navbar() {
                           Sign Out
                         </button>
                       </div>
+                      )
                     ) : (
                       <div className="space-y-3">
                         <div className="grid grid-cols-3 gap-2">

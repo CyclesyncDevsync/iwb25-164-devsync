@@ -450,71 +450,45 @@ export default function StandaloneMaterialRegistration({ onComplete, supplierId 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
       {/* Progress Steps */}
-      <div className="mb-10">
-        {/* Desktop Step Indicator */}
-        <div className="hidden md:flex items-center justify-between">
+  <div className="mb-2">
+        {/* Desktop Step Indicator - simplified */}
+  <div className="hidden md:flex items-center justify-between gap-6 px-4 py-3 bg-white/50 dark:bg-gray-800/40 rounded-lg shadow-sm -mt-2">
           {STEPS.map((step, index) => (
-            <div
-              key={step.id}
-              className={`flex items-center ${index < STEPS.length - 1 ? 'flex-1' : ''}`}
-            >
-              <div className="flex items-center">
+            <div key={step.id} className="flex items-center space-x-4">
+              <div className="flex flex-col items-center text-center">
                 <div
-                  className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold border-2 transition-all duration-200 ${
-                    index <= currentStep
-                      ? 'bg-emerald-600 border-emerald-600 text-white shadow-lg'
-                      : 'bg-white border-gray-300 text-gray-600 dark:bg-gray-800 dark:border-gray-600 dark:text-gray-400'
+                  className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold transition-all duration-200 ${
+                    index < currentStep
+                      ? 'bg-emerald-600 text-white shadow-md'
+                      : index === currentStep
+                      ? 'bg-emerald-500 text-white shadow-md'
+                      : 'bg-white border border-gray-200 text-gray-600 dark:bg-gray-800'
                   }`}
                 >
-                  {index < currentStep ? (
-                    <CheckCircleIcon className="w-6 h-6" />
-                  ) : (
-                    index + 1
-                  )}
+                  {index < currentStep ? <CheckCircleIcon className="w-5 h-5" /> : index + 1}
                 </div>
-                <div className="ml-4">
-                  <p className={`text-sm font-semibold ${
-                    index <= currentStep ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-500 dark:text-gray-400'
-                  }`}>
+                <div className="mt-2 max-w-[140px]">
+                  <p className={`text-sm font-medium ${index <= currentStep ? 'text-emerald-600' : 'text-gray-500'}`}>
                     {step.title}
                   </p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">{step.description}</p>
+                  <p className="text-xs text-gray-400 mt-1">{step.description}</p>
                 </div>
               </div>
-              {index < STEPS.length - 1 && (
-                <div
-                  className={`h-1 flex-1 mx-6 rounded-full transition-all duration-200 ${
-                    index < currentStep ? 'bg-emerald-600' : 'bg-gray-200 dark:bg-gray-700'
-                  }`}
-                />
-              )}
             </div>
           ))}
         </div>
 
-        {/* Mobile Step Indicator */}
-        <div className="md:hidden">
-          <div className="flex items-center justify-center mb-4">
-            <div className="flex items-center space-x-2">
-              {STEPS.map((_, index) => (
-                <div
-                  key={index}
-                  className={`w-3 h-3 rounded-full transition-all duration-200 ${
-                    index <= currentStep
-                      ? 'bg-emerald-600'
-                      : 'bg-gray-300 dark:bg-gray-600'
-                  }`}
-                />
-              ))}
-            </div>
+        {/* Mobile Step Indicator - compact */}
+        <div className="md:hidden px-4">
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-sm font-semibold text-gray-700 dark:text-gray-200">{STEPS[currentStep].title}</p>
+            <p className="text-sm text-gray-500">{currentStep + 1}/{STEPS.length}</p>
           </div>
-          <div className="text-center">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-              {STEPS[currentStep].title}
-            </h3>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              Step {currentStep + 1} of {STEPS.length}
-            </p>
+          <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+            <div
+              className="h-2 rounded-full bg-emerald-500 transition-all duration-400"
+              style={{ width: `${((currentStep + 1) / STEPS.length) * 100}%` }}
+            />
           </div>
         </div>
       </div>
