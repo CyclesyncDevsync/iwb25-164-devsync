@@ -75,15 +75,16 @@ const AgentDashboard = () => {
   });
 
   // Fetch assignments from backend
-  const fetchAssignments = async () => {
-    const userId = user?.asgardeoId ;
-    if (!userId) {
-      console.log('No user ID available, skipping assignment fetch');
-      return;
-    }
+  useEffect(() => {
+    const fetchAssignments = async () => {
+      const userId = user?.asgardeoId ;
+      if (!userId) {
+        console.log('No user ID available, skipping assignment fetch');
+        return;
+      }
 
-    try {
-      const response = await fetch(`/backend/agent/${userId}/assignments`, {
+      try {
+        const response = await fetch(`/backend/agent/${userId}/assignments`, {
         headers: {
           'Content-Type': 'application/json',
         }
@@ -157,6 +158,9 @@ const AgentDashboard = () => {
       // Fall back to empty assignments on error
       setAssignments([]);
     }
+  };
+    
+    fetchAssignments();
   }, [user]);
 
   useEffect(() => {
@@ -187,14 +191,11 @@ const AgentDashboard = () => {
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
 
-    // Fetch real assignments from backend API
-    fetchAssignments();
-
     return () => {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
     };
-  }, [fetchAssignments]);
+  }, []);
 
   const quickActions = [
     {
