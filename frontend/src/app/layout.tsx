@@ -8,6 +8,9 @@ import { MainLayout } from "../components/layout/MainLayout";
 import ChatBot from "@/components/ChatBot";
 import { Toaster } from 'react-hot-toast';
 
+// Import fetch interceptor for global 401 handling
+import '../utils/fetchInterceptor';
+
 
 // Using Inter as a replacement for Geist since it's more widely supported
 const inter = Inter({

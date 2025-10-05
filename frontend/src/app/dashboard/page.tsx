@@ -205,13 +205,13 @@ export default function Dashboard() {
             <CardContent>
               <div className="space-y-2">
                 <p><strong>ID:</strong> {user?.id}</p>
-                <p><strong>Name:</strong> {user?.name}</p>
+                <p><strong>Name:</strong> {user?.firstName}</p>
                 <p><strong>Email:</strong> {user?.email}</p>
-                {user?.given_name && (
-                  <p><strong>Given Name:</strong> {user.given_name}</p>
+                {user?.firstName && (
+                  <p><strong>Given Name:</strong> {user.firstName}</p>
                 )}
-                {user?.family_name && (
-                  <p><strong>Family Name:</strong> {user.family_name}</p>
+                {user?.lastName && (
+                  <p><strong>Family Name:</strong> {user.lastName}</p>
                 )}
               </div>
             </CardContent>

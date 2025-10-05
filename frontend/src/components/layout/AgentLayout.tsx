@@ -3,6 +3,8 @@
 import { useState, useEffect, useMemo } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
+import { useNotifications } from '@/hooks/useNotifications';
+import { useAuth } from '@/hooks/useAuth';
 import {
   HomeIcon,
   DocumentCheckIcon,
@@ -15,8 +17,6 @@ import {
   ArrowRightOnRectangleIcon
 } from '@heroicons/react/24/outline';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useAuth } from '@/hooks/useAuth';
-import MessagesModal from '@/components/agent/MessagesModal';
 
 interface AgentLayoutProps {
   children: React.ReactNode;
@@ -25,7 +25,8 @@ interface AgentLayoutProps {
 const AgentLayout: React.FC<AgentLayoutProps> = ({ children }) => {
   const pathname = usePathname();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [isMessagesModalOpen, setIsMessagesModalOpen] = useState(false);
+  const [unreadMessageCount, setUnreadMessageCount] = useState(0);
+  const { unreadCount, isNotificationCenterOpen, toggleNotificationCenter } = useNotifications();
   const { user, logout } = useAuth();
 
   // Clean pathname by removing query parameters
@@ -36,6 +37,42 @@ const AgentLayout: React.FC<AgentLayoutProps> = ({ children }) => {
     console.log('Current pathname:', pathname);
     console.log('Clean pathname:', cleanPathname);
   }, [pathname, cleanPathname]);
+
+  // Fetch unread message count
+  useEffect(() => {
+    const fetchUnreadCount = async () => {
+      if (!user?.asgardeoId) return;
+
+      try {
+        const authResponse = await fetch('/api/auth/me');
+        if (!authResponse.ok) return;
+
+        const authData = await authResponse.json();
+        const idToken = authData.idToken;
+        const agentId = authData.user?.asgardeoId || authData.user?.sub || authData.userId;
+
+        const response = await fetch(`/backend/chat/rooms/agent/${agentId}/unread-count`, {
+          headers: {
+            'Authorization': `Bearer ${idToken}`
+          }
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setUnreadMessageCount(data.unread_count || 0);
+        }
+      } catch (error) {
+        console.error('Error fetching unread count:', error);
+      }
+    };
+
+    // Fetch initially
+    fetchUnreadCount();
+
+    // Poll every 10 seconds
+    const interval = setInterval(fetchUnreadCount, 10000);
+    return () => clearInterval(interval);
+  }, [user]);
 
   const navigationItems = useMemo(() => [
     {
@@ -61,7 +98,7 @@ const AgentLayout: React.FC<AgentLayoutProps> = ({ children }) => {
       href: '/agent/messages',
       icon: ChatBubbleLeftRightIcon,
       current: cleanPathname.startsWith('/agent/messages'),
-      badge: 3 // Unread messages count
+      badge: unreadMessageCount
     },
     {
       name: 'Settings',
@@ -69,7 +106,7 @@ const AgentLayout: React.FC<AgentLayoutProps> = ({ children }) => {
       icon: Cog6ToothIcon,
       current: cleanPathname === '/agent/settings'
     }
-  ], [cleanPathname]);
+  ], [cleanPathname, unreadMessageCount]);
 
   // Debug log navigation items
   useEffect(() => {
@@ -153,75 +190,41 @@ const AgentLayout: React.FC<AgentLayoutProps> = ({ children }) => {
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: index * 0.1 }}
                   >
-                    {item.name === 'Messages' ? (
-                      <button
-                        onClick={() => {
-                          setIsMessagesModalOpen(true);
-                          closeSidebar();
-                        }}
-                        className={`relative group flex items-center w-full px-4 py-3 mb-2 pr-12 text-sm font-medium rounded-xl transition-all duration-200 transform hover:scale-105 text-gray-700 dark:text-gray-300 hover:bg-gradient-to-r hover:from-gray-100 hover:to-gray-50 dark:hover:from-gray-800 dark:hover:to-gray-700 hover:shadow-md`}
-                      >
-                        <motion.div
-                          whileHover={{ rotate: 5 }}
-                          className="w-5 h-5 mr-3 flex-shrink-0 text-gray-600 dark:text-gray-400 group-hover:text-agent-DEFAULT"
-                        >
-                          <item.icon className="w-5 h-5" />
-                        </motion.div>
-                        <span className="flex-1">{item.name}</span>
-                            {item.badge && (
-                              <motion.span
-                                initial={{ scale: 0 }}
-                                animate={{ scale: 1 }}
-                                className="absolute right-10 top-1/2 -translate-y-1/2 bg-red-500 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center shadow-sm"
-                              >
-                                {item.badge}
-                              </motion.span>
-                            )}
-                            {item.current && (
-                              <motion.div
-                                initial={{ scale: 0 }}
-                                animate={{ scale: 1 }}
-                                className="absolute right-3 top-1/2 -translate-y-1/2 w-2 h-2 bg-white rounded-full"
-                              />
-                            )}
-                      </button>
-                    ) : (
-                      <Link
-                        href={item.href}
-                        onClick={closeSidebar}
-                        className={`group flex items-center px-4 py-3 mb-2 text-sm font-medium rounded-xl transition-all duration-200 transform hover:scale-105 ${
-                          item.current
-                            ? 'bg-gradient-to-r from-agent-DEFAULT to-green-600 text-white shadow-lg shadow-agent-DEFAULT/25'
-                            : 'text-gray-700 dark:text-gray-300 hover:bg-gradient-to-r hover:from-gray-100 hover:to-gray-50 dark:hover:from-gray-800 dark:hover:to-gray-700 hover:shadow-md'
+                    <Link
+                      href={item.href}
+                      onClick={closeSidebar}
+                      className={`group flex items-center px-4 py-3 mb-2 text-sm font-medium rounded-xl transition-all duration-200 transform hover:scale-105 ${
+                        item.current
+                          ? 'bg-gradient-to-r from-agent-DEFAULT to-green-600 text-white shadow-lg shadow-agent-DEFAULT/25'
+                          : 'text-gray-700 dark:text-gray-300 hover:bg-gradient-to-r hover:from-gray-100 hover:to-gray-50 dark:hover:from-gray-800 dark:hover:to-gray-700 hover:shadow-md'
+                      }`}
+                    >
+                      <motion.div
+                        whileHover={{ rotate: 5 }}
+                        className={`w-5 h-5 mr-3 flex-shrink-0 ${
+                          item.current ? 'text-white' : 'text-gray-600 dark:text-gray-400 group-hover:text-agent-DEFAULT'
                         }`}
                       >
-                        <motion.div
-                          whileHover={{ rotate: 5 }}
-                          className={`w-5 h-5 mr-3 flex-shrink-0 ${
-                            item.current ? 'text-white' : 'text-gray-600 dark:text-gray-400 group-hover:text-agent-DEFAULT'
-                          }`}
+                        <item.icon className="w-5 h-5" />
+                      </motion.div>
+                      <span className="flex-1">{item.name}</span>
+                      {item.badge !== undefined && item.badge > 0 && (
+                        <motion.span
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
+                          className="bg-red-500 text-white text-xs rounded-full px-2 py-1 min-w-[20px] text-center shadow-sm"
                         >
-                          <item.icon className="w-5 h-5" />
-                        </motion.div>
-                        <span className="flex-1">{item.name}</span>
-                        {item.badge && (
-                          <motion.span
-                            initial={{ scale: 0 }}
-                            animate={{ scale: 1 }}
-                            className="bg-red-500 text-white text-xs rounded-full px-2 py-1 min-w-[20px] text-center shadow-sm"
-                          >
-                            {item.badge}
-                          </motion.span>
-                        )}
-                        {item.current && (
-                          <motion.div
-                            initial={{ scale: 0 }}
-                            animate={{ scale: 1 }}
-                            className="w-2 h-2 bg-white rounded-full ml-2"
-                          />
-                        )}
-                      </Link>
-                    )}
+                          {item.badge}
+                        </motion.span>
+                      )}
+                      {item.current && (
+                        <motion.div
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
+                          className="w-2 h-2 bg-white rounded-full ml-2"
+                        />
+                      )}
+                    </Link>
                   </motion.div>
                 ))}
               </nav>
@@ -247,7 +250,7 @@ const AgentLayout: React.FC<AgentLayoutProps> = ({ children }) => {
       </AnimatePresence>
 
       {/* Desktop sidebar */}
-  <div className="hidden lg:flex lg:w-64 lg:flex-col lg:fixed lg:inset-y-0 z-50">
+      <div className="hidden lg:flex lg:w-64 lg:flex-col lg:fixed lg:inset-y-0 z-50">
         <div className="flex flex-col flex-grow bg-gradient-to-b from-white to-gray-50 dark:from-dark-surface dark:to-gray-900 border-r border-gray-200 dark:border-gray-700 shadow-xl">
           {/* Header with enhanced styling */}
           <div className="flex items-center h-16 px-4 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-agent-DEFAULT/10 to-agent-DEFAULT/5">
@@ -256,7 +259,10 @@ const AgentLayout: React.FC<AgentLayoutProps> = ({ children }) => {
                 <UserCircleIcon className="w-5 h-5 text-white" />
               </div>
               <div>
-               
+                <h2 className="text-lg font-bold text-agent-DEFAULT dark:text-agent-dark">
+                  Field Agent
+                </h2>
+                <p className="text-xs text-gray-600 dark:text-gray-400">Portal</p>
               </div>
             </div>
           </div>
@@ -289,64 +295,40 @@ const AgentLayout: React.FC<AgentLayoutProps> = ({ children }) => {
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: index * 0.1 }}
               >
-                {item.name === 'Messages' ? (
-                  <button
-                    onClick={() => setIsMessagesModalOpen(true)}
-                    className="group flex items-center w-full px-4 py-3 mb-2 text-sm font-medium rounded-xl transition-all duration-200 transform hover:scale-105 text-gray-700 dark:text-gray-300 hover:bg-gradient-to-r hover:from-gray-100 hover:to-gray-50 dark:hover:from-gray-800 dark:hover:to-gray-700 hover:shadow-md"
-                  >
-                    <motion.div
-                      whileHover={{ rotate: 5 }}
-                      className="w-5 h-5 mr-3 flex-shrink-0 text-gray-600 dark:text-gray-400 group-hover:text-agent-DEFAULT"
-                    >
-                      <item.icon className="w-5 h-5" />
-                    </motion.div>
-                    <span className="flex-1">{item.name}</span>
-                    {item.badge && (
-                      <motion.span
-                        initial={{ scale: 0 }}
-                        animate={{ scale: 1 }}
-                        className="bg-red-500 text-white text-xs rounded-full px-2 py-1 min-w-[20px] text-center shadow-sm"
-                      >
-                        {item.badge}
-                      </motion.span>
-                    )}
-                  </button>
-                ) : (
-                  <Link
-                    href={item.href}
-                    className={`relative group flex items-center px-4 py-3 mb-2 pr-12 text-sm font-medium rounded-xl transition-all duration-200 transform hover:scale-105 ${
-                      item.current
-                        ? 'bg-gradient-to-r from-agent-DEFAULT to-green-600 text-white shadow-lg shadow-agent-DEFAULT/25'
-                        : 'text-gray-700 dark:text-gray-300 hover:bg-gradient-to-r hover:from-gray-100 hover:to-gray-50 dark:hover:from-gray-800 dark:hover:to-gray-700 hover:shadow-md'
+                <Link
+                  href={item.href}
+                  className={`relative group flex items-center px-4 py-3 mb-2 pr-12 text-sm font-medium rounded-xl transition-all duration-200 transform hover:scale-105 ${
+                    item.current
+                      ? 'bg-gradient-to-r from-agent-DEFAULT to-green-600 text-white shadow-lg shadow-agent-DEFAULT/25'
+                      : 'text-gray-700 dark:text-gray-300 hover:bg-gradient-to-r hover:from-gray-100 hover:to-gray-50 dark:hover:from-gray-800 dark:hover:to-gray-700 hover:shadow-md'
+                  }`}
+                >
+                  <motion.div
+                    whileHover={{ rotate: 5 }}
+                    className={`w-5 h-5 mr-3 flex-shrink-0 ${
+                      item.current ? 'text-white' : 'text-gray-600 dark:text-gray-400 group-hover:text-agent-DEFAULT'
                     }`}
                   >
-                    <motion.div
-                      whileHover={{ rotate: 5 }}
-                      className={`w-5 h-5 mr-3 flex-shrink-0 ${
-                        item.current ? 'text-white' : 'text-gray-600 dark:text-gray-400 group-hover:text-agent-DEFAULT'
-                      }`}
+                    <item.icon className="w-5 h-5" />
+                  </motion.div>
+                  <span className="flex-1">{item.name}</span>
+                  {item.badge !== undefined && item.badge > 0 && (
+                    <motion.span
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      className="absolute right-10 top-1/2 -translate-y-1/2 bg-red-500 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center shadow-sm"
                     >
-                      <item.icon className="w-5 h-5" />
-                    </motion.div>
-                    <span className="flex-1">{item.name}</span>
-                    {item.badge && (
-                      <motion.span
-                        initial={{ scale: 0 }}
-                        animate={{ scale: 1 }}
-                        className="absolute right-10 top-1/2 -translate-y-1/2 bg-red-500 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center shadow-sm"
-                      >
-                        {item.badge}
-                      </motion.span>
-                    )}
-                    {item.current && (
-                      <motion.div
-                        initial={{ scale: 0 }}
-                        animate={{ scale: 1 }}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 w-2 h-2 bg-white rounded-full"
-                      />
-                    )}
-                  </Link>
-                )}
+                      {item.badge}
+                    </motion.span>
+                  )}
+                  {item.current && (
+                    <motion.div
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 w-2 h-2 bg-white rounded-full"
+                    />
+                  )}
+                </Link>
               </motion.div>
             ))}
           </nav>
@@ -367,7 +349,7 @@ const AgentLayout: React.FC<AgentLayoutProps> = ({ children }) => {
       </div>
 
       {/* Main content */}
-  <div className="lg:pl-64 flex flex-col flex-1 relative z-10">
+      <div className="lg:pl-64 flex flex-col flex-1 relative z-10">
         {/* Desktop header */}
         <div className="hidden lg:block bg-white dark:bg-dark-surface shadow-sm border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-between px-6 py-4">
@@ -410,15 +392,7 @@ const AgentLayout: React.FC<AgentLayoutProps> = ({ children }) => {
         <main className="flex-1">
           {children}
         </main>
-
-
       </div>
-
-      {/* Messages Modal */}
-      <MessagesModal 
-        isOpen={isMessagesModalOpen} 
-        onClose={() => setIsMessagesModalOpen(false)} 
-      />
     </div>
   );
 };

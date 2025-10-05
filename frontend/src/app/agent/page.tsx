@@ -47,7 +47,7 @@ interface Assignment {
     coordinates: { lat: number; lng: number };
   };
   priority: 'high' | 'medium' | 'low';
-  status: 'pending' | 'in-progress' | 'completed';
+  status: 'pending' | 'in-progress' | 'completed' | 'accepted' | 'rejected' | 'scheduled';
   estimatedTime: number; // in minutes
   supplier: {
     name: string;
@@ -75,8 +75,8 @@ const AgentDashboard = () => {
   });
 
   // Fetch assignments from backend
-  const fetchAssignments = useCallback(async () => {
-    const userId = user?.asgardeoId;
+  const fetchAssignments = async () => {
+    const userId = user?.asgardeoId ;
     if (!userId) {
       console.log('No user ID available, skipping assignment fetch');
       return;

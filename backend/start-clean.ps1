@@ -48,7 +48,9 @@ Write-Host "`nPerforming initial build..." -ForegroundColor Green
 bal build
 
 Write-Host "`nStarting Cyclesync Backend..." -ForegroundColor Green
+
 try {
+    # Start the main backend service (this will start all imported modules including scheduling)
     bal run
 }
 finally {

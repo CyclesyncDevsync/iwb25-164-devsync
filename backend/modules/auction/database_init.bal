@@ -51,28 +51,31 @@ public function initializeAuctionAndWalletSchema() returns error? {
 
 # Create ENUM types for auction system
 function createEnumTypes(postgresql:Client dbClient) returns error? {
-    // Auction status enum
+    // Create auction status table
     sql:ExecutionResult|error result1 = dbClient->execute(`
-        DO $$ BEGIN
-            CREATE TYPE auction_status_enum AS ENUM ('upcoming', 'active', 'paused', 'ended', 'cancelled', 'completed', 'reserve_not_met');
-        EXCEPTION
-            WHEN duplicate_object THEN null;
-        END $$;
+        CREATE TABLE IF NOT EXISTS auction_statuses (
+            status_name VARCHAR(50) PRIMARY KEY
+        );
+        INSERT INTO auction_statuses (status_name) VALUES
+            ('upcoming'), ('active'), ('paused'), ('ended'), 
+            ('cancelled'), ('completed'), ('reserve_not_met')
+        ON CONFLICT (status_name) DO NOTHING;
     `);
     if result1 is error {
-        log:printWarn("Failed to create auction_status_enum", result1);
+        log:printWarn("Failed to create auction statuses table", result1);
     }
 
-    // Auction type enum
+    // Create auction type table
     sql:ExecutionResult|error result2 = dbClient->execute(`
-        DO $$ BEGIN
-            CREATE TYPE auction_type_enum AS ENUM ('standard', 'buy_it_now', 'reserve', 'dutch', 'bulk');
-        EXCEPTION
-            WHEN duplicate_object THEN null;
-        END $$;
+        CREATE TABLE IF NOT EXISTS auction_types (
+            type_name VARCHAR(50) PRIMARY KEY
+        );
+        INSERT INTO auction_types (type_name) VALUES
+            ('standard'), ('buy_it_now'), ('reserve'), ('dutch'), ('bulk')
+        ON CONFLICT (type_name) DO NOTHING;
     `);
     if result2 is error {
-        log:printWarn("Failed to create auction_type_enum", result2);
+        log:printWarn("Failed to create auction types table", result2);
     }
 
     // Bid status enum
@@ -168,8 +171,8 @@ function createAuctionsTable(postgresql:Client dbClient) returns error? {
             bid_increment DECIMAL(12,2) DEFAULT 100.00,
             final_price DECIMAL(12,2),
             
-            auction_type auction_type_enum DEFAULT 'standard',
-            status auction_status_enum DEFAULT 'upcoming',
+            auction_type VARCHAR(50) DEFAULT 'standard' REFERENCES auction_types(type_name),
+            status VARCHAR(50) DEFAULT 'upcoming' REFERENCES auction_statuses(status_name),
             start_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             end_time TIMESTAMP NOT NULL,
             duration_days INTEGER DEFAULT 7,
