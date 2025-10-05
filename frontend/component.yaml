@@ -1,67 +1,31 @@
-# Choreo Component Configuration
-apiVersion: core.choreo.dev/v1beta1
-kind: ComponentConfig
-metadata:
-  name: cyclesync-frontend
-  displayName: CycleSync Frontend
-  description: Next.js frontend application for CycleSync circular economy platform
-  
-spec:
-  type: WebApp
-  framework: Next.js
-  
-  # Build configuration
-  build:
-    dockerfile: Dockerfile
-    context: .
-    
-  # Port configuration
-  ports:
-    - name: http
-      port: 3000
-      protocol: HTTP
-      
-  # Environment variables (will be configured in Choreo)
-  environmentVariables:
-    - name: NEXT_PUBLIC_API_URL
-      valueFrom:
-        configMapKeyRef:
-          name: frontend-config
-          key: api_url
-    - name: NEXT_PUBLIC_AUTH_API_URL
-      valueFrom:
-        configMapKeyRef:
-          name: frontend-config
-          key: auth_api_url
-    - name: NEXT_PUBLIC_PRICING_API_URL
-      valueFrom:
-        configMapKeyRef:
-          name: frontend-config
-          key: pricing_api_url
-    - name: NEXT_PUBLIC_ASGARDEO_BASE_URL
-      valueFrom:
-        secretKeyRef:
-          name: frontend-secrets
-          key: asgardeo_base_url
-    - name: NEXT_PUBLIC_ASGARDEO_CLIENT_ID
-      valueFrom:
-        secretKeyRef:
-          name: frontend-secrets
-          key: asgardeo_client_id
-          
-  # Health check
-  livenessProbe:
-    httpGet:
-      path: /api/health
-      port: 3000
-    initialDelaySeconds: 30
-    periodSeconds: 10
-    
-  # Resource limits
-  resources:
-    requests:
-      memory: "256Mi"
-      cpu: "250m"
-    limits:
-      memory: "512Mi"
-      cpu: "500m"
+﻿# +required Schema version
+schemaVersion: 1.0
+
+# +required Unique identifier
+id: cyclesync-frontend
+
+# +required Component name
+name: cyclesync-frontend
+
+# +optional Display name
+displayName: CycleSync Frontend
+
+# +optional Description
+description: Next.js frontend application for CycleSync circular economy platform
+
+# +required Component type
+type: WebApplication
+
+# +required Container specification
+container:
+  # Docker build configuration
+  dockerBuild:
+    dockerfilePath: Dockerfile
+    dockerContext: .
+
+# +required Endpoint configuration
+endpoints:
+  - name: frontend
+    port: 3000
+    type: HTTP
+    networkVisibility: Public

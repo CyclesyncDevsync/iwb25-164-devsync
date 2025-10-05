@@ -4,9 +4,12 @@ const AUCTION_API_URL = process.env.NEXT_PUBLIC_AUCTION_API_URL || 'http://local
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { auctionId: string } }
+  { params }: { params: Promise<{ auctionId: string }> }
 ) {
   try {
+    // Await params in Next.js 15
+    const { auctionId } = await params;
+    
     // Debug: Log all cookies
     console.log('=== BID API DEBUG ===');
     console.log('All cookies:', request.cookies.getAll().map(c => ({ name: c.name, value: c.value.substring(0, 20) + '...' })));
@@ -39,10 +42,10 @@ export async function POST(
     const body = await request.json();
 
     // Forward request to Ballerina auction service with authentication header
-    console.log('Sending to backend:', `${AUCTION_API_URL}/api/auction/auction/${params.auctionId}/bid`);
+    console.log('Sending to backend:', `${AUCTION_API_URL}/api/auction/auction/${auctionId}/bid`);
     console.log('Authorization header:', `Bearer ${idToken.substring(0, 20)}...`);
 
-    const backendResponse = await fetch(`${AUCTION_API_URL}/api/auction/auction/${params.auctionId}/bid`, {
+    const backendResponse = await fetch(`${AUCTION_API_URL}/api/auction/auction/${auctionId}/bid`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { useNotifications } from '@/hooks/useNotifications';
+// ...existing code...
 import { useAuth } from '@/hooks/useAuth';
 import {
   HomeIcon,
@@ -26,7 +26,6 @@ const AgentLayout: React.FC<AgentLayoutProps> = ({ children }) => {
   const pathname = usePathname();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [unreadMessageCount, setUnreadMessageCount] = useState(0);
-  const { unreadCount, isNotificationCenterOpen, toggleNotificationCenter } = useNotifications();
   const { user, logout } = useAuth();
 
   // Clean pathname by removing query parameters
@@ -139,21 +138,21 @@ const AgentLayout: React.FC<AgentLayoutProps> = ({ children }) => {
               initial={{ x: -300 }}
               animate={{ x: 0 }}
               exit={{ x: -300 }}
-              className="fixed inset-y-0 left-0 w-64 bg-gradient-to-b from-white to-gray-50 dark:from-dark-surface dark:to-gray-900 shadow-2xl z-[70]"
+              className="fixed inset-y-0 left-0 w-64 bg-white dark:bg-gray-900 shadow-2xl z-[70]"
             >
               {/* Mobile Header */}
               <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-agent-DEFAULT/10 to-agent-DEFAULT/5">
                 <div className="flex items-center space-x-3">
-                  <div className="w-8 h-8 bg-agent-DEFAULT rounded-lg flex items-center justify-center">
-                    <UserCircleIcon className="w-5 h-5 text-white" />
+                    <div className="w-8 h-8 bg-emerald-600 rounded-lg flex items-center justify-center">
+                      <UserCircleIcon className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                      <h2 className="text-lg font-bold text-emerald-600 dark:text-agent-dark">
+                        Field Agent
+                      </h2>
+                      <p className="text-xs text-gray-600 dark:text-gray-400">Portal</p>
+                    </div>
                   </div>
-                  <div>
-                    <h2 className="text-lg font-bold text-agent-DEFAULT dark:text-agent-dark">
-                      Field Agent
-                    </h2>
-                    <p className="text-xs text-gray-600 dark:text-gray-400">Portal</p>
-                  </div>
-                </div>
                 <button
                   onClick={closeSidebar}
                   className="p-2 rounded-lg text-gray-400 hover:text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
@@ -165,7 +164,7 @@ const AgentLayout: React.FC<AgentLayoutProps> = ({ children }) => {
               {/* Mobile User Profile */}
               <div className="px-4 py-4 border-b border-gray-200 dark:border-gray-700">
                 <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-gradient-to-br from-agent-DEFAULT to-green-600 rounded-full flex items-center justify-center shadow-md">
+                  <div className="w-10 h-10 bg-gradient-to-br from-emerald-600 to-emerald-400 rounded-full flex items-center justify-center shadow-md">
                     <span className="text-white font-semibold text-sm">
                       {user?.firstName?.charAt(0) || user?.email?.charAt(0) || 'A'}
                     </span>
@@ -194,15 +193,15 @@ const AgentLayout: React.FC<AgentLayoutProps> = ({ children }) => {
                       href={item.href}
                       onClick={closeSidebar}
                       className={`group flex items-center px-4 py-3 mb-2 text-sm font-medium rounded-xl transition-all duration-200 transform hover:scale-105 ${
-                        item.current
-                          ? 'bg-gradient-to-r from-agent-DEFAULT to-green-600 text-white shadow-lg shadow-agent-DEFAULT/25'
-                          : 'text-gray-700 dark:text-gray-300 hover:bg-gradient-to-r hover:from-gray-100 hover:to-gray-50 dark:hover:from-gray-800 dark:hover:to-gray-700 hover:shadow-md'
-                      }`}
+                          item.current
+                            ? 'bg-emerald-50 text-emerald-600 dark:bg-gradient-to-r dark:from-agent-DEFAULT dark:to-green-600 dark:text-white shadow-lg dark:shadow-agent-DEFAULT/25'
+                            : 'text-gray-800 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:shadow-md'
+                        }`}
                     >
                       <motion.div
                         whileHover={{ rotate: 5 }}
                         className={`w-5 h-5 mr-3 flex-shrink-0 ${
-                          item.current ? 'text-white' : 'text-gray-600 dark:text-gray-400 group-hover:text-agent-DEFAULT'
+              item.current ? 'text-emerald-600 dark:text-white' : 'text-gray-700 dark:text-gray-400 group-hover:text-emerald-600'
                         }`}
                       >
                         <item.icon className="w-5 h-5" />
@@ -221,7 +220,7 @@ const AgentLayout: React.FC<AgentLayoutProps> = ({ children }) => {
                         <motion.div
                           initial={{ scale: 0 }}
                           animate={{ scale: 1 }}
-                          className="w-2 h-2 bg-white rounded-full ml-2"
+                          className="w-2 h-2 bg-emerald-600 dark:bg-white rounded-full ml-2"
                         />
                       )}
                     </Link>
@@ -251,15 +250,15 @@ const AgentLayout: React.FC<AgentLayoutProps> = ({ children }) => {
 
       {/* Desktop sidebar */}
       <div className="hidden lg:flex lg:w-64 lg:flex-col lg:fixed lg:inset-y-0 z-50">
-        <div className="flex flex-col flex-grow bg-gradient-to-b from-white to-gray-50 dark:from-dark-surface dark:to-gray-900 border-r border-gray-200 dark:border-gray-700 shadow-xl">
+  <div className="flex flex-col flex-grow bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-900 shadow-xl">
           {/* Header with enhanced styling */}
-          <div className="flex items-center h-16 px-4 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-agent-DEFAULT/10 to-agent-DEFAULT/5">
+          <div className="flex items-center h-16 px-4 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-emerald-50 to-emerald-50">
             <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-agent-DEFAULT rounded-lg flex items-center justify-center">
+              <div className="w-8 h-8 bg-emerald-600 rounded-lg flex items-center justify-center">
                 <UserCircleIcon className="w-5 h-5 text-white" />
               </div>
               <div>
-                <h2 className="text-lg font-bold text-agent-DEFAULT dark:text-agent-dark">
+                <h2 className="text-lg font-bold text-emerald-600 dark:text-emerald-300">
                   Field Agent
                 </h2>
                 <p className="text-xs text-gray-600 dark:text-gray-400">Portal</p>
@@ -270,13 +269,13 @@ const AgentLayout: React.FC<AgentLayoutProps> = ({ children }) => {
           {/* User Profile Section */}
           <div className="px-4 py-4 border-b border-gray-200 dark:border-gray-700">
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-agent-DEFAULT to-green-600 rounded-full flex items-center justify-center shadow-md">
+              <div className="w-10 h-10 bg-gradient-to-br from-emerald-600 to-emerald-400 rounded-full flex items-center justify-center shadow-md">
                 <span className="text-white font-semibold text-sm">
                   {user?.firstName?.charAt(0) || user?.email?.charAt(0) || 'A'}
                 </span>
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                <p className="text-sm font-medium text-gray-800 dark:text-emerald-300 truncate">
                   {user?.firstName || 'Agent'}
                 </p>
                 <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
@@ -297,16 +296,16 @@ const AgentLayout: React.FC<AgentLayoutProps> = ({ children }) => {
               >
                 <Link
                   href={item.href}
-                  className={`relative group flex items-center px-4 py-3 mb-2 pr-12 text-sm font-medium rounded-xl transition-all duration-200 transform hover:scale-105 ${
+                    className={`relative group flex items-center px-4 py-3 mb-2 pr-12 text-sm font-medium rounded-xl transition-all duration-200 transform hover:scale-105 ${
                     item.current
-                      ? 'bg-gradient-to-r from-agent-DEFAULT to-green-600 text-white shadow-lg shadow-agent-DEFAULT/25'
-                      : 'text-gray-700 dark:text-gray-300 hover:bg-gradient-to-r hover:from-gray-100 hover:to-gray-50 dark:hover:from-gray-800 dark:hover:to-gray-700 hover:shadow-md'
+                      ? 'bg-emerald-50 text-emerald-600 dark:bg-gradient-to-r dark:from-agent-DEFAULT dark:to-green-600 dark:text-white shadow-lg dark:shadow-agent-DEFAULT/25'
+                      : 'text-gray-800 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:shadow-md'
                   }`}
                 >
                   <motion.div
                     whileHover={{ rotate: 5 }}
                     className={`w-5 h-5 mr-3 flex-shrink-0 ${
-                      item.current ? 'text-white' : 'text-gray-600 dark:text-gray-400 group-hover:text-agent-DEFAULT'
+                      item.current ? 'text-emerald-600 dark:text-white' : 'text-gray-700 dark:text-gray-400 group-hover:text-emerald-600'
                     }`}
                   >
                     <item.icon className="w-5 h-5" />
@@ -321,13 +320,13 @@ const AgentLayout: React.FC<AgentLayoutProps> = ({ children }) => {
                       {item.badge}
                     </motion.span>
                   )}
-                  {item.current && (
-                    <motion.div
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 w-2 h-2 bg-white rounded-full"
-                    />
-                  )}
+                    {item.current && (
+                        <motion.div
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 w-2 h-2 bg-emerald-600 dark:bg-white rounded-full"
+                        />
+                      )}
                 </Link>
               </motion.div>
             ))}
@@ -351,7 +350,7 @@ const AgentLayout: React.FC<AgentLayoutProps> = ({ children }) => {
       {/* Main content */}
       <div className="lg:pl-64 flex flex-col flex-1 relative z-10">
         {/* Desktop header */}
-        <div className="hidden lg:block bg-white dark:bg-dark-surface shadow-sm border-b border-gray-200 dark:border-gray-700">
+  <div className="hidden lg:block bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-between px-6 py-4">
             <div>
               <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
@@ -369,7 +368,7 @@ const AgentLayout: React.FC<AgentLayoutProps> = ({ children }) => {
         </div>
 
         {/* Mobile header */}
-        <div className="lg:hidden bg-white dark:bg-dark-surface shadow-sm border-b border-gray-200 dark:border-gray-700">
+  <div className="lg:hidden bg-white dark:bg-gray-900 shadow-sm border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-between px-4 py-3">
             <button
               onClick={() => setIsSidebarOpen(true)}
@@ -378,7 +377,7 @@ const AgentLayout: React.FC<AgentLayoutProps> = ({ children }) => {
               <Bars3Icon className="w-6 h-6" />
             </button>
             
-            <h1 className="text-lg font-semibold text-agent-DEFAULT dark:text-agent-dark">
+            <h1 className="text-lg font-semibold text-emerald-600 dark:text-emerald-300">
               {getCurrentPageName()}
             </h1>
             

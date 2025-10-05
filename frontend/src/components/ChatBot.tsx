@@ -162,7 +162,7 @@ export default function ChatBot({ className = '' }: ChatBotProps) {
       <div className={`fixed bottom-4 right-4 z-40 ${className}`}>
         <button
           onClick={() => setIsOpen(true)}
-          className="bg-gradient-to-r from-blue-600 to-blue-700 dark:from-blue-500 dark:to-blue-600 hover:from-blue-700 hover:to-blue-800 dark:hover:from-blue-600 dark:hover:to-blue-700 text-white rounded-full p-4 shadow-xl shadow-blue-500/30 dark:shadow-blue-400/20 transition-all duration-300 hover:scale-110 hover:shadow-2xl backdrop-blur-sm border border-blue-500/20"
+          className="bg-gradient-to-r from-emerald-600 to-emerald-700 dark:from-emerald-500 dark:to-emerald-600 hover:from-emerald-700 hover:to-emerald-800 dark:hover:from-emerald-600 dark:hover:to-emerald-700 text-white rounded-full p-4 shadow-xl shadow-emerald-500/30 dark:shadow-emerald-400/20 transition-all duration-300 hover:scale-110 hover:shadow-2xl backdrop-blur-sm border border-emerald-500/20"
           aria-label="Open chat"
         >
           <Bot size={24} />
@@ -172,9 +172,9 @@ export default function ChatBot({ className = '' }: ChatBotProps) {
   }
 
   return (
-    <div className={`fixed bottom-4 right-4 w-96 bg-white/95 dark:bg-slate-800/95 backdrop-blur-xl border border-blue-100 dark:border-slate-700 rounded-xl shadow-2xl shadow-blue-500/10 dark:shadow-blue-400/5 flex flex-col ${isMinimized ? 'h-14' : 'h-[600px]'} transition-all duration-300 z-40 ${className}`}>
+  <div className={`fixed bottom-4 right-4 w-96 bg-white/95 dark:bg-slate-800/95 backdrop-blur-xl border border-emerald-100 dark:border-slate-700 rounded-xl shadow-2xl shadow-emerald-500/10 dark:shadow-emerald-400/5 flex flex-col ${isMinimized ? 'h-14' : 'h-[600px]'} transition-all duration-300 z-40 ${className}`}>
       {/* Header */}
-      <div className="bg-gradient-to-r from-blue-600 to-blue-700 dark:from-blue-500 dark:to-blue-600 text-white p-4 rounded-t-xl flex items-center justify-between">
+  <div className="bg-gradient-to-r from-emerald-600 to-emerald-700 dark:from-emerald-500 dark:to-emerald-600 text-white p-4 rounded-t-xl flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Bot size={20} />
           <h3 className="font-semibold">CircularSync Assistant</h3>
@@ -218,7 +218,7 @@ export default function ChatBot({ className = '' }: ChatBotProps) {
                 <div
                   className={`max-w-[80%] p-4 rounded-xl shadow-lg ${
                     message.type === 'user'
-                      ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-blue-500/20'
+                      ? 'bg-gradient-to-r from-emerald-600 to-emerald-700 text-white shadow-emerald-500/20'
                       : 'bg-gray-100 dark:bg-slate-700 text-gray-800 dark:text-gray-200 shadow-gray-200/50 dark:shadow-slate-800/50'
                   }`}
                 >
@@ -234,9 +234,9 @@ export default function ChatBot({ className = '' }: ChatBotProps) {
               <div className="flex justify-start">
                 <div className="bg-gray-100 dark:bg-slate-700 p-4 rounded-xl shadow-lg shadow-gray-200/50 dark:shadow-slate-800/50">
                   <div className="flex gap-1">
-                    <span className="w-2 h-2 bg-blue-400 rounded-full animate-bounce"></span>
-                    <span className="w-2 h-2 bg-blue-400 rounded-full animate-bounce delay-100"></span>
-                    <span className="w-2 h-2 bg-blue-400 rounded-full animate-bounce delay-200"></span>
+                    <span className="w-2 h-2 bg-emerald-400 rounded-full animate-bounce"></span>
+                    <span className="w-2 h-2 bg-emerald-400 rounded-full animate-bounce delay-100"></span>
+                    <span className="w-2 h-2 bg-emerald-400 rounded-full animate-bounce delay-200"></span>
                   </div>
                 </div>
               </div>
@@ -254,7 +254,7 @@ export default function ChatBot({ className = '' }: ChatBotProps) {
                   <button
                     key={index}
                     onClick={() => handleSuggestionClick(suggestion)}
-                    className="px-3 py-2 text-sm bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 dark:hover:bg-blue-900/50 text-blue-700 dark:text-blue-300 rounded-lg border border-blue-200 dark:border-blue-700 transition-all duration-200 hover:scale-105 shadow-sm"
+                    className="px-3 py-2 text-sm bg-emerald-50 dark:bg-emerald-900/30 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 rounded-lg border border-emerald-200 dark:border-emerald-700 transition-all duration-200 hover:scale-105 shadow-sm"
                     disabled={!isConnected}
                   >
                     {suggestion}
@@ -285,7 +285,7 @@ export default function ChatBot({ className = '' }: ChatBotProps) {
               <button
                 onClick={() => sendMessage()}
                 disabled={!isConnected || !inputMessage.trim()}
-                className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 disabled:from-gray-300 disabled:to-gray-400 dark:disabled:from-slate-600 dark:disabled:to-slate-700 text-white p-3 rounded-xl transition-all duration-200 hover:scale-105 shadow-lg shadow-blue-500/20 disabled:shadow-none"
+                className="bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 disabled:from-gray-300 disabled:to-gray-400 dark:disabled:from-slate-600 dark:disabled:to-slate-700 text-white p-3 rounded-xl transition-all duration-200 hover:scale-105 shadow-lg shadow-emerald-500/20 disabled:shadow-none"
                 aria-label="Send message"
               >
                 <Send size={20} />

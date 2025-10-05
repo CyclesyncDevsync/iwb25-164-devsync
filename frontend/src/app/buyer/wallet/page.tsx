@@ -28,13 +28,27 @@ interface WalletData {
   total_balance: number;
 }
 
+interface WalletModal {
+  id: string;
+  userId: number;
+  type: string;
+  balance: number;
+  available_balance: number;
+  frozen_balance: number;
+  total_balance: number;
+  currency: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export default function WalletPage() {
   const searchParams = useSearchParams();
   const [balance, setBalance] = useState<WalletData | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [showDepositModal, setShowDepositModal] = useState(false);
-  const [walletForModal, setWalletForModal] = useState<any>(null);
+  const [walletForModal, setWalletForModal] = useState<WalletModal | null>(null);
   const hasProcessedPayment = useRef(false);
 
   useEffect(() => {
@@ -59,7 +73,7 @@ export default function WalletPage() {
       // Initial fetch if no payment status
       fetchWalletData();
     }
-  }, [searchParams]);
+  }, [searchParams, verifyCheckoutSession]);
 
   const fetchWalletData = async () => {
     try {
@@ -76,9 +90,8 @@ export default function WalletPage() {
           setBalance(balanceData.data);
           // Create wallet object for modal
           setWalletForModal({
-            id: balanceData.data.id || 1,
+            id: String(balanceData.data.id || 1),
             userId: balanceData.data.user_id || 1,
-            user_id: balanceData.data.user_id || 1,
             type: 'buyer', // Set wallet type for buyer
             balance: balanceData.data.available_balance || 0,
             available_balance: balanceData.data.available_balance,
@@ -111,7 +124,7 @@ export default function WalletPage() {
     }
   };
 
-  const verifyCheckoutSession = async (sessionId: string) => {
+  const verifyCheckoutSession = React.useCallback(async (sessionId: string) => {
     try {
       const response = await fetch('/api/payment/verify-checkout-session', {
         method: 'POST',
@@ -147,7 +160,7 @@ export default function WalletPage() {
       toast.error('Failed to verify payment. Please contact support if amount was deducted.');
       window.history.replaceState({}, '', '/buyer/wallet');
     }
-  };
+  }, []);
 
   const handleDepositSuccess = () => {
     setShowDepositModal(false);
@@ -196,7 +209,7 @@ export default function WalletPage() {
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
-            <WalletIcon className="h-8 w-8 text-indigo-600" />
+            <WalletIcon className="h-8 w-8 text-emerald-600" />
             My Wallet
           </h1>
           <p className="mt-2 text-gray-600">Manage your wallet balance and transactions</p>
@@ -216,7 +229,7 @@ export default function WalletPage() {
                 <ArrowPathIcon className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
               </button>
             </div>
-            <p className="text-3xl font-bold text-indigo-600">
+            <p className="text-3xl font-bold text-emerald-600">
               {loading ? 'Loading...' : 
                balance !== null ? `LKR ${balance.available_balance.toLocaleString()}` : 'LKR 0'}
             </p>
@@ -246,7 +259,7 @@ export default function WalletPage() {
         <div className="mb-8">
           <button
             onClick={() => setShowDepositModal(true)}
-            className="inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium shadow-sm"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 font-medium shadow-sm"
           >
             <PlusIcon className="h-5 w-5" />
             Recharge Wallet

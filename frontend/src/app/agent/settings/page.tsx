@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import {
-  Cog6ToothIcon,
   BellIcon,
   MapPinIcon,
   CameraIcon,
@@ -50,7 +49,7 @@ const AgentSettingsPage = () => {
     total: '0 MB'
   });
 
-  const updateSetting = (category: string, key: string, value: any) => {
+  const updateSetting = (category: string, key: string, value: boolean | string | number) => {
     setSettings(prev => ({
       ...prev,
       [category]: {
@@ -77,7 +76,7 @@ const AgentSettingsPage = () => {
       // Refresh storage info
       const info = await offlineStorage.getStorageSize();
       setStorageInfo(info);
-    } catch (error) {
+    } catch {
       alert('Sync failed. Please try again later.');
     }
   };
@@ -95,7 +94,7 @@ const AgentSettingsPage = () => {
           >
             <div className="p-4 border-b border-gray-200 dark:border-gray-700">
               <div className="flex items-center">
-                <BellIcon className="w-5 h-5 text-agent-DEFAULT mr-2" />
+                <BellIcon className="w-5 h-5 text-emerald-600 mr-2" />
                 <h3 className="text-lg font-medium text-gray-900 dark:text-white">
                   Notifications
                 </h3>
@@ -124,7 +123,7 @@ const AgentSettingsPage = () => {
                       onChange={(e) => updateSetting('notifications', item.key, e.target.checked)}
                       className="sr-only peer"
                     />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-emerald-300 dark:peer-focus:ring-emerald-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-emerald-600"></div>
                   </label>
                 </div>
               ))}
@@ -140,7 +139,7 @@ const AgentSettingsPage = () => {
           >
             <div className="p-4 border-b border-gray-200 dark:border-gray-700">
               <div className="flex items-center">
-                <MapPinIcon className="w-5 h-5 text-agent-DEFAULT mr-2" />
+                <MapPinIcon className="w-5 h-5 text-emerald-600 mr-2" />
                 <h3 className="text-lg font-medium text-gray-900 dark:text-white">
                   Location & GPS
                 </h3>
@@ -168,7 +167,7 @@ const AgentSettingsPage = () => {
                       onChange={(e) => updateSetting('location', item.key, e.target.checked)}
                       className="sr-only peer"
                     />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-emerald-300 dark:peer-focus:ring-emerald-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-emerald-600"></div>
                   </label>
                 </div>
               ))}
@@ -184,7 +183,7 @@ const AgentSettingsPage = () => {
           >
             <div className="p-4 border-b border-gray-200 dark:border-gray-700">
               <div className="flex items-center">
-                <CameraIcon className="w-5 h-5 text-agent-DEFAULT mr-2" />
+                <CameraIcon className="w-5 h-5 text-emerald-600 mr-2" />
                 <h3 className="text-lg font-medium text-gray-900 dark:text-white">
                   Camera & Photos
                 </h3>
@@ -207,7 +206,7 @@ const AgentSettingsPage = () => {
                     onChange={(e) => updateSetting('camera', 'autoCompress', e.target.checked)}
                     className="sr-only peer"
                   />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-emerald-300 dark:peer-focus:ring-emerald-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-emerald-600"></div>
                 </label>
               </div>
 
@@ -242,7 +241,7 @@ const AgentSettingsPage = () => {
                     onChange={(e) => updateSetting('camera', 'gpsTagging', e.target.checked)}
                     className="sr-only peer"
                   />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-emerald-300 dark:peer-focus:ring-emerald-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-emerald-600"></div>
                 </label>
               </div>
             </div>
@@ -257,7 +256,7 @@ const AgentSettingsPage = () => {
           >
             <div className="p-4 border-b border-gray-200 dark:border-gray-700">
               <div className="flex items-center">
-                <CloudArrowUpIcon className="w-5 h-5 text-agent-DEFAULT mr-2" />
+                <CloudArrowUpIcon className="w-5 h-5 text-emerald-600 mr-2" />
                 <h3 className="text-lg font-medium text-gray-900 dark:text-white">
                   Offline Storage & Sync
                 </h3>
@@ -319,7 +318,7 @@ const AgentSettingsPage = () => {
                     onChange={(e) => updateSetting('sync', 'autoSync', e.target.checked)}
                     className="sr-only peer"
                   />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-emerald-300 dark:peer-focus:ring-emerald-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-emerald-600"></div>
                 </label>
               </div>
             </div>
@@ -335,9 +334,9 @@ const AgentSettingsPage = () => {
             <div className="p-4 border-b border-gray-200 dark:border-gray-700">
               <div className="flex items-center">
                 {settings.display.darkMode ? (
-                  <MoonIcon className="w-5 h-5 text-agent-DEFAULT mr-2" />
+                  <MoonIcon className="w-5 h-5 text-emerald-600 mr-2" />
                 ) : (
-                  <SunIcon className="w-5 h-5 text-agent-DEFAULT mr-2" />
+                  <SunIcon className="w-5 h-5 text-emerald-600 mr-2" />
                 )}
                 <h3 className="text-lg font-medium text-gray-900 dark:text-white">
                   Display & Language
@@ -361,7 +360,7 @@ const AgentSettingsPage = () => {
                     onChange={(e) => updateSetting('display', 'darkMode', e.target.checked)}
                     className="sr-only peer"
                   />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-emerald-300 dark:peer-focus:ring-emerald-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-emerald-600"></div>
                 </label>
               </div>
 
@@ -372,7 +371,7 @@ const AgentSettingsPage = () => {
                 <select
                   value={settings.display.language}
                   onChange={(e) => updateSetting('display', 'language', e.target.value)}
-                  className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 bg-white dark:bg-dark-bg text-gray-900 dark:text-white focus:ring-2 focus:ring-agent-DEFAULT focus:border-agent-DEFAULT"
+                  className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 bg-white dark:bg-dark-bg text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-600 focus:border-emerald-600"
                 >
                   <option value="en">English</option>
                   <option value="si">සිංහල (Sinhala)</option>
