@@ -80,8 +80,9 @@ export default function MaterialManagement() {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
 
+        // Use cached API endpoint instead of direct backend call
         const response = await fetch(
-          `http://localhost:8086/api/material/workflow/submissions/${supplierId}`,
+          `/api/supplier/materials?supplierId=${supplierId}`,
           {
             signal: controller.signal,
           }
@@ -90,7 +91,8 @@ export default function MaterialManagement() {
         clearTimeout(timeoutId);
 
         if (response.ok) {
-          const data = await response.json();
+          const result = await response.json();
+          const data = result.data || result;
 
           // The backend returns {supplierId, submissions, count}
           const materialsArray = data.submissions || [];

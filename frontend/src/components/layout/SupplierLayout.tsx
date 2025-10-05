@@ -41,35 +41,20 @@ const SupplierLayout: React.FC<SupplierLayoutProps> = ({ children }) => {
   // Clean pathname by removing query parameters
   const cleanPathname = pathname?.split("?")[0] || "";
 
-  // Fetch unread message count - optimized to reduce API calls
+  // Fetch unread message count - optimized with Redis caching
   useEffect(() => {
     const fetchUnreadCount = async () => {
       if (!user?.asgardeoId) return;
 
       try {
-        const authResponse = await fetch("/api/auth/me", {
-          // Add cache control to reduce redundant auth checks
-          next: { revalidate: 60 },
+        // Use cached API endpoint instead of direct backend call
+        const response = await fetch("/api/chat/unread-count", {
+          credentials: "include",
         });
-        if (!authResponse.ok) return;
-
-        const authData = await authResponse.json();
-        const idToken = authData.idToken;
-        const supplierId =
-          authData.user?.asgardeoId || authData.user?.sub || authData.userId;
-
-        const response = await fetch(
-          `/backend/chat/rooms/supplier/${supplierId}/unread-count`,
-          {
-            headers: {
-              Authorization: `Bearer ${idToken}`,
-            },
-          }
-        );
 
         if (response.ok) {
-          const data = await response.json();
-          setUnreadMessageCount(data.unread_count || 0);
+          const result = await response.json();
+          setUnreadMessageCount(result.data?.unread_count || 0);
         }
       } catch (error) {
         console.error("Error fetching unread count:", error);
@@ -79,8 +64,9 @@ const SupplierLayout: React.FC<SupplierLayoutProps> = ({ children }) => {
     // Fetch initially
     fetchUnreadCount();
 
-    // Increase poll interval to 30 seconds to reduce server load
-    const interval = setInterval(fetchUnreadCount, 30000);
+    // Since we're using Redis cache (30s TTL), we can poll less frequently
+    // Poll every 60 seconds - cache will serve fresh data
+    const interval = setInterval(fetchUnreadCount, 60000);
     return () => clearInterval(interval);
   }, [user]);
 
