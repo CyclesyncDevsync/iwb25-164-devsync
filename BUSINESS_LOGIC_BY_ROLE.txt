@@ -1,0 +1,702 @@
+================================================================================
+                    CYCLESYNC PLATFORM - BUSINESS LOGIC BY ROLE
+================================================================================
+
+Platform Overview:
+------------------
+CircularSync is an industrial waste management and circular economy platform 
+that transforms waste into valuable resources. It connects waste suppliers 
+with buyers through an intelligent marketplace featuring real-time auctions, 
+AI-powered quality assessment, field agent verification, and secure payment 
+processing.
+
+================================================================================
+                              ROLE 1: SUPPLIER
+================================================================================
+
+WHO THEY ARE:
+-------------
+Industrial waste material providers (individuals or organizations) who want to 
+sell their waste materials instead of sending them to landfills.
+
+WHAT THEY CAN DO:
+-----------------
+
+1. REGISTRATION & PROFILE MANAGEMENT
+   • Self-register on the platform (no approval needed)
+   • Complete their profile with business/individual information
+   • Manage account settings and preferences
+   • Access personal wallet for payments
+
+2. MATERIAL SUBMISSION (Multi-Step Process)
+   • Submit waste materials with detailed information:
+     - Material type, category, and subcategory
+     - Quantity and unit of measurement
+     - Upload photos of the material
+     - Provide location details
+     - Add description and condition notes
+   
+   • Material goes through automated AI analysis:
+     - Google Vision API analyzes photos
+     - System generates quality score (0-100)
+     - AI provides recommendations or identifies issues
+     - Automatically approved or flagged for review
+
+3. FIELD AGENT VERIFICATION (If Required)
+   • System assigns a field agent based on:
+     - Geographic location (nearest agent)
+     - Agent specialization in material type
+     - Agent availability and rating
+   
+   • Agent conducts on-site verification:
+     - Verifies actual quantity vs. claimed quantity
+     - Assesses material condition in person
+     - Takes additional verification photos
+     - Provides professional quality rating
+   
+   • Supplier receives visit cost invoice based on:
+     - Distance from agent location
+     - Material type complexity
+     - Time required for inspection
+
+4. AUCTION PARTICIPATION
+   • Once material is approved (AI + Agent), it's listed for auction
+   • Supplier can:
+     - Set starting price and reserve price
+     - Choose auction type (Standard, Buy It Now, Reserve, Dutch, Bulk)
+     - Set auction duration (typically 7 days)
+     - Monitor bids in real-time
+     - Chat with potential buyers
+     - Accept or reject offers
+
+5. PAYMENT & WALLET MANAGEMENT
+   • Wallet system with two components:
+     - Available balance (for withdrawals)
+     - Frozen balance (during transactions)
+   
+   • When auction ends and buyer pays:
+     - Payment goes into supplier's wallet
+     - Platform fee is deducted
+     - Remaining amount available for withdrawal
+   
+   • Withdrawal options:
+     - Subject to daily limits
+     - Transferred to bank account
+     - Transaction history tracking
+
+6. NOTIFICATIONS & COMMUNICATION
+   • Receive real-time notifications for:
+     - Material submission status
+     - AI analysis results
+     - Agent assignment and arrival
+     - New bids on auctions
+     - Auction end results
+     - Payment received
+   
+   • In-app chat with:
+     - Potential buyers (during auction)
+     - Field agents (during verification)
+     - Support team (for issues)
+
+BUSINESS FLOW FOR SUPPLIER:
+---------------------------
+1. Register → 2. Submit Material → 3. AI Analysis → 4. Agent Verification 
+→ 5. Material Listed in Auction → 6. Buyers Bid → 7. Auction Ends 
+→ 8. Payment Received → 9. Deliver Material → 10. Withdraw Funds
+
+================================================================================
+                              ROLE 2: BUYER
+================================================================================
+
+WHO THEY ARE:
+-------------
+Companies or individuals looking to purchase recycled/waste materials for 
+reuse in manufacturing, construction, or other industrial processes.
+
+WHAT THEY CAN DO:
+-----------------
+
+1. REGISTRATION & PROFILE MANAGEMENT
+   • Self-register on the platform (no approval needed)
+   • Complete business profile and requirements
+   • Set material preferences and interests
+   • Manage delivery addresses
+   • Access personal wallet for bidding
+
+2. MATERIAL DISCOVERY
+   • Browse marketplace with advanced filters:
+     - Material category and subcategory
+     - Location and distance radius
+     - Quantity range
+     - Quality score range
+     - Price range
+     - Auction type
+   
+   • Search functionality:
+     - Keyword search
+     - Category browsing
+     - Save favorite searches
+     - Receive alerts for matching materials
+
+3. AUCTION PARTICIPATION
+   • View detailed material information:
+     - Photos (supplier + agent verification photos)
+     - AI quality assessment report
+     - Agent verification report
+     - Quantity details
+     - Location information
+     - Supplier ratings/history
+   
+   • Bidding process:
+     - Place bids on active auctions
+     - Auto-bid functionality (optional)
+     - Real-time bid notifications
+     - Buy It Now option (if available)
+     - Bid amount gets frozen in wallet
+   
+   • Auction types available:
+     - Standard: Traditional highest bidder wins
+     - Reserve: Must meet minimum reserve price
+     - Buy It Now: Instant purchase option
+     - Dutch: Price decreases over time
+     - Bulk: Multiple items bundled together
+
+4. WALLET & PAYMENT MANAGEMENT
+   • Multi-wallet system:
+     - Recharge wallet to participate in auctions
+     - Available balance for new bids
+     - Frozen balance (active bids)
+     - Escrow protection during transactions
+   
+   • When winning an auction:
+     - Bid amount transferred to escrow
+     - Released to supplier after delivery confirmation
+     - Refunded if supplier fails to deliver
+   
+   • Payment methods:
+     - Credit/Debit card recharge
+     - Bank transfer
+     - Previous winnings reinvestment
+
+5. ORDER MANAGEMENT
+   • After winning auction:
+     - Coordinate delivery with supplier
+     - Track order status
+     - Confirm receipt of materials
+     - Rate supplier and material quality
+     - Dispute resolution (if needed)
+
+6. COMMUNICATION & SUPPORT
+   • Real-time chat with:
+     - Suppliers (during auction/after winning)
+     - Support team
+   
+   • Notifications for:
+     - New materials matching preferences
+     - Outbid notifications
+     - Auction ending soon
+     - Auction won/lost
+     - Delivery updates
+
+BUSINESS FLOW FOR BUYER:
+-------------------------
+1. Register → 2. Recharge Wallet → 3. Browse Materials → 4. Review Quality Reports 
+→ 5. Place Bids → 6. Win Auction → 7. Payment Processed → 8. Coordinate Delivery 
+→ 9. Receive Materials → 10. Confirm & Rate
+
+================================================================================
+                         ROLE 3: FIELD AGENT
+================================================================================
+
+WHO THEY ARE:
+-------------
+Mobile field professionals who conduct on-site verification of waste materials. 
+They provide critical quality assurance by physically inspecting materials 
+before they're listed for auction.
+
+WHAT THEY CAN DO:
+-----------------
+
+1. REGISTRATION & PROFILE
+   • Registered by admin (not self-registration)
+   • Profile includes:
+     - Specialization areas (material types)
+     - Service location/coverage area
+     - Qualifications and certifications
+     - Rating history
+   • Access to mobile-optimized interface
+   • Offline capability for field work
+
+2. ASSIGNMENT MANAGEMENT
+   • Receive automated assignments based on:
+     - Geographic proximity to material
+     - Specialization in material type
+     - Current availability
+     - Performance rating
+   
+   • Assignment notifications include:
+     - Material details and photos
+     - Supplier location on map
+     - Estimated travel distance
+     - Estimated visit cost
+     - Expected time required
+
+3. FIELD VERIFICATION PROCESS
+   • Check-in upon arrival:
+     - GPS-verified location
+     - Record arrival time
+     - Start verification session
+   
+   • On-site inspection:
+     - Verify actual quantity vs. claimed
+     - Assess material condition (visual inspection)
+     - Check for contamination or quality issues
+     - Verify material category accuracy
+     - Take verification photos
+     - Document any discrepancies
+   
+   • Verification checklist includes:
+     - Material condition rating (1-10)
+     - Quantity verification (accurate/discrepant)
+     - Quality assessment (Grade A/B/C/D)
+     - Contamination check (yes/no)
+     - Safety concerns (if any)
+     - Storage conditions
+
+4. REPORTING & RECOMMENDATIONS
+   • Submit detailed verification report:
+     - Overall rating (1-10 scale)
+     - Condition rating
+     - Quantity rating
+     - Quality notes and observations
+     - Photos with timestamps
+     - GPS-stamped location
+   
+   • Make recommendation:
+     - APPROVE: Material meets standards → List for auction
+     - REJECT: Material doesn't meet standards → Not listed
+     - REQUIRES SECOND REVIEW: Borderline case → Senior agent review
+   
+   • Rejection reasons (if applicable):
+     - Contamination detected
+     - Quantity discrepancy
+     - Poor condition
+     - Safety hazards
+     - Misclassified material
+
+5. PAYMENT & EARNINGS
+   • Agent wallet system:
+     - Earn verification fees per assignment
+     - Fees based on:
+       * Distance traveled
+       * Material complexity
+       * Time spent on verification
+     - Daily/weekly payout options
+     - Transaction history
+   
+   • Performance bonuses:
+     - High accuracy ratings
+     - Fast turnaround times
+     - Positive supplier feedback
+
+6. ASSIGNMENT TRACKING
+   • View assignment history
+   • Track verification statistics
+   • Monitor performance ratings
+   • Access training materials
+   • Receive feedback from supervisors
+
+BUSINESS FLOW FOR AGENT:
+-------------------------
+1. Receive Assignment → 2. Travel to Location → 3. Check In (GPS verified) 
+→ 4. Conduct On-Site Inspection → 5. Document Findings → 6. Upload Photos 
+→ 7. Submit Recommendation → 8. Check Out → 9. Receive Payment
+
+================================================================================
+                              ROLE 4: ADMIN
+================================================================================
+
+WHO THEY ARE:
+-------------
+Platform administrators who manage daily operations, oversee transactions, 
+handle disputes, manage field agents, and ensure smooth platform functioning.
+
+WHAT THEY CAN DO:
+-----------------
+
+1. USER MANAGEMENT
+   • View all platform users (buyers, suppliers, agents)
+   • Filter and search users:
+     - By role
+     - By status (active, inactive, suspended)
+     - By registration date
+     - By activity level
+   
+   • Manage user accounts:
+     - View detailed user profiles
+     - Update user information
+     - Activate/deactivate accounts
+     - Suspend problematic users
+     - Reset passwords
+     - Handle account issues
+   
+   • CANNOT create/manage Super Admins
+
+2. FIELD AGENT MANAGEMENT
+   • Agent recruitment and onboarding:
+     - Create agent accounts
+     - Assign service areas
+     - Define specializations
+     - Set availability schedules
+   
+   • Monitor agent performance:
+     - View verification accuracy
+     - Track response times
+     - Monitor customer ratings
+     - Analyze productivity metrics
+   
+   • Assignment oversight:
+     - View all active assignments
+     - Reassign tasks if needed
+     - Handle agent disputes
+     - Approve second reviews
+
+3. MATERIAL & AUCTION OVERSIGHT
+   • Review all material submissions
+   • Monitor AI analysis results
+   • Override AI decisions when necessary
+   • View all active auctions
+   • Monitor bidding activity
+   • Handle material disputes:
+     - Quantity disputes
+     - Quality disputes
+     - Misrepresentation claims
+
+4. TRANSACTION MONITORING
+   • View all platform transactions:
+     - Auction payments
+     - Wallet recharges
+     - Withdrawals
+     - Agent fees
+   
+   • Financial oversight:
+     - Monitor platform revenue
+     - Track commission collection
+     - Manage refunds
+     - Process chargebacks
+   
+   • Payment issues:
+     - Resolve payment failures
+     - Handle escrow releases
+     - Process manual refunds
+
+5. DISPUTE RESOLUTION
+   • Handle various dispute types:
+     - Buyer-Supplier disputes
+     - Material quality issues
+     - Delivery problems
+     - Payment conflicts
+     - Agent verification disputes
+   
+   • Dispute resolution process:
+     - Review evidence from both parties
+     - Examine transaction history
+     - Review agent reports
+     - Make fair judgments
+     - Process refunds/compensations
+     - Document resolutions
+
+6. SYSTEM MONITORING
+   • Dashboard with key metrics:
+     - Daily active users
+     - New registrations
+     - Active auctions
+     - Transaction volume
+     - Revenue analytics
+     - System health
+   
+   • Operational reports:
+     - Material submission trends
+     - Auction success rates
+     - Agent performance
+     - User satisfaction scores
+
+7. CUSTOMER SUPPORT
+   • Support ticket management
+   • In-app chat support
+   • Email support
+   • FAQ management
+   • Help documentation updates
+
+8. NOTIFICATIONS & COMMUNICATION
+   • Send platform-wide announcements
+   • Alert users to policy changes
+   • Notify about maintenance windows
+   • Send targeted communications
+
+BUSINESS FLOW FOR ADMIN:
+-------------------------
+Daily Operations: Monitor Dashboard → Review Flagged Items → Manage Agent 
+Assignments → Process Disputes → Generate Reports → Support Users
+
+================================================================================
+                           ROLE 5: SUPER ADMIN
+================================================================================
+
+WHO THEY ARE:
+-------------
+Highest level platform administrators with complete system access. They manage 
+the entire platform infrastructure, other admins, and make strategic decisions.
+
+WHAT THEY CAN DO:
+-----------------
+
+1. COMPLETE ADMIN CAPABILITIES
+   • Everything that regular Admin can do
+   • Plus additional super-user privileges
+
+2. ADMIN MANAGEMENT
+   • Create and manage admin accounts:
+     - Add new administrators
+     - Assign admin permissions
+     - Update admin profiles
+     - Deactivate admin accounts
+     - Monitor admin activities
+   
+   • Admin oversight:
+     - View admin action logs
+     - Track admin performance
+     - Review admin decisions
+     - Override admin actions
+
+3. PLATFORM CONFIGURATION
+   • System settings management:
+     - Payment gateway configuration
+     - Commission rates and fees
+     - Auction rules and parameters
+     - Quality threshold settings
+     - AI analysis parameters
+   
+   • Feature toggles:
+     - Enable/disable platform features
+     - Roll out new functionality
+     - Beta testing controls
+     - Emergency shutdowns
+
+4. FINANCIAL MANAGEMENT
+   • Shared admin wallet:
+     - All platform commissions collected here
+     - Platform operational expenses
+     - Agent payment pool
+     - Revenue distribution
+   
+   • Financial analytics:
+     - Total platform revenue
+     - Revenue by category
+     - Profit margins
+     - Cost analysis
+     - Growth metrics
+   
+   • Commission structure:
+     - Set commission rates
+     - Adjust platform fees
+     - Configure agent fee calculations
+     - Manage pricing models
+
+5. SECURITY & COMPLIANCE
+   • User data protection
+   • Audit trail management
+   • Security incident handling
+   • Compliance monitoring
+   • Privacy policy enforcement
+   • Terms of service updates
+
+6. STRATEGIC OVERSIGHT
+   • Platform analytics and insights:
+     - User growth trends
+     - Market analysis
+     - Material category performance
+     - Regional performance
+     - Seasonal trends
+   
+   • Business intelligence:
+     - Revenue forecasting
+     - User retention metrics
+     - Platform health indicators
+     - Competitive analysis
+
+7. SYSTEM ADMINISTRATION
+   • Database management oversight
+   • API integration management
+   • Third-party service configuration:
+     - Asgardeo authentication
+     - Google Vision API
+     - Payment processors
+     - Cloud services (Choreo, Neon)
+   
+   • Performance monitoring:
+     - Server health
+     - Response times
+     - Error rates
+     - Uptime statistics
+
+8. CRISIS MANAGEMENT
+   • Handle platform emergencies
+   • Make critical business decisions
+   • Override all system controls
+   • Emergency user communications
+   • Platform-wide interventions
+
+BUSINESS FLOW FOR SUPER ADMIN:
+-------------------------------
+Strategic: Set Platform Policies → Configure Systems → Monitor Overall Health 
+→ Analyze Business Metrics → Manage Admin Team → Make Strategic Decisions
+
+Operational: Everything Admin does + Higher level controls
+
+================================================================================
+                        PLATFORM WORKFLOW SUMMARY
+================================================================================
+
+COMPLETE MATERIAL LIFECYCLE:
+-----------------------------
+
+1. SUBMISSION (Supplier)
+   └─> Supplier submits material with photos and details
+
+2. AI ANALYSIS (Automated)
+   └─> Google Vision API analyzes quality
+   └─> System generates quality score
+   └─> Auto-approve or flag for agent review
+
+3. AGENT ASSIGNMENT (System + Agent)
+   └─> System assigns nearest specialized agent
+   └─> Agent receives notification
+   └─> Cost calculation based on distance
+
+4. FIELD VERIFICATION (Agent)
+   └─> Agent travels to location
+   └─> GPS check-in
+   └─> On-site inspection
+   └─> Photo documentation
+   └─> Submit verification report
+   └─> Recommend: Approve/Reject/Second Review
+
+5. AUCTION LISTING (Automated if Approved)
+   └─> Material listed in marketplace
+   └─> Buyers can browse and view details
+   └─> Auction becomes active
+
+6. BIDDING (Buyers)
+   └─> Buyers place bids
+   └─> Bid amounts frozen in wallet
+   └─> Real-time updates
+   └─> Outbid notifications
+
+7. AUCTION CLOSE (System)
+   └─> Highest bidder wins
+   └─> Payment transferred to escrow
+   └─> Supplier and buyer notified
+
+8. DELIVERY (Supplier + Buyer)
+   └─> Coordinate delivery
+   └─> Material shipped/picked up
+   └─> Buyer confirms receipt
+
+9. PAYMENT RELEASE (System)
+   └─> Payment released to supplier wallet
+   └─> Platform commission deducted
+   └─> Agent fee processed
+   └─> Transaction complete
+
+10. POST-TRANSACTION (Users)
+    └─> Rating and reviews
+    └─> Dispute window (if issues)
+    └─> Admin oversight
+
+================================================================================
+                         KEY PLATFORM FEATURES
+================================================================================
+
+WALLET SYSTEM:
+--------------
+• Buyers: Recharge wallet → Bid (frozen balance) → Win or refund
+• Suppliers: Receive payments → Withdraw to bank
+• Agents: Earn verification fees → Daily/weekly payouts
+• Admins: Shared wallet for platform revenue and operational costs
+
+QUALITY ASSURANCE (Two-Layer):
+-------------------------------
+1. AI Analysis (Google Vision API)
+   - Automated photo analysis
+   - Quality scoring (0-100)
+   - Contamination detection
+   - Category verification
+
+2. Field Agent Verification
+   - Physical inspection
+   - Quantity verification
+   - Professional quality assessment
+   - Photo documentation
+   - GPS-stamped reporting
+
+AUCTION TYPES:
+--------------
+• Standard: Traditional bidding, highest wins
+• Reserve: Minimum price must be met
+• Buy It Now: Instant purchase option
+• Dutch: Price decreases over time
+• Bulk: Multiple items packaged together
+
+NOTIFICATION SYSTEM:
+--------------------
+• In-app notifications
+• Real-time updates
+• Email notifications (optional)
+• SMS alerts (critical updates)
+• Push notifications (mobile app)
+
+SECURITY:
+---------
+• Asgardeo authentication (OAuth2/OIDC)
+• Role-based access control
+• Encrypted data transmission
+• Secure payment processing
+• Escrow protection
+• GPS verification for agents
+
+================================================================================
+                              TECHNICAL STACK
+================================================================================
+
+Frontend: Next.js 14+ (TypeScript, React, Tailwind CSS, Redux)
+Backend: Ballerina microservices
+Database: PostgreSQL (Neon Cloud)
+Authentication: Asgardeo Identity Server (WSO2)
+AI: Google Vision API
+Deployment: Choreo Platform (WSO2)
+Real-time: WebSocket (Socket.io)
+Maps: OpenStreetMap
+
+================================================================================
+                              SUPPORT & CONTACT
+================================================================================
+
+For platform support and inquiries:
+- User Support Portal: Available in-app
+- Admin Dashboard: Complete oversight and management tools
+- Documentation: Technical and user guides available
+- Emergency Contacts: Platform downtime or critical issues
+
+================================================================================
+                                   END
+================================================================================
+
+This document provides a comprehensive overview of the CircularSync platform's
+business logic for each user role. It explains what each role can do, how they
+interact with the system, and how the platform creates a complete circular
+economy ecosystem for industrial waste management.
+
+Document Version: 1.0
+Last Updated: October 5, 2025
+Platform: CircularSync (Cyclesync)
