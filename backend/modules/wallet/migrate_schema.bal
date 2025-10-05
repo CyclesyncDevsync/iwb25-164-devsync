@@ -14,7 +14,7 @@ import ballerina/log;
         maxAge: 84900
     }
 }
-service /api/wallet/migrate on new http:Listener(8098) {
+service /api/wallet/migrate on new http:Listener(8099) {
 
     resource function post schema() returns http:Response {
         http:Response response = new;

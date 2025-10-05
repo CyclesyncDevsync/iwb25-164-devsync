@@ -1,7 +1,25 @@
 Write-Host "Cleaning up existing Java processes..." -ForegroundColor Yellow
 Get-Process java -ErrorAction SilentlyContinue | Stop-Process -Force
+
 Write-Host "Waiting for ports to be released..." -ForegroundColor Yellow
-Start-Sleep -Seconds 3
+Start-Sleep -Seconds 5
+
+# Check if critical ports are still in use
+$portsToCheck = @(8080, 8082, 8084, 8085, 8086, 8087, 8089, 8091, 8092, 8093, 8095, 8096, 8097, 8098, 8099)
+foreach ($port in $portsToCheck) {
+    $connection = Get-NetTCPConnection -LocalPort $port -ErrorAction SilentlyContinue
+    if ($connection) {
+        Write-Host "Warning: Port $port is still in use by PID $($connection.OwningProcess)" -ForegroundColor Red
+        $process = Get-Process -Id $connection.OwningProcess -ErrorAction SilentlyContinue
+        if ($process) {
+            Write-Host "  Killing process: $($process.ProcessName) (PID: $($process.Id))" -ForegroundColor Yellow
+            Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue
+        }
+    }
+}
+
+Write-Host "Waiting for final cleanup..." -ForegroundColor Yellow
+Start-Sleep -Seconds 2
 
 Write-Host "Setting up file watcher for automatic builds..." -ForegroundColor Cyan
 
