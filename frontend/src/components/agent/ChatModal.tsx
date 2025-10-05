@@ -38,6 +38,7 @@ interface ChatModalProps {
   supplierId: string;
   materialTitle: string;
   materialId: string;
+  readOnly?: boolean;
 }
 
 export function ChatModal({
@@ -47,13 +48,15 @@ export function ChatModal({
   supplierName,
   supplierId,
   materialTitle,
-  materialId
+  materialId,
+  readOnly = false
 }: ChatModalProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [roomId, setRoomId] = useState<string | null>(null);
   const [isSending, setIsSending] = useState(false);
+  const [isInitializing, setIsInitializing] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
   const pollingInterval = useRef<NodeJS.Timeout | null>(null);
@@ -72,7 +75,7 @@ export function ChatModal({
       
       // Get the proper agent ID from auth data
       // The user object has asgardeoId (camelCase), not asgardeo_id
-      const agentId = authData.user?.asgardeoId || authData.userId || authData.sub || user?.sub;
+      const agentId = authData.user?.asgardeoId || authData.userId || authData.sub ;
       
       if (!agentId || typeof agentId === 'number') {
         console.error('Invalid agent ID detected. Auth data:', authData);
@@ -143,9 +146,17 @@ export function ChatModal({
         const data = await response.json();
         setMessages(data.messages);
         markMessagesAsRead(currentRoomId);
+        // Set initializing to false after first successful fetch
+        if (isInitializing) {
+          setIsInitializing(false);
+        }
       }
     } catch (error) {
       console.error('Error fetching messages:', error);
+      // Set initializing to false even on error to show error state
+      if (isInitializing) {
+        setIsInitializing(false);
+      }
     }
   };
 
@@ -166,7 +177,7 @@ export function ChatModal({
         },
         body: JSON.stringify({
           room_id: currentRoomId,
-          reader_id: authData.user?.asgardeoId || authData.userId || authData.sub || user?.sub
+          reader_id: authData.user?.asgardeoId || authData.userId || authData.sub 
         })
       });
     } catch (error) {
@@ -199,7 +210,7 @@ export function ChatModal({
         },
         body: JSON.stringify({
           room_id: roomId,
-          sender_id: authData.user?.asgardeoId || authData.userId || authData.sub || user?.sub,
+          sender_id: authData.user?.asgardeoId || authData.userId || authData.sub ,
           sender_type: 'agent',
           message: {
             content: messageContent,
@@ -316,7 +327,7 @@ export function ChatModal({
 
           {/* Messages */}
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
-            {isLoading ? (
+            {isLoading || isInitializing ? (
               <div className="flex items-center justify-center h-full">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-agent-DEFAULT" />
               </div>
@@ -365,8 +376,9 @@ export function ChatModal({
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Message Input */}
-          <form onSubmit={sendMessage} className="p-4 border-t border-gray-200 dark:border-gray-700">
+          {/* Message Input - Only show if not read-only */}
+          {!readOnly && (
+            <form onSubmit={sendMessage} className="p-4 border-t border-gray-200 dark:border-gray-700">
             <div className="flex items-center gap-2">
               <button
                 type="button"
@@ -410,6 +422,7 @@ export function ChatModal({
               </button>
             </div>
           </form>
+          )}
         </motion.div>
       </div>
     </AnimatePresence>

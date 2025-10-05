@@ -66,7 +66,7 @@ const BuyerAnalyticsPage = () => {
   const stats = [
     {
       title: 'Total Spent',
-      value: '₹83,000',
+      value: 'Rs83,000',
       change: '+23.5%',
       trend: 'up',
       icon: CurrencyRupeeIcon,
@@ -84,7 +84,7 @@ const BuyerAnalyticsPage = () => {
     },
     {
       title: 'Avg Order Value',
-      value: '₹1,844',
+      value: 'Rs1,844',
       change: '-5.3%',
       trend: 'down',
       icon: ChartBarIcon,
@@ -191,7 +191,7 @@ const BuyerAnalyticsPage = () => {
                 <YAxis />
                 <Tooltip 
                   formatter={(value, name) => [
-                    name === 'amount' ? `₹${value.toLocaleString()}` : value,
+                    name === 'amount' ? `Rs${value.toLocaleString()}` : value,
                     name === 'amount' ? 'Amount' : 'Orders'
                   ]}
                 />
@@ -250,7 +250,7 @@ const BuyerAnalyticsPage = () => {
                       <span>{category.name}</span>
                     </div>
                     <div className="text-right">
-                      <div className="font-medium">₹{category.amount.toLocaleString()}</div>
+                      <div className="font-medium">Rs{category.amount.toLocaleString()}</div>
                       <div className="text-gray-500">{category.value}%</div>
                     </div>
                   </div>
@@ -290,7 +290,7 @@ const BuyerAnalyticsPage = () => {
               <XAxis dataKey="month" />
               <YAxis />
               <Tooltip 
-                formatter={(value) => `₹${value.toLocaleString()}`}
+                formatter={(value) => `Rs${value.toLocaleString()}`}
               />
               <Bar dataKey="traditional" fill="#F87171" name="Traditional Cost" />
               <Bar dataKey="circular" fill="#10B981" name="Circular Cost" />
@@ -300,7 +300,7 @@ const BuyerAnalyticsPage = () => {
           <div className="mt-4 p-4 bg-green-50 rounded-lg">
             <div className="flex items-center justify-between">
               <span className="text-green-800 font-medium">Total Savings This Quarter</span>
-              <span className="text-2xl font-bold text-green-600">₹16,000</span>
+              <span className="text-2xl font-bold text-green-600">Rs16,000</span>
             </div>
             <p className="text-sm text-green-700 mt-1">
               You've saved 19.3% compared to traditional procurement methods
@@ -340,7 +340,7 @@ const BuyerAnalyticsPage = () => {
                       </span>
                     </td>
                     <td className="py-3 text-gray-600">{supplier.orders}</td>
-                    <td className="py-3 font-medium">₹{supplier.amount.toLocaleString()}</td>
+                    <td className="py-3 font-medium">Rs{supplier.amount.toLocaleString()}</td>
                     <td className="py-3">
                       <div className="flex items-center gap-1">
                         <span className="text-yellow-500">★</span>
@@ -390,7 +390,7 @@ const BuyerAnalyticsPage = () => {
             <p className="text-green-100 text-sm mb-2">
               Plastic materials offer the best value for money
             </p>
-            <div className="text-2xl font-bold">Plastic (₹15/kg avg)</div>
+            <div className="text-2xl font-bold">Plastic (Rs15/kg avg)</div>
           </motion.div>
 
           <motion.div

@@ -18,7 +18,9 @@ export default function LoginForm() {
       setMessage(urlMessage);
     }
     if (urlError) {
-      const errorMsg = urlError === 'login_required' ? 'Please log in to continue' : 'Authentication failed';
+      const errorMsg = urlError === 'login_required' ? 'Please log in to continue' : 
+                      urlError === 'session_expired' ? 'Your session has expired. Please log in again.' :
+                      'Authentication failed';
       setMessage(errorMsg);
     }
   }, [searchParams]);

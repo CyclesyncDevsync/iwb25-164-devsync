@@ -51,28 +51,31 @@ public function initializeAuctionAndWalletSchema() returns error? {
 
 # Create ENUM types for auction system
 function createEnumTypes(postgresql:Client dbClient) returns error? {
-    // Auction status enum
+    // Create auction status table
     sql:ExecutionResult|error result1 = dbClient->execute(`
-        DO $$ BEGIN
-            CREATE TYPE auction_status_enum AS ENUM ('upcoming', 'active', 'paused', 'ended', 'cancelled', 'completed', 'reserve_not_met');
-        EXCEPTION
-            WHEN duplicate_object THEN null;
-        END $$;
+        CREATE TABLE IF NOT EXISTS auction_statuses (
+            status_name VARCHAR(50) PRIMARY KEY
+        );
+        INSERT INTO auction_statuses (status_name) VALUES
+            ('upcoming'), ('active'), ('paused'), ('ended'), 
+            ('cancelled'), ('completed'), ('reserve_not_met')
+        ON CONFLICT (status_name) DO NOTHING;
     `);
     if result1 is error {
-        log:printWarn("Failed to create auction_status_enum", result1);
+        log:printWarn("Failed to create auction statuses table", result1);
     }
 
-    // Auction type enum
+    // Create auction type table
     sql:ExecutionResult|error result2 = dbClient->execute(`
-        DO $$ BEGIN
-            CREATE TYPE auction_type_enum AS ENUM ('standard', 'buy_it_now', 'reserve', 'dutch', 'bulk');
-        EXCEPTION
-            WHEN duplicate_object THEN null;
-        END $$;
+        CREATE TABLE IF NOT EXISTS auction_types (
+            type_name VARCHAR(50) PRIMARY KEY
+        );
+        INSERT INTO auction_types (type_name) VALUES
+            ('standard'), ('buy_it_now'), ('reserve'), ('dutch'), ('bulk')
+        ON CONFLICT (type_name) DO NOTHING;
     `);
     if result2 is error {
-        log:printWarn("Failed to create auction_type_enum", result2);
+        log:printWarn("Failed to create auction types table", result2);
     }
 
     // Bid status enum
@@ -168,8 +171,8 @@ function createAuctionsTable(postgresql:Client dbClient) returns error? {
             bid_increment DECIMAL(12,2) DEFAULT 100.00,
             final_price DECIMAL(12,2),
             
-            auction_type auction_type_enum DEFAULT 'standard',
-            status auction_status_enum DEFAULT 'upcoming',
+            auction_type VARCHAR(50) DEFAULT 'standard' REFERENCES auction_types(type_name),
+            status VARCHAR(50) DEFAULT 'upcoming' REFERENCES auction_statuses(status_name),
             start_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             end_time TIMESTAMP NOT NULL,
             duration_days INTEGER DEFAULT 7,
@@ -232,20 +235,37 @@ function createBidsTable(postgresql:Client dbClient) returns error? {
 
 # Create user wallets table
 function createUserWalletsTable(postgresql:Client dbClient) returns error? {
+    // First create wallet_type enum
+    sql:ExecutionResult|error enumResult = dbClient->execute(`
+        DO $$ BEGIN
+            CREATE TYPE wallet_type_enum AS ENUM ('buyer', 'supplier', 'agent', 'admin_shared');
+        EXCEPTION
+            WHEN duplicate_object THEN null;
+        END $$;
+    `);
+    if enumResult is error {
+        log:printWarn("Failed to create wallet_type_enum", enumResult);
+    }
+
     sql:ExecutionResult|error result = dbClient->execute(`
         CREATE TABLE IF NOT EXISTS user_wallets (
             wallet_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-            user_id INTEGER UNIQUE REFERENCES users(id),
+            user_id INTEGER REFERENCES users(id),
+            wallet_type wallet_type_enum NOT NULL,
             available_balance DECIMAL(12,2) DEFAULT 0.00,
             frozen_balance DECIMAL(12,2) DEFAULT 0.00,
             total_balance DECIMAL(12,2) GENERATED ALWAYS AS (available_balance + frozen_balance) STORED,
-            
+
             daily_withdrawal_limit DECIMAL(12,2) DEFAULT 100000.00,
             daily_withdrawal_used DECIMAL(12,2) DEFAULT 0.00,
             daily_limit_reset_date DATE DEFAULT CURRENT_DATE,
-            
+
+            is_shared BOOLEAN DEFAULT FALSE,
+
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+            CONSTRAINT unique_user_wallet_type UNIQUE(user_id, wallet_type)
         )
     `);
 
@@ -496,10 +516,40 @@ function createTriggers(postgresql:Client dbClient) returns error? {
     sql:ExecutionResult|error triggerFunctionResult = dbClient->execute(`
         CREATE OR REPLACE FUNCTION create_user_wallet()
         RETURNS TRIGGER AS $$
+        DECLARE
+            admin_wallet_id UUID;
         BEGIN
-            INSERT INTO user_wallets (user_id, available_balance, frozen_balance)
-            VALUES (NEW.id, 0.00, 0.00)
-            ON CONFLICT (user_id) DO NOTHING;
+            -- For admin and super_admin users, link to shared wallet
+            IF NEW.role IN ('admin', 'super_admin') THEN
+                -- Get or create shared admin wallet
+                SELECT wallet_id INTO admin_wallet_id
+                FROM user_wallets
+                WHERE wallet_type = 'admin_shared' AND is_shared = TRUE
+                LIMIT 1;
+
+                IF admin_wallet_id IS NULL THEN
+                    -- Create shared admin wallet with NULL user_id
+                    INSERT INTO user_wallets (user_id, wallet_type, available_balance, frozen_balance, is_shared)
+                    VALUES (NULL, 'admin_shared', 0.00, 0.00, TRUE)
+                    RETURNING wallet_id INTO admin_wallet_id;
+                END IF;
+            ELSE
+                -- For other users (buyer, supplier, agent), create individual wallets
+                IF NEW.role = 'buyer' THEN
+                    INSERT INTO user_wallets (user_id, wallet_type, available_balance, frozen_balance)
+                    VALUES (NEW.id, 'buyer', 0.00, 0.00)
+                    ON CONFLICT (user_id, wallet_type) DO NOTHING;
+                ELSIF NEW.role = 'supplier' THEN
+                    INSERT INTO user_wallets (user_id, wallet_type, available_balance, frozen_balance)
+                    VALUES (NEW.id, 'supplier', 0.00, 0.00)
+                    ON CONFLICT (user_id, wallet_type) DO NOTHING;
+                ELSIF NEW.role = 'agent' THEN
+                    INSERT INTO user_wallets (user_id, wallet_type, available_balance, frozen_balance)
+                    VALUES (NEW.id, 'agent', 0.00, 0.00)
+                    ON CONFLICT (user_id, wallet_type) DO NOTHING;
+                END IF;
+            END IF;
+
             RETURN NEW;
         END;
         $$ LANGUAGE plpgsql;
@@ -511,6 +561,7 @@ function createTriggers(postgresql:Client dbClient) returns error? {
 
     // Create trigger for automatic wallet creation
     sql:ExecutionResult|error triggerResult = dbClient->execute(`
+        DROP TRIGGER IF EXISTS trigger_create_user_wallet ON users;
         CREATE TRIGGER trigger_create_user_wallet
             AFTER INSERT ON users
             FOR EACH ROW
@@ -591,15 +642,50 @@ function createTriggers(postgresql:Client dbClient) returns error? {
 
 # Insert initial wallets for existing users
 function insertInitialWallets(postgresql:Client dbClient) returns error? {
-    sql:ExecutionResult|error result = dbClient->execute(`
-        INSERT INTO user_wallets (user_id, available_balance, frozen_balance)
-        SELECT id, 0.00, 0.00 FROM users
-        ON CONFLICT (user_id) DO NOTHING
+    // Create shared admin wallet first
+    sql:ExecutionResult|error adminWalletResult = dbClient->execute(`
+        INSERT INTO user_wallets (user_id, wallet_type, available_balance, frozen_balance, is_shared)
+        SELECT NULL, 'admin_shared', 0.00, 0.00, TRUE
+        WHERE NOT EXISTS (
+            SELECT 1 FROM user_wallets WHERE wallet_type = 'admin_shared' AND is_shared = TRUE
+        )
     `);
 
-    if result is error {
-        log:printWarn("Failed to create initial wallets for existing users", result);
-        return result;
+    if adminWalletResult is error {
+        log:printWarn("Failed to create shared admin wallet", adminWalletResult);
+    }
+
+    // Create individual wallets for buyers
+    sql:ExecutionResult|error buyerResult = dbClient->execute(`
+        INSERT INTO user_wallets (user_id, wallet_type, available_balance, frozen_balance)
+        SELECT id, 'buyer', 0.00, 0.00 FROM users WHERE role = 'buyer'
+        ON CONFLICT (user_id, wallet_type) DO NOTHING
+    `);
+
+    if buyerResult is error {
+        log:printWarn("Failed to create buyer wallets", buyerResult);
+    }
+
+    // Create individual wallets for suppliers
+    sql:ExecutionResult|error supplierResult = dbClient->execute(`
+        INSERT INTO user_wallets (user_id, wallet_type, available_balance, frozen_balance)
+        SELECT id, 'supplier', 0.00, 0.00 FROM users WHERE role = 'supplier'
+        ON CONFLICT (user_id, wallet_type) DO NOTHING
+    `);
+
+    if supplierResult is error {
+        log:printWarn("Failed to create supplier wallets", supplierResult);
+    }
+
+    // Create individual wallets for agents
+    sql:ExecutionResult|error agentResult = dbClient->execute(`
+        INSERT INTO user_wallets (user_id, wallet_type, available_balance, frozen_balance)
+        SELECT id, 'agent', 0.00, 0.00 FROM users WHERE role = 'agent'
+        ON CONFLICT (user_id, wallet_type) DO NOTHING
+    `);
+
+    if agentResult is error {
+        log:printWarn("Failed to create agent wallets", agentResult);
     }
 
     log:printInfo("Initial wallets created for existing users");

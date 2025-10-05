@@ -25,6 +25,11 @@ public isolated class AuctionService {
         // Begin transaction
         transaction {
             // Create auction record
+            // Convert UUID strings to proper format
+            string materialIdUUID = "'" + request.materialId + "'::uuid";
+            string workflowIdUUID = request.workflowId is string ? "'" + request.workflowId + "'::uuid" : "null";
+            string auctionIdUUID = "'" + auctionId + "'::uuid";
+            
             sql:ParameterizedQuery auctionQuery = `
                 INSERT INTO auctions (
                     auction_id, material_id, workflow_id, supplier_id,
@@ -40,9 +45,11 @@ public isolated class AuctionService {
                     ${request.title}, ${request.description}, ${request.category}, ${request.subCategory},
                     ${request.quantity}, ${request.unit}, ${request.conditionRating}, ${request.qualityScore},
                     ${request.startingPrice}, ${request.reservePrice}, ${request.startingPrice},
-                    ${request.bidIncrement}, ${request.auctionType}, 'active',
+                    ${request.bidIncrement},
+                    ${request.auctionType},
+                    'active',
                     CURRENT_TIMESTAMP, ${endTime}, ${request.durationDays},
-                    ${self.arrayToJson(request.photos)}, ${request.verificationDetails.toString()}, ${request?.agentNotes},
+                    ${request.photos}, ${request.verificationDetails.toString()}, ${request?.agentNotes},
                     CURRENT_TIMESTAMP
                 )
             `;
@@ -61,20 +68,22 @@ public isolated class AuctionService {
             
             _ = check self.dbClient->execute(metricsQuery);
             
-            // Update workflow status
-            sql:ParameterizedQuery workflowQuery = `
-                UPDATE material_workflows
-                SET current_stage = 'auction_active',
-                    auction_listing = jsonb_build_object(
-                        'auctionId', ${auctionId},
-                        'listedAt', CURRENT_TIMESTAMP,
-                        'endTime', ${endTime}
-                    ),
-                    updated_at = CURRENT_TIMESTAMP
-                WHERE workflow_id = ${request.workflowId}
-            `;
-            
-            _ = check self.dbClient->execute(workflowQuery);
+            // Update workflow status if workflow_id is present
+            if request.workflowId is string {
+                sql:ParameterizedQuery workflowQuery = `
+                    UPDATE material_workflows
+                    SET current_stage = 'auction_active',
+                        auction_listing = jsonb_build_object(
+                            'auctionId', ${auctionId},
+                            'listedAt', CURRENT_TIMESTAMP,
+                            'endTime', ${endTime}
+                        ),
+                        updated_at = CURRENT_TIMESTAMP
+                    WHERE workflow_id = ${request.workflowId}
+                `;
+                
+                _ = check self.dbClient->execute(workflowQuery);
+            }
             
             // Create notification for supplier
             sql:ParameterizedQuery notificationQuery = `
@@ -409,7 +418,7 @@ public isolated class AuctionService {
 public type AuctionCreationRequest record {|
     string materialId;
     string workflowId;
-    string supplierId;
+    int supplierId;
     string title;
     string description;
     string category;
@@ -421,7 +430,7 @@ public type AuctionCreationRequest record {|
     decimal startingPrice;
     decimal reservePrice;
     decimal bidIncrement;
-    string auctionType = "standard"; // standard, dutch, sealed
+    string? auctionType = "standard"; // standard, dutch, sealed
     int durationDays;
     string[] photos;
     json verificationDetails;

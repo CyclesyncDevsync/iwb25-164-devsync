@@ -654,4 +654,45 @@ service /api/chat on chatListener {
             "unread_count": unreadCount
         };
     }
+    
+    // Get total unread count for an agent
+    resource function get rooms/agent/[string agentId]/unread\-count() 
+            returns json|http:InternalServerError|error {
+        
+        postgresql:Client|error dbClientResult = database_config:getDbClient();
+        if (dbClientResult is error) {
+            return <http:InternalServerError>{
+                body: {"error": "Database connection not available"}
+            };
+        }
+        
+        postgresql:Client dbClientLocal = dbClientResult;
+        
+        sql:ParameterizedQuery query = `
+            SELECT COUNT(*) as unread_count
+            FROM chat_messages cm
+            INNER JOIN chat_rooms r ON cm.room_id = r.room_id
+            WHERE r.agent_id = ${agentId}
+            AND cm.sender_id != ${agentId}
+            AND cm.status != 'read'
+        `;
+        
+        stream<record {}, error?> resultStream = dbClientLocal->query(query);
+        record {}? result = check resultStream.next();
+        check resultStream.close();
+        
+        int unreadCount = 0;
+        if (result is record {}) {
+            var count = result["unread_count"];
+            if (count is int) {
+                unreadCount = count;
+            } else if (count is decimal) {
+                unreadCount = <int>count;
+            }
+        }
+        
+        return {
+            "unread_count": unreadCount
+        };
+    }
 }

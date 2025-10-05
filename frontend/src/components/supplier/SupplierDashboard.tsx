@@ -126,7 +126,7 @@ export default function SupplierDashboard() {
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="p-6 md:p-8 lg:p-10 space-y-6">
       {/* Welcome Banner */}
       <WelcomeBanner profile={profile} user={user} />
 
@@ -227,20 +227,20 @@ function WelcomeBanner({ profile, user }: WelcomeBannerProps) {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-gradient-to-r from-emerald-500 to-emerald-600 rounded-lg shadow-lg overflow-hidden"
+      className="bg-gradient-to-r from-emerald-500 via-green-500 to-emerald-600 rounded-2xl shadow-xl overflow-hidden"
     >
-      <div className="px-6 py-8 sm:px-8">
+      <div className="px-8 py-10 sm:px-10">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-white">
+            <h1 className="text-3xl font-bold text-white">
               Welcome back, {user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : 'Supplier'}!
             </h1>
-            <p className="mt-2 text-emerald-100">
+            <p className="mt-3 text-emerald-100 text-lg">
               Manage your materials and track your earnings
             </p>
-            <div className="mt-4 flex items-center text-emerald-100">
-              <MapPinIcon className="h-4 w-4 mr-1" />
-              <span className="text-sm">
+            <div className="mt-6 flex items-center text-emerald-100">
+              <MapPinIcon className="h-5 w-5 mr-2" />
+              <span className="text-base">
                 {profile?.address?.city && profile?.address?.district 
                   ? `${profile.address.city}, ${profile.address.district}`
                   : 'Location not set'
@@ -290,11 +290,11 @@ interface QuickStatCardProps {
 }
 
 function QuickStatCard({ title, value, change, changeLabel, icon: Icon, color }: QuickStatCardProps) {
-  const colorClasses = {
-    emerald: 'bg-emerald-50 text-emerald-600 dark:bg-emerald-900/20 dark:text-emerald-400',
-    blue: 'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400',
-    purple: 'bg-purple-50 text-purple-600 dark:bg-purple-900/20 dark:text-purple-400',
-    yellow: 'bg-yellow-50 text-yellow-600 dark:bg-yellow-900/20 dark:text-yellow-400'
+  const iconBgClasses = {
+    emerald: 'linear-gradient(135deg,#10B981,#34D399)',
+    blue: 'linear-gradient(135deg,#3B82F6,#60A5FA)',
+    purple: 'linear-gradient(135deg,#8B5CF6,#A78BFA)',
+    yellow: 'linear-gradient(135deg,#F59E0B,#FBBF24)'
   };
 
   const isPositive = change > 0;
@@ -303,15 +303,20 @@ function QuickStatCard({ title, value, change, changeLabel, icon: Icon, color }:
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-white dark:bg-gray-800 rounded-lg shadow p-6"
+      whileHover={{ y: -4, scale: 1.02 }}
+      transition={{ type: "spring", stiffness: 300, damping: 20 }}
+      className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg hover:shadow-xl p-6 border border-gray-100 dark:border-gray-700"
     >
       <div className="flex items-center">
-        <div className={`rounded-lg p-3 ${colorClasses[color]}`}>
-          <Icon className="h-6 w-6" />
+        <div
+          className="rounded-xl p-3"
+          style={{ background: iconBgClasses[color] }}
+        >
+          <Icon className="h-6 w-6 text-white" />
         </div>
         <div className="ml-4 flex-1">
           <p className="text-sm font-medium text-gray-600 dark:text-gray-400">{title}</p>
-          <p className="text-2xl font-semibold text-gray-900 dark:text-white">{value}</p>
+          <p className="text-2xl font-bold text-gray-900 dark:text-white">{value}</p>
         </div>
       </div>
       <div className="mt-4">
@@ -321,7 +326,7 @@ function QuickStatCard({ title, value, change, changeLabel, icon: Icon, color }:
             ) : (
               <ArrowTrendingDownIcon className="h-4 w-4 text-red-500 mr-1" />
             )}
-          <span className={`font-medium ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
+          <span className={`font-semibold ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
             {isPositive ? '+' : ''}{change}%
           </span>
           <span className="text-gray-500 dark:text-gray-400 ml-1">{changeLabel}</span>
@@ -513,33 +518,52 @@ function EarningsChart({ analytics }: EarningsChartProps) {
   const data = analytics?.earningsHistory || [];
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
-      <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-        <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+    <motion.div
+      initial={{ opacity: 0, x: -20 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ delay: 0.2 }}
+      className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700 overflow-hidden"
+    >
+      <div className="p-8 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-emerald-50 to-green-50 dark:from-emerald-900/20 dark:to-green-900/20">
+        <h3 className="text-xl font-bold text-gray-900 dark:text-white">
           Earnings Overview
         </h3>
-        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+        <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">
           Your earnings over the last 30 days
         </p>
       </div>
-      <div className="p-6">
-        <ResponsiveContainer width="100%" height={300}>
+      <div className="p-8">
+        <ResponsiveContainer width="100%" height={320}>
           <AreaChart data={data}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="date" tick={{ fontSize: 12 }} />
-            <YAxis tick={{ fontSize: 12 }} />
-            <Tooltip />
+            <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+            <XAxis dataKey="date" tick={{ fontSize: 12, fill: '#6B7280' }} />
+            <YAxis tick={{ fontSize: 12, fill: '#6B7280' }} />
+            <Tooltip
+              contentStyle={{
+                backgroundColor: '#FFFFFF',
+                border: '1px solid #E5E7EB',
+                borderRadius: '8px',
+                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+              }}
+            />
             <Area
               type="monotone"
               dataKey="earnings"
               stroke="#10B981"
-              fill="#10B981"
-              fillOpacity={0.6}
+              fill="url(#earningsGradient)"
+              fillOpacity={0.8}
+              strokeWidth={3}
             />
+            <defs>
+              <linearGradient id="earningsGradient" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#10B981" stopOpacity={0.8}/>
+                <stop offset="95%" stopColor="#10B981" stopOpacity={0.1}/>
+              </linearGradient>
+            </defs>
           </AreaChart>
         </ResponsiveContainer>
       </div>
-    </div>
+    </motion.div>
   );
 }
 
@@ -558,28 +582,40 @@ function MaterialPerformanceChart({ materials }: MaterialPerformanceChartProps) 
   ];
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
-      <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-        <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+    <motion.div
+      initial={{ opacity: 0, x: 20 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ delay: 0.3 }}
+      className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700 overflow-hidden"
+    >
+      <div className="p-8 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20">
+        <h3 className="text-xl font-bold text-gray-900 dark:text-white">
           Material Performance
         </h3>
-        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+        <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">
           Views vs sales by category
         </p>
       </div>
-      <div className="p-6">
-        <ResponsiveContainer width="100%" height={300}>
-          <BarChart data={performanceData}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="category" tick={{ fontSize: 12 }} />
-            <YAxis tick={{ fontSize: 12 }} />
-            <Tooltip />
-            <Bar dataKey="views" fill="#3B82F6" name="Views" />
-            <Bar dataKey="sales" fill="#10B981" name="Sales" />
+      <div className="p-8">
+        <ResponsiveContainer width="100%" height={320}>
+          <BarChart data={performanceData} barCategoryGap="20%">
+            <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+            <XAxis dataKey="category" tick={{ fontSize: 12, fill: '#6B7280' }} />
+            <YAxis tick={{ fontSize: 12, fill: '#6B7280' }} />
+            <Tooltip
+              contentStyle={{
+                backgroundColor: '#FFFFFF',
+                border: '1px solid #E5E7EB',
+                borderRadius: '8px',
+                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+              }}
+            />
+            <Bar dataKey="views" fill="#3B82F6" name="Views" radius={[4, 4, 0, 0]} />
+            <Bar dataKey="sales" fill="#10B981" name="Sales" radius={[4, 4, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </div>
-    </div>
+    </motion.div>
   );
 }
 
@@ -591,15 +627,20 @@ function RecentMaterials({ materials }: RecentMaterialsProps) {
   const recentMaterials = materials.slice(0, 5);
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
-      <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.4 }}
+      className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700 overflow-hidden"
+    >
+      <div className="p-8 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20">
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+          <h3 className="text-xl font-bold text-gray-900 dark:text-white">
             Recent Materials
           </h3>
           <Link
             href="/supplier/materials"
-            className="text-sm text-emerald-600 hover:text-emerald-500 font-medium"
+            className="text-sm font-semibold text-emerald-600 hover:text-emerald-500 dark:text-emerald-400 dark:hover:text-emerald-300 transition-colors"
           >
             View all →
           </Link>
@@ -607,45 +648,49 @@ function RecentMaterials({ materials }: RecentMaterialsProps) {
       </div>
       <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-          <thead className="bg-gray-50 dark:bg-gray-700">
+          <thead className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-600">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+              <th className="px-8 py-5 text-left text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
                 Material
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+              <th className="px-8 py-5 text-left text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
                 Category
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+              <th className="px-8 py-5 text-left text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
                 Status
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+              <th className="px-8 py-5 text-left text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
                 Price
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+              <th className="px-8 py-5 text-left text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
                 Actions
               </th>
             </tr>
           </thead>
           <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
             {recentMaterials.map((material) => (
-              <tr key={material.id}>
-                <td className="px-6 py-4 whitespace-nowrap">
+              <motion.tr
+                key={material.id}
+                whileHover={{ backgroundColor: 'rgba(16, 185, 129, 0.05)' }}
+                className="hover:bg-emerald-50/50 dark:hover:bg-emerald-900/10 transition-colors"
+              >
+                <td className="px-8 py-5 whitespace-nowrap">
                   <div className="flex items-center">
-                    <div className="h-10 w-10 flex-shrink-0">
+                    <div className="h-12 w-12 flex-shrink-0">
                       {material.photos?.[0] ? (
                         <img
-                          className="h-10 w-10 rounded-lg object-cover"
+                          className="h-12 w-12 rounded-xl object-cover shadow-sm"
                           src={material.photos[0].url}
                           alt={material.title}
                         />
                       ) : (
-                        <div className="h-10 w-10 rounded-lg bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
-                          <ShoppingBagIcon className="h-5 w-5 text-gray-400" />
+                        <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-600 flex items-center justify-center">
+                          <ShoppingBagIcon className="h-6 w-6 text-gray-500 dark:text-gray-400" />
                         </div>
                       )}
                     </div>
                     <div className="ml-4">
-                      <div className="text-sm font-medium text-gray-900 dark:text-white">
+                      <div className="text-sm font-semibold text-gray-900 dark:text-white">
                         {material.title}
                       </div>
                       <div className="text-sm text-gray-500 dark:text-gray-400">
@@ -654,10 +699,10 @@ function RecentMaterials({ materials }: RecentMaterialsProps) {
                     </div>
                   </div>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 capitalize">
+                <td className="px-8 py-5 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 capitalize">
                   {material.category}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap">
+                <td className="px-8 py-5 whitespace-nowrap">
                   <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
                     material.status === MaterialStatus.APPROVED
                       ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
@@ -668,10 +713,10 @@ function RecentMaterials({ materials }: RecentMaterialsProps) {
                     {material.status.replace('_', ' ')}
                   </span>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                <td className="px-8 py-5 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                   LKR {material.pricing?.expectedPrice?.toLocaleString() || '0'}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                <td className="px-8 py-5 whitespace-nowrap text-sm font-medium">
                   <Link
                     href={`/supplier/materials/${material.id}`}
                     className="text-emerald-600 hover:text-emerald-900 dark:text-emerald-400 dark:hover:text-emerald-300"
@@ -679,12 +724,12 @@ function RecentMaterials({ materials }: RecentMaterialsProps) {
                     View
                   </Link>
                 </td>
-              </tr>
+              </motion.tr>
             ))}
           </tbody>
         </table>
       </div>
-    </div>
+    </motion.div>
   );
 }
 

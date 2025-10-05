@@ -1,6 +1,5 @@
 'use client';
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { 
   MagnifyingGlassIcon, 
@@ -20,8 +19,26 @@ import { useAuth } from '@/hooks/useAuth';
 import WalletBalance from '@/components/shared/WalletBalance';
 
 const BuyerDashboard = () => {
-  const [activeTab, setActiveTab] = useState('overview');
+  const [isNotificationOpen, setIsNotificationOpen] = useState(false);
+  const notificationRef = useRef<HTMLDivElement>(null);
   const { user, loading } = useAuth();
+
+  // Close notification panel when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (notificationRef.current && !notificationRef.current.contains(event.target as Node)) {
+        setIsNotificationOpen(false);
+      }
+    };
+
+    if (isNotificationOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isNotificationOpen]);
 
   // Debug logging
   console.log('=== BUYER DASHBOARD RENDER ===');
@@ -29,15 +46,14 @@ const BuyerDashboard = () => {
   console.log('Loading state:', loading);
   console.log('localStorage user:', typeof window !== 'undefined' ? localStorage.getItem('user') : 'SSR');
 
-
   // Show loading state while fetching user data
-  if (loading) {
+    if (loading) {
     console.log('Dashboard showing loading state');
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 dark:bg-dark-bg flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading dashboard...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-400">Loading dashboard...</p>
         </div>
       </div>
     );
@@ -72,8 +88,8 @@ const BuyerDashboard = () => {
       title: 'Active Bids',
       value: '12',
       icon: ClockIcon,
-      color: 'text-purple-600',
-      bgColor: 'bg-purple-100',
+      color: 'text-green-600',
+      bgColor: 'bg-green-100',
       change: '+2 from yesterday'
     },
     {
@@ -135,14 +151,14 @@ const BuyerDashboard = () => {
       description: 'Find and filter materials',
       icon: MagnifyingGlassIcon,
       href: '/buyer/search',
-      color: 'bg-purple-500 hover:bg-purple-600'
+      color: 'bg-green-500 hover:bg-green-600'
     },
     {
       title: 'Live Auctions',
       description: 'Join ongoing auctions',
       icon: ClockIcon,
       href: '/buyer/auctions',
-      color: 'bg-red-500 hover:bg-red-600'
+      color: 'bg-green-500 hover:bg-green-600'
     },
     {
       title: 'My Orders',
@@ -156,37 +172,78 @@ const BuyerDashboard = () => {
       description: 'View purchase insights',
       icon: ChartBarIcon,
       href: '/buyer/analytics',
-      color: 'bg-blue-500 hover:bg-blue-600'
+      color: 'bg-green-500 hover:bg-green-600'
     },
     {
       title: 'My Wallet',
       description: 'Manage balance & transactions',
       icon: WalletIcon,
       href: '/wallet',
-      color: 'bg-indigo-500 hover:bg-indigo-600'
+      color: 'bg-green-500 hover:bg-green-600'
     }
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-dark-bg">
       {/* Header */}
-      <div className="bg-white shadow-sm border-b">
+      <div className="bg-white dark:bg-dark-surface shadow-sm border-b border-gray-200 dark:border-gray-700">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-6">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Buyer Dashboard</h1>
-              <p className="text-gray-600">Welcome back, {user?.firstName || 'User'}! Here's your procurement overview.</p>
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Buyer Dashboard</h1>
+              <p className="text-gray-600 dark:text-gray-400">Welcome back, {user?.firstName || 'User'}! Here's your procurement overview.</p>
             </div>
             <div className="flex items-center space-x-4">
-              <button className="relative p-2 text-gray-400 hover:text-gray-500">
-                <BellIcon className="h-6 w-6" />
-                <span className="absolute top-0 right-0 block h-2 w-2 bg-red-400 rounded-full"></span>
-              </button>
-              <div className="flex items-center space-x-2">
-                <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
-                  <span className="text-purple-600 font-medium text-sm">{getUserInitials()}</span>
-                </div>
-                <span className="text-gray-700 font-medium">{getUserDisplayName()}</span>
+              <div className="relative" ref={notificationRef}>
+                <button 
+                  onClick={() => setIsNotificationOpen(!isNotificationOpen)}
+                  className="relative p-2 text-gray-400 hover:text-gray-500 dark:text-gray-500 dark:hover:text-gray-400"
+                >
+                  <BellIcon className="h-6 w-6" />
+                  <span className="absolute top-0 right-0 block h-2 w-2 bg-red-400 rounded-full"></span>
+                </button>
+                
+                {/* Notification Panel */}
+                {isNotificationOpen && (
+                  <div className="absolute right-0 mt-2 w-80 bg-white dark:bg-dark-surface rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-50">
+                    <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Notifications</h3>
+                    </div>
+                    <div className="max-h-96 overflow-y-auto">
+                      <div className="p-4 space-y-3">
+                        <div className="flex items-start space-x-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                          <div className="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
+                          <div className="flex-1">
+                            <p className="text-sm font-medium text-gray-900 dark:text-white">New auction started</p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">Plastic bottles auction is now live</p>
+                            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">2 minutes ago</p>
+                          </div>
+                        </div>
+                        <div className="flex items-start space-x-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                          <div className="w-2 h-2 bg-green-500 rounded-full mt-2"></div>
+                          <div className="flex-1">
+                            <p className="text-sm font-medium text-gray-900 dark:text-white">Bid accepted</p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">Your bid on cardboard sheets was accepted</p>
+                            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">1 hour ago</p>
+                          </div>
+                        </div>
+                        <div className="flex items-start space-x-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                          <div className="w-2 h-2 bg-orange-500 rounded-full mt-2"></div>
+                          <div className="flex-1">
+                            <p className="text-sm font-medium text-gray-900 dark:text-white">Delivery scheduled</p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">Your order will be delivered tomorrow</p>
+                            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">3 hours ago</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="p-3 border-t border-gray-200 dark:border-gray-700">
+                      <button className="w-full text-center text-sm text-green-600 dark:text-green-300 hover:text-green-800 dark:hover:text-green-300">
+                          View all notifications
+                        </button>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -202,13 +259,13 @@ const BuyerDashboard = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.1 }}
-              className="bg-white rounded-lg shadow-sm p-6 border"
+              className="bg-white dark:bg-dark-surface rounded-lg shadow-sm p-6 border border-gray-200 dark:border-gray-700"
             >
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">{stat.title}</p>
-                  <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
-                  <p className="text-xs text-gray-500 mt-1">{stat.change}</p>
+                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">{stat.title}</p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{stat.value}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">{stat.change}</p>
                 </div>
                 <div className={`p-3 rounded-full ${stat.bgColor}`}>
                   <stat.icon className={`h-6 w-6 ${stat.color}`} />
@@ -222,7 +279,7 @@ const BuyerDashboard = () => {
           {/* Quick Actions */}
           <div className="lg:col-span-1 space-y-6">
             <div>
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h2>
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Quick Actions</h2>
             <div className="space-y-3">
               {quickActions.map((action, index) => (
                 <motion.a
@@ -233,14 +290,14 @@ const BuyerDashboard = () => {
                   transition={{ delay: index * 0.1 }}
                   className="block"
                 >
-                  <div className="bg-white rounded-lg shadow-sm p-4 border hover:shadow-md transition-shadow">
+                  <div className="bg-white dark:bg-dark-surface rounded-lg shadow-sm p-4 border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow">
                     <div className="flex items-center space-x-3">
                       <div className={`p-2 rounded-lg ${action.color}`}>
                         <action.icon className="h-5 w-5 text-white" />
                       </div>
                       <div>
-                        <h3 className="font-medium text-gray-900">{action.title}</h3>
-                        <p className="text-sm text-gray-500">{action.description}</p>
+                        <h3 className="font-medium text-gray-900 dark:text-white">{action.title}</h3>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">{action.description}</p>
                       </div>
                     </div>
                   </div>
@@ -252,8 +309,8 @@ const BuyerDashboard = () => {
 
           {/* Recent Activity */}
           <div className="lg:col-span-2">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Recent Activity</h2>
-            <div className="bg-white rounded-lg shadow-sm border">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Recent Activity</h2>
+            <div className="bg-white dark:bg-dark-surface rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
               <div className="p-6">
                 <div className="space-y-4">
                   {recentActivity.map((activity, index) => (
@@ -262,18 +319,18 @@ const BuyerDashboard = () => {
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: index * 0.1 }}
-                      className="flex items-center justify-between py-3 border-b last:border-b-0"
+                      className="flex items-center justify-between py-3 border-b border-gray-200 dark:border-gray-700 last:border-b-0"
                     >
                       <div className="flex-1">
-                        <p className="text-sm font-medium text-gray-900">{activity.title}</p>
-                        <p className="text-xs text-gray-500">{activity.time}</p>
+                        <p className="text-sm font-medium text-gray-900 dark:text-white">{activity.title}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">{activity.time}</p>
                       </div>
                       <div className="flex items-center space-x-3">
-                        <span className="text-sm font-medium text-gray-900">{activity.amount}</span>
+                        <span className="text-sm font-medium text-gray-900 dark:text-white">{activity.amount}</span>
                         <span className={`px-2 py-1 text-xs rounded-full ${
-                          activity.status === 'leading' ? 'bg-blue-100 text-blue-800' :
-                          activity.status === 'won' ? 'bg-green-100 text-green-800' :
-                          'bg-gray-100 text-gray-800'
+                          activity.status === 'leading' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400' :
+                          activity.status === 'won' ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400' :
+                          'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300'
                         }`}>
                           {activity.status}
                         </span>
@@ -294,8 +351,8 @@ const BuyerDashboard = () => {
         {/* Recommended Materials */}
         <div className="mt-8">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-900">Recommended for You</h2>
-            <a href="/buyer/search" className="text-purple-600 hover:text-purple-800 text-sm font-medium">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Recommended for You</h2>
+            <a href="/buyer/search" className="text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300 text-sm font-medium">
               View All →
             </a>
           </div>
@@ -306,20 +363,20 @@ const BuyerDashboard = () => {
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: item * 0.1 }}
-                className="bg-white rounded-lg shadow-sm border overflow-hidden hover:shadow-md transition-shadow"
+                className="bg-white dark:bg-dark-surface rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-md transition-shadow"
               >
-                <div className="h-48 bg-gray-200"></div>
+                <div className="h-48 bg-gray-200 dark:bg-gray-700"></div>
                 <div className="p-4">
                   <div className="flex items-center justify-between mb-2">
-                    <h3 className="font-medium text-gray-900">Plastic Bottles</h3>
-                    <button className="text-gray-400 hover:text-red-500">
+                    <h3 className="font-medium text-gray-900 dark:text-white">Plastic Bottles</h3>
+                    <button className="text-gray-400 dark:text-gray-500 hover:text-red-500 dark:hover:text-red-400">
                       <HeartIcon className="h-5 w-5" />
                     </button>
                   </div>
-                  <p className="text-sm text-gray-600 mb-2">High quality PET bottles, 500ml</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">High quality PET bottles, 500ml</p>
                   <div className="flex items-center justify-between">
-                    <span className="text-lg font-bold text-purple-600">₹12/kg</span>
-                    <button className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-medium hover:bg-purple-200">
+                    <span className="text-lg font-bold text-green-600 dark:text-green-300">₹12/kg</span>
+                    <button className="px-3 py-1 bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-300 rounded-full text-xs font-medium hover:bg-green-200 dark:hover:bg-green-800/40">
                       View Details
                     </button>
                   </div>
