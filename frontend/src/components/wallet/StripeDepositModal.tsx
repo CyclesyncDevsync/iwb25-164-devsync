@@ -9,6 +9,8 @@ interface StripeDepositModalProps {
   wallet: Wallet;
   onClose: () => void;
   onSuccess: () => void;
+  initialAmount?: string;
+  initialNote?: string;
 }
 
 declare global {
@@ -21,13 +23,15 @@ const StripeDepositModal: React.FC<StripeDepositModalProps> = ({
   wallet,
   onClose,
   onSuccess,
+  initialAmount = '',
+  initialNote = '',
 }) => {
-  const [amount, setAmount] = useState('');
-  const [note, setNote] = useState('');
+  const [amount, setAmount] = useState(initialAmount);
+  const [note, setNote] = useState(initialNote);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
   const [paymentIntent, setPaymentIntent] = useState<PaymentIntent | null>(null);
-  const [step, setStep] = useState<'amount' | 'payment'>('amount');
+  const [step, setStep] = useState<'amount' | 'payment'>(initialAmount ? 'payment' : 'amount');
   const [stripe, setStripe] = useState<any>(null);
   const [cardElement, setCardElement] = useState<any>(null);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -62,37 +66,87 @@ const StripeDepositModal: React.FC<StripeDepositModalProps> = ({
     loadStripe();
   }, []);
 
+  // Auto-create payment intent when modal opens with initial amount
   useEffect(() => {
-    if (stripe && step === 'payment' && !cardElement) {
-      // Create card element
-      const elements = stripe.elements();
-      const card = elements.create('card', {
-        style: {
-          base: {
-            fontSize: '16px',
-            color: '#424770',
-            '::placeholder': {
-              color: '#aab7c4',
+    const createInitialPaymentIntent = async () => {
+      if (initialAmount && step === 'payment' && !paymentIntent && !isLoading) {
+        setIsLoading(true);
+        try {
+          const paymentIntentData = await paymentService.createPaymentIntent({
+            amount: parseFloat(initialAmount),
+            currency: 'lkr',
+            description: initialNote.trim() || `Wallet recharge - ${wallet.type} wallet`,
+            customer: {
+              name: 'User',
+              email: 'user@example.com',
+            }
+          });
+          setPaymentIntent(paymentIntentData);
+        } catch (error: any) {
+          console.error('Failed to create payment intent:', error);
+          toast.error(error.message || 'Failed to initialize payment');
+          setStep('amount'); // Fall back to amount step on error
+        } finally {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    createInitialPaymentIntent();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialAmount, initialNote, wallet.type]);
+
+  useEffect(() => {
+    if (stripe && step === 'payment' && !cardElement && paymentIntent) {
+      // Wait for DOM element to be available
+      const mountCardElement = () => {
+        const cardElementContainer = document.getElementById('card-element');
+        
+        if (!cardElementContainer) {
+          // DOM not ready yet, try again
+          setTimeout(mountCardElement, 100);
+          return;
+        }
+
+        // Create card element
+        const elements = stripe.elements();
+        const card = elements.create('card', {
+          style: {
+            base: {
+              fontSize: '16px',
+              color: '#424770',
+              '::placeholder': {
+                color: '#aab7c4',
+              },
+            },
+            invalid: {
+              color: '#9e2146',
             },
           },
-          invalid: {
-            color: '#9e2146',
-          },
-        },
-      });
-      
-      card.mount('#card-element');
-      setCardElement(card);
+        });
+        
+        card.mount('#card-element');
+        setCardElement(card);
 
-      // Handle real-time validation errors from the card Element
-      card.on('change', ({ error }: any) => {
-        setErrors(prev => ({
-          ...prev,
-          card: error ? error.message : ''
-        }));
-      });
+        // Handle real-time validation errors from the card Element
+        card.on('change', ({ error }: any) => {
+          setErrors(prev => ({
+            ...prev,
+            card: error ? error.message : ''
+          }));
+        });
+      };
+
+      mountCardElement();
+
+      // Cleanup function
+      return () => {
+        if (cardElement) {
+          cardElement.unmount();
+        }
+      };
     }
-  }, [stripe, step, cardElement]);
+  }, [stripe, step, cardElement, paymentIntent]);
 
   const formatCurrency = (amount: number): string => {
     return new Intl.NumberFormat('en-LK', {
@@ -315,7 +369,18 @@ const StripeDepositModal: React.FC<StripeDepositModalProps> = ({
     </form>
   );
 
-  const renderPaymentStep = () => (
+  const renderPaymentStep = () => {
+    // Show loading state while creating payment intent
+    if (isLoading && !paymentIntent) {
+      return (
+        <div className="p-12 flex flex-col items-center justify-center space-y-4">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+          <p className="text-gray-600 dark:text-gray-400">Preparing payment...</p>
+        </div>
+      );
+    }
+
+    return (
     <form onSubmit={handlePaymentSubmit} className="space-y-6">
       {/* Payment Summary */}
       <div className="p-6 bg-green-50 dark:bg-green-900/20 border-b border-gray-200 dark:border-gray-700">
@@ -418,11 +483,12 @@ const StripeDepositModal: React.FC<StripeDepositModalProps> = ({
         </button>
       </div>
     </form>
-  );
+    );
+  };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white dark:bg-gray-800 rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-[60]">
+      <div className="bg-white dark:bg-gray-800 rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto shadow-2xl">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white">

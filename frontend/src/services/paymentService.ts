@@ -77,15 +77,35 @@ class PaymentService {
         }
       );
 
-      if (response.data.status === 'success') {
+      // Handle new format: { status: 'success', data: {...} }
+      if (response.data.status === 'success' && response.data.data) {
         return response.data.data;
-      } else {
-        throw new Error(response.data.message || 'Failed to create payment intent');
       }
+      
+      // Handle old format (backward compatibility): direct response
+      // Check if response has clientSecret field (old format)
+      if (response.data.clientSecret || response.data.client_secret) {
+        return {
+          id: response.data.id || '',
+          client_secret: response.data.clientSecret || response.data.client_secret,
+          status: response.data.status || 'requires_payment_method',
+          amount: response.data.amount || 0,
+          currency: response.data.currency || 'lkr',
+          description: response.data.description,
+          metadata: response.data.metadata || {},
+          created: response.data.created || new Date().toISOString()
+        };
+      }
+      
+      // Error case
+      console.error('Payment intent creation failed:', response.data);
+      throw new Error(response.data.message || 'Failed to create payment intent');
     } catch (error: any) {
       console.error('Create payment intent error:', error);
+      console.error('Error response:', error.response?.data);
       throw new Error(
         error.response?.data?.message || 
+        error.response?.data?.error || 
         error.message || 
         'Failed to create payment intent'
       );
@@ -103,9 +123,17 @@ class PaymentService {
         }
       );
 
-      if (response.data.status !== 'success') {
-        throw new Error(response.data.message || 'Failed to confirm payment');
+      // Handle new format: { status: 'success', data: {...} }
+      if (response.data.status === 'success') {
+        return;
       }
+      
+      // Handle old format (backward compatibility)
+      if (response.data.status && response.data.paymentIntentId) {
+        return;
+      }
+      
+      throw new Error(response.data.message || 'Failed to confirm payment');
     } catch (error: any) {
       console.error('Confirm payment error:', error);
       throw new Error(

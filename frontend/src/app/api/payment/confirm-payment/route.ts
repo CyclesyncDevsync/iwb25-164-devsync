@@ -25,14 +25,22 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Transform field names from snake_case to camelCase for backend
+    const backendPayload = {
+      paymentIntentId: body.payment_intent_id,
+      amount: body.amount,
+      currency: body.currency,
+      description: body.description
+    };
+
     // Forward request to Ballerina payment service with auth token
-    const backendResponse = await fetch(`${PAYMENT_API_URL}/api/payment/confirm-payment`, {
+    const backendResponse = await fetch(`${PAYMENT_API_URL}/api/payment/confirm`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${idToken}`
       },
-      body: JSON.stringify(body)
+      body: JSON.stringify(backendPayload)
     });
 
     const backendData = await backendResponse.json();
