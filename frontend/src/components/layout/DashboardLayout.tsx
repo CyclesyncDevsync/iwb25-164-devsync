@@ -1,10 +1,11 @@
 "use client";
 
-import React, { ReactNode, useState } from "react";
+import React, { ReactNode, useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { USER_ROLES, ROUTES } from "../../constants";
 import { useAuth } from "../../hooks/useAuth";
+import { useCachedUser } from "../../hooks/useCachedUser";
 import { cn } from "../../utils/cn";
 import type { User } from "../../types/user";
 
@@ -45,16 +46,45 @@ interface DashboardLayoutProps {
 
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const pathname = usePathname();
-  const { user } = useAuth() as { user: User | null };
+  const { user: authUser } = useAuth() as { user: User | null };
+  const {
+    user: cachedUser,
+    loading: cacheLoading,
+    fromCache,
+  } = useCachedUser();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  // Use authenticated user
-  const currentUser = user;
+  // Use cached user if available (from Redis), otherwise fall back to auth user
+  const currentUser = cachedUser || authUser;
 
-  const userRole =
-    currentUser?.role && Object.values(USER_ROLES).includes(currentUser.role)
-      ? currentUser.role
-      : USER_ROLES.GUEST;
+  // Log cache status for debugging
+  useEffect(() => {
+    if (fromCache) {
+      console.log("📦 Using Redis-cached user data for sidebar");
+    } else if (cachedUser) {
+      console.log("🔄 Using fresh user data (cached for next load)");
+    }
+  }, [fromCache, cachedUser]);
+
+  // Normalize role to uppercase for consistent comparison
+  const normalizeRole = (role: string | undefined): string => {
+    if (!role) return USER_ROLES.GUEST;
+    const upperRole = role.toUpperCase();
+    // Check if the normalized role exists in USER_ROLES
+    if (Object.values(USER_ROLES).includes(upperRole as any)) {
+      return upperRole;
+    }
+    return USER_ROLES.GUEST;
+  };
+
+  const userRole = normalizeRole(currentUser?.role);
+
+  // Debug logging for role and sidebar links
+  useEffect(() => {
+    console.log("🔍 User Role (normalized):", userRole);
+    console.log("👤 Current User:", currentUser);
+    console.log("📝 Sidebar Links Count:", sidebarLinks.length);
+  }, [userRole, currentUser]);
 
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);

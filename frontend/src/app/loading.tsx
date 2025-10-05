@@ -1,15 +1,20 @@
-'use client';
+"use client";
 
-import React from 'react';
+import React from "react";
 
 interface LoadingProps {
-  progress: number;
+  progress?: number;
 }
 
-export default function Loading({ progress }: LoadingProps) {
+export default function Loading({ progress = 0 }: LoadingProps) {
   const radius = 35;
   const circumference = 2 * Math.PI * radius;
-  const strokeDashoffset = circumference - (progress / 100) * circumference;
+  // Ensure progress is a valid number between 0 and 100
+  const validProgress = isNaN(progress)
+    ? 0
+    : Math.min(Math.max(progress, 0), 100);
+  const strokeDashoffset =
+    circumference - (validProgress / 100) * circumference;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-white dark:bg-slate-900">
@@ -43,7 +48,7 @@ export default function Loading({ progress }: LoadingProps) {
           </svg>
           <div className="absolute inset-0 flex items-center justify-center">
             <span className="text-lg font-semibold text-green-600 dark:text-green-400">
-              {Math.round(progress)}%
+              {Math.round(validProgress)}%
             </span>
           </div>
         </div>
@@ -52,7 +57,7 @@ export default function Loading({ progress }: LoadingProps) {
         <div className="w-full bg-gray-200 dark:bg-slate-700 rounded-full h-2">
           <div
             className="bg-green-500 h-2 rounded-full transition-all duration-300"
-            style={{ width: `${progress}%` }}
+            style={{ width: `${validProgress}%` }}
           ></div>
         </div>
 
