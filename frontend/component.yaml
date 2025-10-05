@@ -1,29 +1,24 @@
-﻿# +required Schema version
+﻿# Choreo Component Configuration
+# This configuration tells Choreo to use the custom Dockerfile for building
+
+# Component metadata
 schemaVersion: 1.0
-
-# +required Unique identifier
 id: cyclesync-frontend
-
-# +required Component name
 name: cyclesync-frontend
-
-# +optional Display name
 displayName: CycleSync Frontend
-
-# +optional Description
 description: Next.js frontend application for CycleSync circular economy platform
 
-# +required Component type
-type: WebApplication
+# Build configuration - explicitly use Dockerfile
+buildType: dockerfile
+dockerfilePath: ./Dockerfile
 
-# +required Container specification
+# Container configuration
 container:
-  # Docker build configuration
   dockerBuild:
     dockerfilePath: Dockerfile
     dockerContext: .
 
-# +required Endpoint configuration
+# Endpoints
 endpoints:
   - name: frontend
     port: 3000

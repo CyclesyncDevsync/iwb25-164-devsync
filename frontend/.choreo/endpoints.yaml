@@ -1,0 +1,7 @@
+# Choreo Endpoints Configuration for Frontend
+schemaVersion: 1.0
+endpoints:
+  - name: frontend
+    port: 3000
+    type: REST
+    networkVisibility: Public

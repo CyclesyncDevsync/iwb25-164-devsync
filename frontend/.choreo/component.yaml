@@ -1,0 +1,14 @@
+# +required The configuration file schema version
+schemaVersion: 1.2
+
+# +optional Incoming connection details for the component
+endpoints:
+  # Frontend HTTP endpoint
+  - name: frontend
+    displayName: CycleSync Frontend
+    service:
+      basePath: /
+      port: 3000
+    type: REST
+    networkVisibilities: 
+      - Public

@@ -1,0 +1,4 @@
+# Choreo Build Configuration
+# This file explicitly tells Choreo to use Docker buildpack
+
+buildpack: docker
