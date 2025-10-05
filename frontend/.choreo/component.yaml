@@ -1,6 +1,11 @@
 # +required The configuration file schema version
 schemaVersion: 1.2
 
+# +optional Build specification
+build:
+  # Use Docker build with custom Dockerfile
+  dockerfile: Dockerfile
+
 # +optional Incoming connection details for the component
 endpoints:
   # Frontend HTTP endpoint
