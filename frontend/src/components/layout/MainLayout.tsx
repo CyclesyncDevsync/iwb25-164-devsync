@@ -27,7 +27,7 @@ export function MainLayout({ children }: MainLayoutProps) {
                        pathname === '/offline';
 
   // Routes where footer should be hidden (supplier and admin dashboards have their own layouts)
-  const hideFooterRoutes = pathname?.startsWith('/supplier') || pathname?.startsWith('/admin');
+  const hideFooterRoutes = pathname?.startsWith('/supplier') || pathname?.startsWith('/admin') || pathname?.startsWith('/agent') || pathname?.startsWith('/buyer');
 
   // Show FAB on public pages and some specific routes
   const showFAB = !isHiddenRoute && (

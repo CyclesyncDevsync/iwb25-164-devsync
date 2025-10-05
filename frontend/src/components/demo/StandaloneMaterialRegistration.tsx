@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { useForm, Controller } from 'react-hook-form';
+import { useForm, Controller, Control, FieldErrors, UseFormRegister, UseFormSetValue } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -13,9 +13,6 @@ import {
   ArrowLeftIcon,
   ArrowRightIcon,
   CloudArrowUpIcon,
-  SparklesIcon,
-  EyeIcon,
-  ClockIcon,
   MapPinIcon,
   ExclamationTriangleIcon
 } from '@heroicons/react/24/outline';
@@ -103,6 +100,47 @@ interface SubmissionResult {
   supplierId?: string;
 }
 
+// Component prop interfaces
+interface DeliveryMethodStepProps {
+  control: Control<EnhancedMaterialFormData>;
+  errors: FieldErrors<EnhancedMaterialFormData>;
+}
+
+interface PhotoUploadStepProps {
+  photoPreviews: string[];
+  isDragActive: boolean;
+  onFileUpload: (files: FileList | null) => void;
+  onRemovePhoto: (index: number) => void;
+  onDragEnter: (e: React.DragEvent) => void;
+  onDragLeave: (e: React.DragEvent) => void;
+  onDrop: (e: React.DragEvent) => void;
+  errors: FieldErrors<EnhancedMaterialFormData>;
+}
+
+interface LocationStepProps {
+  register: UseFormRegister<EnhancedMaterialFormData>;
+  control: Control<EnhancedMaterialFormData>;
+  errors: FieldErrors<EnhancedMaterialFormData>;
+  setValue: UseFormSetValue<EnhancedMaterialFormData>;
+  deliveryMethod: string;
+}
+
+interface SpecificationsStepProps {
+  register: UseFormRegister<EnhancedMaterialFormData>;
+  errors: FieldErrors<EnhancedMaterialFormData>;
+  tags: string[];
+  tagInput: string;
+  onTagInputChange: (value: string) => void;
+  onAddTag: () => void;
+  onRemoveTag: (tag: string) => void;
+}
+
+interface ReviewStepProps {
+  data: EnhancedMaterialFormData;
+  photoPreviews: string[];
+  deliveryMethod: string;
+}
+
 
 const STEPS = [
   { id: 'basic', title: 'Basic Information', description: 'Material details and category' },
@@ -134,7 +172,7 @@ const DISTRICTS = [
 ];
 
 interface StandaloneMaterialRegistrationProps {
-  onComplete?: (material: any, submissionResult: SubmissionResult) => void;
+  onComplete?: (material: EnhancedMaterialFormData, submissionResult: SubmissionResult) => void;
   supplierId?: string;
 }
 
@@ -146,7 +184,6 @@ export default function StandaloneMaterialRegistration({ onComplete, supplierId 
   const [isDragActive, setIsDragActive] = useState(false);
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState('');
-  const [submissionResult, setSubmissionResult] = useState<SubmissionResult | null>(null);
   
   // Log the supplier ID to debug
   console.log('📌 StandaloneMaterialRegistration received supplierId:', supplierId);
@@ -175,7 +212,6 @@ export default function StandaloneMaterialRegistration({ onComplete, supplierId 
   });
 
   const watchedCategory = watch('category');
-  const watchedCondition = watch('condition');
   const watchedDeliveryMethod = watch('deliveryMethod');
   
   // Trigger full validation when reaching review step
@@ -293,8 +329,6 @@ export default function StandaloneMaterialRegistration({ onComplete, supplierId 
         supplierId: result.supplierId
       };
       
-      setSubmissionResult(submissionResult);
-      
       return submissionResult;
       
     } catch (error) {
@@ -353,10 +387,8 @@ export default function StandaloneMaterialRegistration({ onComplete, supplierId 
         throw new Error('Submission failed');
       }
 
-      // Extract the IDs from the response
-      const transactionId = result.transactionId || 'TXN_PENDING';
+      // Extract the supplier ID from the response
       const supplierId = result.supplierId || 'SUPPLIER_MOCK';
-      const workflowId = result.workflowId || 'WORKFLOW_PENDING';
       
       // Store supplier ID in localStorage for fetching materials later
       if (supplierId) {
@@ -416,47 +448,48 @@ export default function StandaloneMaterialRegistration({ onComplete, supplierId 
   };
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
       {/* Progress Steps */}
-      <div className="mb-8">
-        <div className="flex items-center justify-between">
+  <div className="mb-2">
+        {/* Desktop Step Indicator - simplified */}
+  <div className="hidden md:flex items-center justify-between gap-6 px-4 py-3 bg-white/50 dark:bg-gray-800/40 rounded-lg shadow-sm -mt-2">
           {STEPS.map((step, index) => (
-            <div
-              key={step.id}
-              className={`flex items-center ${index < STEPS.length - 1 ? 'flex-1' : ''}`}
-            >
-              <div className="flex items-center">
+            <div key={step.id} className="flex items-center space-x-4">
+              <div className="flex flex-col items-center text-center">
                 <div
-                  className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                    index <= currentStep
-                      ? 'bg-emerald-600 text-white'
-                      : 'bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-400'
+                  className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold transition-all duration-200 ${
+                    index < currentStep
+                      ? 'bg-emerald-600 text-white shadow-md'
+                      : index === currentStep
+                      ? 'bg-emerald-500 text-white shadow-md'
+                      : 'bg-white border border-gray-200 text-gray-600 dark:bg-gray-800'
                   }`}
                 >
-                  {index < currentStep ? (
-                    <CheckCircleIcon className="w-5 h-5" />
-                  ) : (
-                    index + 1
-                  )}
+                  {index < currentStep ? <CheckCircleIcon className="w-5 h-5" /> : index + 1}
                 </div>
-                <div className="ml-3">
-                  <p className={`text-sm font-medium ${
-                    index <= currentStep ? 'text-emerald-600' : 'text-gray-500'
-                  }`}>
+                <div className="mt-2 max-w-[140px]">
+                  <p className={`text-sm font-medium ${index <= currentStep ? 'text-emerald-600' : 'text-gray-500'}`}>
                     {step.title}
                   </p>
-                  <p className="text-xs text-gray-500">{step.description}</p>
+                  <p className="text-xs text-gray-400 mt-1">{step.description}</p>
                 </div>
               </div>
-              {index < STEPS.length - 1 && (
-                <div
-                  className={`h-0.5 flex-1 mx-4 ${
-                    index < currentStep ? 'bg-emerald-600' : 'bg-gray-200 dark:bg-gray-700'
-                  }`}
-                />
-              )}
             </div>
           ))}
+        </div>
+
+        {/* Mobile Step Indicator - compact */}
+        <div className="md:hidden px-4">
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-sm font-semibold text-gray-700 dark:text-gray-200">{STEPS[currentStep].title}</p>
+            <p className="text-sm text-gray-500">{currentStep + 1}/{STEPS.length}</p>
+          </div>
+          <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+            <div
+              className="h-2 rounded-full bg-emerald-500 transition-all duration-400"
+              style={{ width: `${((currentStep + 1) / STEPS.length) * 100}%` }}
+            />
+          </div>
         </div>
       </div>
 
@@ -469,51 +502,65 @@ export default function StandaloneMaterialRegistration({ onComplete, supplierId 
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -20 }}
             transition={{ duration: 0.3 }}
-            className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6"
+            className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-8"
           >
             {/* Render Basic Information Step */}
             {currentStep === 0 && (
-              <div className="space-y-6">
+              <div className="space-y-8">
                 <div>
-                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
-                    Basic Information
-                  </h3>
+                  <div className="mb-6">
+                    <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+                      Basic Information
+                    </h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      Tell us about your material and its basic properties
+                    </p>
+                  </div>
                   
                   <div className="grid grid-cols-1 gap-6">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                        Material Title *
+                      <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-1.5">
+                        Material Title
+                        <span className="text-red-500 ml-1">*</span>
                       </label>
                       <input
                         {...register('title')}
                         type="text"
                         placeholder="e.g., High-Quality Aluminum Sheets"
-                        className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                        className="mt-1 block w-full px-3 py-2.5 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors duration-200 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400"
                       />
                       {errors.title && (
-                        <p className="mt-1 text-sm text-red-600">{errors.title.message}</p>
+                        <p className="mt-2 text-sm text-red-600 dark:text-red-400 flex items-center">
+                          <ExclamationTriangleIcon className="w-4 h-4 mr-1 flex-shrink-0" />
+                          {errors.title.message}
+                        </p>
                       )}
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                        Description *
+                      <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-1.5">
+                        Description
+                        <span className="text-red-500 ml-1">*</span>
                       </label>
                       <textarea
                         {...register('description')}
                         rows={4}
                         placeholder="Describe your material in detail..."
-                        className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                        className="mt-1 block w-full px-3 py-2.5 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors duration-200 resize-none dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400"
                       />
                       {errors.description && (
-                        <p className="mt-1 text-sm text-red-600">{errors.description.message}</p>
+                        <p className="mt-2 text-sm text-red-600 dark:text-red-400 flex items-center">
+                          <ExclamationTriangleIcon className="w-4 h-4 mr-1 flex-shrink-0" />
+                          {errors.description.message}
+                        </p>
                       )}
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                          Category *
+                        <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-1.5">
+                          Category
+                          <span className="text-red-500 ml-1">*</span>
                         </label>
                         <Controller
                           name="category"
@@ -533,13 +580,17 @@ export default function StandaloneMaterialRegistration({ onComplete, supplierId 
                           )}
                         />
                         {errors.category && (
-                          <p className="mt-1 text-sm text-red-600">{errors.category.message}</p>
+                          <p className="mt-2 text-sm text-red-600 dark:text-red-400 flex items-center">
+                            <ExclamationTriangleIcon className="w-4 h-4 mr-1 flex-shrink-0" />
+                            {errors.category.message}
+                          </p>
                         )}
                       </div>
 
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                          Sub-category *
+                        <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-1.5">
+                          Sub-category
+                          <span className="text-red-500 ml-1">*</span>
                         </label>
                         <Controller
                           name="subCategory"
@@ -548,7 +599,7 @@ export default function StandaloneMaterialRegistration({ onComplete, supplierId 
                             <select
                               {...field}
                               disabled={!watchedCategory}
-                              className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white disabled:opacity-50"
+                              className="mt-1 block w-full px-3 py-2.5 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors duration-200 dark:bg-gray-700 dark:border-gray-600 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                               <option value="">Select sub-category</option>
                               {watchedCategory && CATEGORY_SUBCATEGORIES[watchedCategory]?.map(subCat => (
@@ -560,34 +611,43 @@ export default function StandaloneMaterialRegistration({ onComplete, supplierId 
                           )}
                         />
                         {errors.subCategory && (
-                          <p className="mt-1 text-sm text-red-600">{errors.subCategory.message}</p>
+                          <p className="mt-2 text-sm text-red-600 dark:text-red-400 flex items-center">
+                            <ExclamationTriangleIcon className="w-4 h-4 mr-1 flex-shrink-0" />
+                            {errors.subCategory.message}
+                          </p>
                         )}
                       </div>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                          Quantity *
+                        <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-1.5">
+                          Quantity
+                          <span className="text-red-500 ml-1">*</span>
                         </label>
                         <input
                           {...register('quantity', { valueAsNumber: true })}
                           type="number"
                           min="1"
-                          className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                          placeholder="0"
+                          className="mt-1 block w-full px-3 py-2.5 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors duration-200 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400"
                         />
                         {errors.quantity && (
-                          <p className="mt-1 text-sm text-red-600">{errors.quantity.message}</p>
+                          <p className="mt-2 text-sm text-red-600 dark:text-red-400 flex items-center">
+                            <ExclamationTriangleIcon className="w-4 h-4 mr-1 flex-shrink-0" />
+                            {errors.quantity.message}
+                          </p>
                         )}
                       </div>
 
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                          Unit *
+                        <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-1.5">
+                          Unit
+                          <span className="text-red-500 ml-1">*</span>
                         </label>
                         <select
                           {...register('unit')}
-                          className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                          className="mt-1 block w-full px-3 py-2.5 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors duration-200 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                         >
                           <option value="">Select unit</option>
                           <option value="kg">Kilograms</option>
@@ -596,13 +656,17 @@ export default function StandaloneMaterialRegistration({ onComplete, supplierId 
                           <option value="liters">Liters</option>
                         </select>
                         {errors.unit && (
-                          <p className="mt-1 text-sm text-red-600">{errors.unit.message}</p>
+                          <p className="mt-2 text-sm text-red-600 dark:text-red-400 flex items-center">
+                            <ExclamationTriangleIcon className="w-4 h-4 mr-1 flex-shrink-0" />
+                            {errors.unit.message}
+                          </p>
                         )}
                       </div>
 
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                          Condition *
+                        <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-1.5">
+                          Condition
+                          <span className="text-red-500 ml-1">*</span>
                         </label>
                         <Controller
                           name="condition"
@@ -622,7 +686,10 @@ export default function StandaloneMaterialRegistration({ onComplete, supplierId 
                           )}
                         />
                         {errors.condition && (
-                          <p className="mt-1 text-sm text-red-600">{errors.condition.message}</p>
+                          <p className="mt-2 text-sm text-red-600 dark:text-red-400 flex items-center">
+                            <ExclamationTriangleIcon className="w-4 h-4 mr-1 flex-shrink-0" />
+                            {errors.condition.message}
+                          </p>
                         )}
                       </div>
                     </div>
@@ -634,7 +701,6 @@ export default function StandaloneMaterialRegistration({ onComplete, supplierId 
             {/* Photo Upload Step */}
             {currentStep === 1 && (
               <PhotoUploadStep
-                uploadedPhotos={uploadedPhotos}
                 photoPreviews={photoPreviews}
                 isDragActive={isDragActive}
                 onFileUpload={handleFileUpload}
@@ -651,7 +717,6 @@ export default function StandaloneMaterialRegistration({ onComplete, supplierId 
               <DeliveryMethodStep
                 control={control}
                 errors={errors}
-                watchedDeliveryMethod={watchedDeliveryMethod}
               />
             )}
 
@@ -670,7 +735,6 @@ export default function StandaloneMaterialRegistration({ onComplete, supplierId 
             {currentStep === 4 && (
               <SpecificationsStep
                 register={register}
-                control={control}
                 errors={errors}
                 tags={tags}
                 tagInput={tagInput}
@@ -694,13 +758,13 @@ export default function StandaloneMaterialRegistration({ onComplete, supplierId 
         </AnimatePresence>
 
         {/* Navigation */}
-        <div className="mt-6 flex items-center justify-between">
+        <div className="mt-8 flex items-center justify-between bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
           <div>
             {currentStep > 0 && (
               <button
                 type="button"
                 onClick={prevStep}
-                className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-600"
+                className="inline-flex items-center px-6 py-2.5 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition-all duration-200 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-600"
               >
                 <ArrowLeftIcon className="w-4 h-4 mr-2" />
                 Previous
@@ -713,7 +777,7 @@ export default function StandaloneMaterialRegistration({ onComplete, supplierId 
               <button
                 type="button"
                 onClick={nextStep}
-                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="inline-flex items-center px-6 py-2.5 border border-transparent text-sm font-medium rounded-lg text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-md hover:shadow-lg"
               >
                 Next
                 <ArrowRightIcon className="w-4 h-4 ml-2" />
@@ -727,7 +791,7 @@ export default function StandaloneMaterialRegistration({ onComplete, supplierId 
                   console.log('Submit clicked - loading:', loading.creating, 'isValid:', isValid);
                   handleSubmit(onSubmit)();
                 }}
-                className="inline-flex items-center px-6 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="inline-flex items-center px-8 py-3 border border-transparent text-sm font-semibold rounded-lg text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-xl"
               >
                 {loading.creating ? (
                   <>
@@ -750,7 +814,7 @@ export default function StandaloneMaterialRegistration({ onComplete, supplierId 
 }
 
 // Component implementations (simplified versions)
-function DeliveryMethodStep({ control, errors, watchedDeliveryMethod }: any) {
+function DeliveryMethodStep({ control, errors }: DeliveryMethodStepProps) {
   return (
     <div className="space-y-6">
       <div>
@@ -774,13 +838,13 @@ function DeliveryMethodStep({ control, errors, watchedDeliveryMethod }: any) {
                   checked={field.value === 'agent_visit'}
                   className="sr-only"
                 />
-                <div className={`flex items-center justify-center w-5 h-5 rounded-full border-2 mr-3 mt-0.5 ${
+                <div className={`flex items-center justify-center w-6 h-6 rounded-full border-2 mr-4 mt-0.5 transition-all duration-200 ${
                   field.value === 'agent_visit' 
-                    ? 'border-emerald-600 bg-emerald-600' 
-                    : 'border-gray-300 dark:border-gray-600'
+                    ? 'border-emerald-600 bg-emerald-600 shadow-md' 
+                    : 'border-gray-300 dark:border-gray-600 hover:border-emerald-400'
                 }`}>
                   {field.value === 'agent_visit' && (
-                    <div className="w-2 h-2 rounded-full bg-white" />
+                    <div className="w-2.5 h-2.5 rounded-full bg-white" />
                   )}
                 </div>
                 <div className="flex-1">
@@ -799,7 +863,7 @@ function DeliveryMethodStep({ control, errors, watchedDeliveryMethod }: any) {
                 </div>
               </label>
 
-              <label className="relative flex items-start p-4 rounded-lg border cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+              <label className="relative flex items-start p-6 rounded-xl border-2 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-all duration-200 hover:border-emerald-300 dark:hover:border-emerald-600">
                 <input
                   type="radio"
                   {...field}
@@ -807,13 +871,13 @@ function DeliveryMethodStep({ control, errors, watchedDeliveryMethod }: any) {
                   checked={field.value === 'drop_off'}
                   className="sr-only"
                 />
-                <div className={`flex items-center justify-center w-5 h-5 rounded-full border-2 mr-3 mt-0.5 ${
+                <div className={`flex items-center justify-center w-6 h-6 rounded-full border-2 mr-4 mt-0.5 transition-all duration-200 ${
                   field.value === 'drop_off' 
-                    ? 'border-emerald-600 bg-emerald-600' 
-                    : 'border-gray-300 dark:border-gray-600'
+                    ? 'border-emerald-600 bg-emerald-600 shadow-md' 
+                    : 'border-gray-300 dark:border-gray-600 hover:border-emerald-400'
                 }`}>
                   {field.value === 'drop_off' && (
-                    <div className="w-2 h-2 rounded-full bg-white" />
+                    <div className="w-2.5 h-2.5 rounded-full bg-white" />
                   )}
                 </div>
                 <div className="flex-1">
@@ -843,7 +907,7 @@ function DeliveryMethodStep({ control, errors, watchedDeliveryMethod }: any) {
   );
 }
 
-function PhotoUploadStep({ uploadedPhotos, photoPreviews, isDragActive, onFileUpload, onRemovePhoto, onDragEnter, onDragLeave, onDrop, errors }: any) {
+function PhotoUploadStep({ photoPreviews, isDragActive, onFileUpload, onRemovePhoto, onDragEnter, onDragLeave, onDrop, errors }: PhotoUploadStepProps) {
   return (
     <div className="space-y-6">
       <div>
@@ -860,16 +924,16 @@ function PhotoUploadStep({ uploadedPhotos, photoPreviews, isDragActive, onFileUp
           onDragOver={(e) => e.preventDefault()}
           onDragLeave={onDragLeave}
           onDrop={onDrop}
-          className={`border-2 border-dashed rounded-lg p-8 text-center ${
+          className={`border-2 border-dashed rounded-xl p-10 text-center transition-all duration-200 ${
             isDragActive
-              ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20'
-              : 'border-gray-300 dark:border-gray-600'
+              ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20 scale-105'
+              : 'border-gray-300 dark:border-gray-600 hover:border-emerald-400 hover:bg-gray-50 dark:hover:bg-gray-700/50'
           }`}
         >
           <PhotoIcon className="mx-auto h-12 w-12 text-gray-400" />
           <div className="mt-4">
             <label className="cursor-pointer">
-              <span className="text-emerald-600 hover:text-emerald-500 font-medium">
+              <span className="text-emerald-600 hover:text-emerald-500 font-semibold">
                 Click to upload
               </span>
               <span className="text-gray-600 dark:text-gray-400"> or drag and drop</span>
@@ -888,7 +952,10 @@ function PhotoUploadStep({ uploadedPhotos, photoPreviews, isDragActive, onFileUp
         </div>
 
         {errors.photos && (
-          <p className="mt-2 text-sm text-red-600">{errors.photos.message}</p>
+          <p className="mt-3 text-sm text-red-600 dark:text-red-400 flex items-center">
+            <ExclamationTriangleIcon className="w-4 h-4 mr-1 flex-shrink-0" />
+            {errors.photos.message}
+          </p>
         )}
 
         {/* Photo Previews */}
@@ -898,7 +965,7 @@ function PhotoUploadStep({ uploadedPhotos, photoPreviews, isDragActive, onFileUp
               Uploaded Photos ({photoPreviews.length}/10)
             </h4>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {photoPreviews.map((preview, index) => (
+              {photoPreviews.map((preview: string, index: number) => (
                 <div key={index} className="relative group">
                   <img
                     src={preview}
@@ -927,7 +994,7 @@ function PhotoUploadStep({ uploadedPhotos, photoPreviews, isDragActive, onFileUp
   );
 }
 
-function LocationStep({ register, control, errors, setValue, deliveryMethod }: any) {
+function LocationStep({ register, control, errors, setValue, deliveryMethod }: LocationStepProps) {
   // Warehouse locations (dummy coordinates)
   const warehouseLocations = [
     { 
@@ -1069,7 +1136,7 @@ function LocationStep({ register, control, errors, setValue, deliveryMethod }: a
 
   // Generate OpenStreetMap URL with marker
   const getMapUrl = () => {
-    const zoom = 13;
+    // Map configuration
     if (markerPosition) {
       return `https://www.openstreetmap.org/export/embed.html?bbox=${markerPosition.lng - 0.01},${markerPosition.lat - 0.01},${markerPosition.lng + 0.01},${markerPosition.lat + 0.01}&layer=mapnik&marker=${markerPosition.lat},${markerPosition.lng}`;
     }
@@ -1310,7 +1377,7 @@ function LocationStep({ register, control, errors, setValue, deliveryMethod }: a
 }
 
 
-function SpecificationsStep({ register, control, errors, tags, tagInput, onTagInputChange, onAddTag, onRemoveTag }: any) {
+function SpecificationsStep({ register, errors, tags, tagInput, onTagInputChange, onAddTag, onRemoveTag }: SpecificationsStepProps) {
   return (
     <div className="space-y-6">
       <div>
@@ -1409,7 +1476,7 @@ function SpecificationsStep({ register, control, errors, tags, tagInput, onTagIn
 
 // AgentAssignmentStep component removed - agent assignment is no longer part of the workflow
 
-function ReviewStep({ data, photoPreviews, deliveryMethod }: any) {
+function ReviewStep({ data, photoPreviews, deliveryMethod }: ReviewStepProps) {
   return (
     <div className="space-y-6">
       <div>

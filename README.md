@@ -1,6 +1,5 @@
 # CircularSync
 
-**AI-Powered Circular Economy Platform**
 
 CircularSync is an enterprise-grade platform that transforms industrial waste management through intelligent material matching, real-time auctions, and comprehensive workflow automation. Built with Ballerina microservices, Next.js 14+, and deployed on Choreo Platform.
 
