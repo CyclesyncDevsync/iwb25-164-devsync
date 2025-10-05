@@ -89,10 +89,10 @@ export class AuctionApiService {
     }
 
     try {
-      console.log("Fetching auctions from URL:", `${AUCTION_API_URL}/auctions`);
+      console.log("Fetching auctions from URL:", `${AUCTION_API_URL}/auctions?${params.toString()}`);
 
       // Use axios instance with CORS configuration
-      const response = await auctionApi.get("/auctions");
+      const response = await auctionApi.get("/auctions", { params });
 
       // Transform backend response to match expected format
       const backendData = response.data;

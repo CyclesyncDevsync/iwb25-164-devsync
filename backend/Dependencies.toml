@@ -514,6 +514,7 @@ modules = [
 	{org = "hp", packageName = "Cyclesync", moduleName = "Cyclesync.database_config"},
 	{org = "hp", packageName = "Cyclesync", moduleName = "Cyclesync.demand_prediction"},
 	{org = "hp", packageName = "Cyclesync", moduleName = "Cyclesync.dynamic_pricing"},
+	{org = "hp", packageName = "Cyclesync", moduleName = "Cyclesync.google_calendar"},
 	{org = "hp", packageName = "Cyclesync", moduleName = "Cyclesync.material_workflow"},
 	{org = "hp", packageName = "Cyclesync", moduleName = "Cyclesync.news"},
 	{org = "hp", packageName = "Cyclesync", moduleName = "Cyclesync.notifications"},
