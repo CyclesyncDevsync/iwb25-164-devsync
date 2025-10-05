@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
-import { Send, X, Minimize2, Maximize2, Bot, ChevronRight, Users, Package, TrendingUp, AlertCircle, FileText, Settings, Shield, DollarSign, UserCheck, BarChart3, MapPin, Gavel } from 'lucide-react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { Send, X, Minimize2, Maximize2, Bot, ChevronRight, Users, AlertCircle, Shield, DollarSign, UserCheck, BarChart3, MapPin, Gavel } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 interface Message {
@@ -17,7 +17,8 @@ interface AdminAction {
   label: string;
   action: 'navigate' | 'display' | 'execute';
   target?: string;
-  data?: any;
+  data?: unknown;
+  description?: string;
   icon?: React.ReactNode;
 }
 
@@ -85,7 +86,7 @@ export default function AdminChatBot({ className = '' }: AdminChatBotProps) {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [isTyping, setIsTyping] = useState(false);
   const [showDataModal, setShowDataModal] = useState(false);
-  const [modalData, setModalData] = useState<any>(null);
+  const [modalData, setModalData] = useState<unknown | null>(null);
   
   const wsRef = useRef<WebSocket | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -100,21 +101,58 @@ export default function AdminChatBot({ className = '' }: AdminChatBotProps) {
     scrollToBottom();
   }, [messages]);
 
-  // Connect to WebSocket when chat opens
-  useEffect(() => {
-    if (isOpen && !wsRef.current) {
-      connectWebSocket();
-    }
-    
-    return () => {
-      if (wsRef.current) {
-        wsRef.current.close();
-        wsRef.current = null;
-      }
-    };
-  }, [isOpen]);
+  // Handle incoming server messages (declaration moved above websocket setup so it can be referenced)
+  const handleServerMessage = useCallback((incoming: unknown) => {
+    if (typeof incoming !== 'object' || incoming === null) return;
+    const data = incoming as Record<string, unknown>;
+    const type = String(data.type || '');
 
-  const connectWebSocket = () => {
+    switch (type) {
+      case 'connection': {
+        const sId = String(data.sessionId || '');
+        setSessionId(sId);
+        // Show admin-specific welcome message
+        addBotMessage(
+          "Welcome Admin! I'm here to help you manage the CircularSync platform. Select an option below or type your question:",
+          [],
+          ADMIN_QUICK_ACTIONS.map(action => ({
+            label: action.label,
+            action: 'navigate',
+            target: action.path,
+            icon: action.icon,
+            description: action.description
+          }))
+        );
+        break;
+      }
+      case 'bot_response': {
+        setIsTyping(false);
+        const content = String(data.content || '');
+        const actions = parseAdminActions(content);
+        const suggestions = Array.isArray(data.suggestions) ? (data.suggestions as string[]) : [];
+        addBotMessage(content, suggestions, actions);
+        break;
+      }
+      case 'typing': {
+        setIsTyping(String(data.status || '') === 'start');
+        break;
+      }
+      case 'error': {
+        setIsTyping(false);
+        addBotMessage(`Error: ${String(data.message || 'Unknown error')}`);
+        break;
+      }
+      case 'data_response': {
+        // Handle data display
+        setModalData(data.data ?? null);
+        setShowDataModal(true);
+        break;
+      }
+    }
+  }, []);
+
+  // Connect to WebSocket when chat opens
+  const connectWebSocket = useCallback(() => {
     try {
       wsRef.current = new WebSocket('ws://localhost:8094/chat');
       
@@ -150,49 +188,20 @@ export default function AdminChatBot({ className = '' }: AdminChatBotProps) {
       console.error('Failed to connect:', error);
       setIsConnected(false);
     }
-  };
+  }, [handleServerMessage]);
 
-  const handleServerMessage = (data: any) => {
-    switch (data.type) {
-      case 'connection':
-        setSessionId(data.sessionId);
-        // Show admin-specific welcome message
-        addBotMessage(
-          "Welcome Admin! I'm here to help you manage the CircularSync platform. Select an option below or type your question:",
-          [],
-          ADMIN_QUICK_ACTIONS.map(action => ({
-            label: action.label,
-            action: 'navigate',
-            target: action.path,
-            icon: action.icon,
-            description: action.description
-          }))
-        );
-        break;
-        
-      case 'bot_response':
-        setIsTyping(false);
-        // Parse admin-specific responses
-        const actions = parseAdminActions(data.content);
-        addBotMessage(data.content, data.suggestions || [], actions);
-        break;
-        
-      case 'typing':
-        setIsTyping(data.status === 'start');
-        break;
-        
-      case 'error':
-        setIsTyping(false);
-        addBotMessage(`Error: ${data.message}`);
-        break;
-        
-      case 'data_response':
-        // Handle data display
-        setModalData(data.data);
-        setShowDataModal(true);
-        break;
+  useEffect(() => {
+    if (isOpen && !wsRef.current) {
+      connectWebSocket();
     }
-  };
+    
+    return () => {
+      if (wsRef.current) {
+        wsRef.current.close();
+        wsRef.current = null;
+      }
+    };
+  }, [isOpen, connectWebSocket]);
 
   const parseAdminActions = (content: string): AdminAction[] => {
     // Parse content for admin-specific actions
@@ -283,7 +292,7 @@ export default function AdminChatBot({ className = '' }: AdminChatBotProps) {
       <div className={`fixed bottom-4 right-4 ${className}`}>
         <button
           onClick={() => setIsOpen(true)}
-          className="bg-purple-600 hover:bg-purple-700 text-white rounded-full p-4 shadow-lg transition-all hover:scale-110 group"
+          className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-full p-4 shadow-lg transition-all hover:scale-110 group"
           aria-label="Open admin assistant"
         >
           <Bot size={24} />
@@ -297,7 +306,7 @@ export default function AdminChatBot({ className = '' }: AdminChatBotProps) {
     <>
       <div className={`fixed bottom-4 right-4 w-96 bg-white rounded-lg shadow-2xl flex flex-col ${isMinimized ? 'h-14' : 'h-[600px]'} transition-all ${className}`}>
         {/* Header */}
-        <div className="bg-purple-600 text-white p-4 rounded-t-lg flex items-center justify-between">
+  <div className="bg-emerald-600 text-white p-4 rounded-t-lg flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Bot size={20} />
             <h3 className="font-semibold">Admin Assistant</h3>
@@ -306,14 +315,14 @@ export default function AdminChatBot({ className = '' }: AdminChatBotProps) {
           <div className="flex items-center gap-2">
             <button
               onClick={() => setIsMinimized(!isMinimized)}
-              className="hover:bg-purple-700 p-1 rounded transition-colors"
+              className="hover:bg-emerald-700 p-1 rounded transition-colors"
               aria-label={isMinimized ? 'Maximize' : 'Minimize'}
             >
               {isMinimized ? <Maximize2 size={18} /> : <Minimize2 size={18} />}
             </button>
             <button
               onClick={() => setIsOpen(false)}
-              className="hover:bg-purple-700 p-1 rounded transition-colors"
+              className="hover:bg-emerald-700 p-1 rounded transition-colors"
               aria-label="Close chat"
             >
               <X size={18} />
@@ -327,7 +336,7 @@ export default function AdminChatBot({ className = '' }: AdminChatBotProps) {
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
               {messages.length === 0 && (
                 <div className="text-center text-gray-500 mt-8">
-                  <Bot size={48} className="mx-auto mb-4 text-purple-300" />
+                  <Bot size={48} className="mx-auto mb-4 text-emerald-300" />
                   <p className="font-medium">Admin Assistant Ready!</p>
                   <p className="text-sm mt-2">I can help you manage the platform efficiently.</p>
                 </div>
@@ -339,7 +348,7 @@ export default function AdminChatBot({ className = '' }: AdminChatBotProps) {
                     <div
                       className={`max-w-[80%] p-3 rounded-lg ${
                         message.type === 'user'
-                          ? 'bg-purple-600 text-white'
+                            ? 'bg-emerald-600 text-white'
                           : 'bg-gray-100 text-gray-800'
                       }`}
                     >
@@ -357,14 +366,14 @@ export default function AdminChatBot({ className = '' }: AdminChatBotProps) {
                         <button
                           key={index}
                           onClick={() => handleActionClick(action)}
-                          className="w-full flex items-start gap-3 px-4 py-3 text-left bg-purple-50 hover:bg-purple-100 text-purple-700 rounded-lg transition-colors group border border-purple-200 hover:border-purple-300"
+                          className="w-full flex items-start gap-3 px-4 py-3 text-left bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg transition-colors group border border-emerald-200 hover:border-emerald-300"
                         >
                           <div className="mt-0.5">{action.icon || <ChevronRight size={16} />}</div>
                           <div className="flex-1">
                             <div className="font-medium">{action.label}</div>
                             {action.description && (
-                              <div className="text-xs text-purple-600 mt-0.5">{action.description}</div>
-                            )}
+                                      <div className="text-xs text-emerald-600 mt-0.5">{action.description}</div>
+                                    )}
                           </div>
                           <ChevronRight size={16} className="mt-0.5 opacity-0 group-hover:opacity-100 transition-opacity" />
                         </button>
@@ -405,12 +414,12 @@ export default function AdminChatBot({ className = '' }: AdminChatBotProps) {
                   onKeyPress={handleKeyPress}
                   placeholder="Ask about users, materials, auctions..."
                   disabled={!isConnected}
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:bg-gray-100"
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:bg-gray-100"
                 />
                 <button
                   onClick={() => sendMessage()}
                   disabled={!isConnected || !inputMessage.trim()}
-                  className="bg-purple-600 hover:bg-purple-700 disabled:bg-gray-300 text-white p-2 rounded-md transition-colors"
+                  className="bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-300 text-white p-2 rounded-md transition-colors"
                   aria-label="Send message"
                 >
                   <Send size={20} />
