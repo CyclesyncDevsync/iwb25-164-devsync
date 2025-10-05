@@ -37,18 +37,20 @@ interface TabProps {
   onClick: () => void;
 }
 
-const Tab: React.FC<TabProps> = ({ id, label, icon: Icon, isActive, onClick }) => (
-  <button
+const Tab: React.FC<TabProps> = ({ label, icon: Icon, isActive, onClick }) => (
+  <motion.button
+    whileHover={{ scale: 1.02, x: 4 }}
+    whileTap={{ scale: 0.98 }}
     onClick={onClick}
-    className={`flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors ${
+    className={`flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 w-full text-left ${
       isActive
-        ? 'bg-emerald-100 text-emerald-700 border border-emerald-200'
-        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+        ? 'bg-gradient-to-r from-emerald-500 to-green-500 text-white shadow-lg border border-emerald-300'
+        : 'text-gray-600 hover:text-gray-900 hover:bg-gradient-to-r hover:from-gray-50 hover:to-gray-100 dark:text-gray-300 dark:hover:text-white dark:hover:from-gray-700 dark:hover:to-gray-600'
     }`}
   >
     <Icon className="w-5 h-5 mr-3" />
     {label}
-  </button>
+  </motion.button>
 );
 
 interface SwitchProps {
@@ -629,28 +631,36 @@ export const SupplierSettingsComponent: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="p-6 md:p-8 lg:p-10 space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="flex justify-between items-center bg-gradient-to-r from-emerald-50 to-blue-50 dark:from-emerald-900/20 dark:to-blue-900/20 rounded-2xl p-6 shadow-lg"
+      >
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
-          <p className="text-gray-600">Manage your account preferences and configurations</p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Settings</h1>
+          <p className="text-gray-600 dark:text-gray-300 mt-1">Manage your account preferences and configurations</p>
         </div>
         
         {/* Save Button */}
         <div className="flex items-center space-x-4">
           {unsavedChanges && (
-            <span className="text-sm text-amber-600 flex items-center">
+            <motion.span
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="text-sm text-amber-600 flex items-center bg-amber-50 px-3 py-1 rounded-full"
+            >
               <ExclamationTriangleIcon className="w-4 h-4 mr-1" />
               Unsaved changes
-            </span>
+            </motion.span>
           )}
           
           {saveStatus !== 'idle' && (
             <motion.div
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="flex items-center text-sm"
+              className="flex items-center text-sm bg-white px-3 py-1 rounded-full shadow-sm"
             >
               {saveStatus === 'saving' && (
                 <>
@@ -673,25 +683,32 @@ export const SupplierSettingsComponent: React.FC = () => {
             </motion.div>
           )}
           
-          <button
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
             onClick={handleSave}
             disabled={!unsavedChanges || saveStatus === 'saving'}
-            className={`px-4 py-2 rounded-md font-medium transition-colors ${
+            className={`px-6 py-3 rounded-xl font-medium transition-all duration-200 shadow-lg ${
               unsavedChanges && saveStatus !== 'saving'
-                ? 'bg-green-600 text-white hover:bg-green-700'
+                ? 'bg-gradient-to-r from-emerald-600 to-green-600 text-white hover:from-emerald-700 hover:to-green-700 hover:shadow-xl'
                 : 'bg-gray-300 text-gray-500 cursor-not-allowed'
             }`}
           >
             {saveStatus === 'saving' ? 'Saving...' : 'Save Changes'}
-          </button>
+          </motion.button>
         </div>
-      </div>
+      </motion.div>
 
       {/* Settings Container */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1 }}
+        className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden"
+      >
         <div className="flex">
           {/* Sidebar */}
-          <div className="w-64 border-r border-gray-200 p-6">
+          <div className="w-64 border-r border-gray-200 dark:border-gray-700 p-6 bg-gradient-to-b from-gray-50 to-white dark:from-gray-800 dark:to-gray-700">
             <nav className="space-y-2">
               {tabs.map((tab) => (
                 <Tab
@@ -707,7 +724,7 @@ export const SupplierSettingsComponent: React.FC = () => {
           </div>
 
           {/* Content */}
-          <div className="flex-1 p-6">
+          <div className="flex-1 p-8">
             <AnimatePresence mode="wait">
               <motion.div
                 key={activeTab}
@@ -724,7 +741,7 @@ export const SupplierSettingsComponent: React.FC = () => {
             </AnimatePresence>
           </div>
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 };
