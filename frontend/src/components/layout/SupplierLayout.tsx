@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import { useState, useEffect, useMemo } from 'react';
-import { usePathname, useRouter } from 'next/navigation';
-import Link from 'next/link';
+import { useState, useEffect, useMemo } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import Link from "next/link";
 import {
   ChartBarIcon,
   HomeIcon,
@@ -17,13 +17,13 @@ import {
   UserCircleIcon,
   XMarkIcon,
   ArrowRightOnRectangleIcon,
-  Bars3Icon
-} from '@heroicons/react/24/outline';
-import { motion, AnimatePresence } from 'framer-motion';
-import { useAppSelector, useAppDispatch } from '../../hooks/redux';
-import { useAuth } from '@/hooks/useAuth';
-import { logout } from '../../store/slices/authSlice';
-import { SupplierType } from '../../types/supplier';
+  Bars3Icon,
+} from "@heroicons/react/24/outline";
+import { motion, AnimatePresence } from "framer-motion";
+import { useAppSelector, useAppDispatch } from "../../hooks/redux";
+import { useAuth } from "@/hooks/useAuth";
+import { logout } from "../../store/slices/authSlice";
+import { SupplierType } from "../../types/supplier";
 
 interface SupplierLayoutProps {
   children: React.ReactNode;
@@ -39,113 +39,122 @@ const SupplierLayout: React.FC<SupplierLayoutProps> = ({ children }) => {
   const [unreadMessageCount, setUnreadMessageCount] = useState(0);
 
   // Clean pathname by removing query parameters
-  const cleanPathname = pathname?.split('?')[0] || '';
+  const cleanPathname = pathname?.split("?")[0] || "";
 
-  // Fetch unread message count
+  // Fetch unread message count - optimized with Redis caching
   useEffect(() => {
     const fetchUnreadCount = async () => {
       if (!user?.asgardeoId) return;
 
       try {
-        const authResponse = await fetch('/api/auth/me');
-        if (!authResponse.ok) return;
-
-        const authData = await authResponse.json();
-        const idToken = authData.idToken;
-        const supplierId = authData.user?.asgardeoId || authData.user?.sub || authData.userId;
-
-        const response = await fetch(`/backend/chat/rooms/supplier/${supplierId}/unread-count`, {
-          headers: {
-            'Authorization': `Bearer ${idToken}`
-          }
+        // Use cached API endpoint instead of direct backend call
+        const response = await fetch("/api/chat/unread-count", {
+          credentials: "include",
         });
 
         if (response.ok) {
-          const data = await response.json();
-          setUnreadMessageCount(data.unread_count || 0);
+          const result = await response.json();
+          setUnreadMessageCount(result.data?.unread_count || 0);
         }
       } catch (error) {
-        console.error('Error fetching unread count:', error);
+        console.error("Error fetching unread count:", error);
       }
     };
 
     // Fetch initially
     fetchUnreadCount();
 
-    // Poll every 10 seconds
-    const interval = setInterval(fetchUnreadCount, 10000);
+    // Since we're using Redis cache (30s TTL), we can poll less frequently
+    // Poll every 60 seconds - cache will serve fresh data
+    const interval = setInterval(fetchUnreadCount, 60000);
     return () => clearInterval(interval);
   }, [user]);
 
   const navigationItems = useMemo(() => {
     const items = [
       {
-        name: 'Dashboard',
-        href: '/supplier',
+        name: "Dashboard",
+        href: "/supplier",
         icon: HomeIcon,
-        current: cleanPathname === '/supplier'
+        current: cleanPathname === "/supplier",
+        prefetch: true,
       },
       {
-        name: 'Add Material',
-        href: '/supplier/materials/new-enhanced',
+        name: "Add Material",
+        href: "/supplier/materials/new-enhanced",
         icon: PlusCircleIcon,
-        current: cleanPathname === '/supplier/materials/new' || cleanPathname === '/supplier/materials/new-enhanced'
+        current:
+          cleanPathname === "/supplier/materials/new" ||
+          cleanPathname === "/supplier/materials/new-enhanced",
+        prefetch: true,
       },
       {
-        name: 'My Materials',
-        href: '/supplier/materials',
+        name: "My Materials",
+        href: "/supplier/materials",
         icon: DocumentDuplicateIcon,
-        current: cleanPathname.startsWith('/supplier/materials') && !cleanPathname.includes('/new')
+        current:
+          cleanPathname.startsWith("/supplier/materials") &&
+          !cleanPathname.includes("/new"),
+        prefetch: true,
       },
       {
-        name: 'Orders',
-        href: '/supplier/orders',
+        name: "Orders",
+        href: "/supplier/orders",
         icon: ShoppingBagIcon,
-        current: cleanPathname.startsWith('/supplier/orders')
+        current: cleanPathname.startsWith("/supplier/orders"),
+        prefetch: true,
       },
       {
-        name: 'Messages',
-        href: '/supplier/messages',
+        name: "Messages",
+        href: "/supplier/messages",
         icon: ChatBubbleLeftRightIcon,
-        current: cleanPathname.startsWith('/supplier/messages'),
-        badge: unreadMessageCount
+        current: cleanPathname.startsWith("/supplier/messages"),
+        badge: unreadMessageCount,
+        prefetch: true,
       },
       {
-        name: 'Analytics',
-        href: '/supplier/analytics',
+        name: "Analytics",
+        href: "/supplier/analytics",
         icon: ChartBarIcon,
-        current: cleanPathname === '/supplier/analytics'
+        current: cleanPathname === "/supplier/analytics",
+        prefetch: true,
       },
       {
-        name: 'Earnings',
-        href: '/supplier/earnings',
+        name: "Earnings",
+        href: "/supplier/earnings",
         icon: CurrencyDollarIcon,
-        current: cleanPathname.startsWith('/supplier/earnings')
-      }
+        current: cleanPathname.startsWith("/supplier/earnings"),
+        prefetch: true,
+      },
     ];
 
     if (profile?.type === SupplierType.ORGANIZATION) {
-      items.splice(-1, 0,
+      items.splice(
+        -1,
+        0,
         {
-          name: 'Team',
-          href: '/supplier/team',
+          name: "Team",
+          href: "/supplier/team",
           icon: UserGroupIcon,
-          current: cleanPathname.startsWith('/supplier/team')
+          current: cleanPathname.startsWith("/supplier/team"),
+          prefetch: true,
         },
         {
-          name: 'Locations',
-          href: '/supplier/locations',
+          name: "Locations",
+          href: "/supplier/locations",
           icon: MapPinIcon,
-          current: cleanPathname.startsWith('/supplier/locations')
+          current: cleanPathname.startsWith("/supplier/locations"),
+          prefetch: true,
         }
       );
     }
 
     items.push({
-      name: 'Settings',
-      href: '/supplier/settings',
+      name: "Settings",
+      href: "/supplier/settings",
       icon: Cog6ToothIcon,
-      current: cleanPathname === '/supplier/settings'
+      current: cleanPathname === "/supplier/settings",
+      prefetch: true,
     });
 
     return items;
@@ -155,11 +164,11 @@ const SupplierLayout: React.FC<SupplierLayoutProps> = ({ children }) => {
 
   const handleLogout = async () => {
     try {
-      await fetch('/api/auth/logout', { method: 'POST' });
+      await fetch("/api/auth/logout", { method: "POST" });
       dispatch(logout());
-      router.push('/login');
+      router.push("/login");
     } catch (error) {
-      console.error('Logout failed:', error);
+      console.error("Logout failed:", error);
     }
   };
 
@@ -174,7 +183,10 @@ const SupplierLayout: React.FC<SupplierLayoutProps> = ({ children }) => {
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-[65] lg:hidden"
           >
-            <div className="fixed inset-0 bg-black bg-opacity-50" onClick={closeSidebar} />
+            <div
+              className="fixed inset-0 bg-black bg-opacity-50"
+              onClick={closeSidebar}
+            />
             <motion.div
               initial={{ x: -300 }}
               animate={{ x: 0 }}
@@ -191,7 +203,9 @@ const SupplierLayout: React.FC<SupplierLayoutProps> = ({ children }) => {
                     <h2 className="text-lg font-bold text-emerald-600 dark:text-emerald-300">
                       Supplier Portal
                     </h2>
-                    <p className="text-xs text-gray-600 dark:text-gray-400">Dashboard</p>
+                    <p className="text-xs text-gray-600 dark:text-gray-400">
+                      Dashboard
+                    </p>
                   </div>
                 </div>
                 <button
@@ -208,15 +222,19 @@ const SupplierLayout: React.FC<SupplierLayoutProps> = ({ children }) => {
                   <div className="flex items-center space-x-3">
                     <div className="w-10 h-10 bg-gradient-to-br from-emerald-700 to-emerald-500 rounded-full flex items-center justify-center shadow-lg ring-1 ring-gray-100 dark:ring-transparent">
                       <span className="text-white font-semibold text-sm">
-                        {profile?.contactPerson?.charAt(0) || 'S'}
+                        {profile?.contactPerson?.charAt(0) || "S"}
                       </span>
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                        {profile?.businessName || profile?.contactPerson || 'Supplier'}
+                        {profile?.businessName ||
+                          profile?.contactPerson ||
+                          "Supplier"}
                       </p>
                       <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                        {profile?.type ? `${profile.type} Supplier` : 'Supplier'}
+                        {profile?.type
+                          ? `${profile.type} Supplier`
+                          : "Supplier"}
                       </p>
                     </div>
                   </div>
@@ -234,17 +252,20 @@ const SupplierLayout: React.FC<SupplierLayoutProps> = ({ children }) => {
                   >
                     <Link
                       href={item.href}
+                      prefetch={item.prefetch !== false}
                       onClick={closeSidebar}
                       className={`group flex items-center px-4 py-3 mb-2 text-sm font-medium rounded-xl transition-all duration-200 transform hover:scale-105 ${
                         item.current
-                          ? 'bg-emerald-50 text-emerald-600 shadow-sm border-l-4 border-emerald-600 dark:bg-gradient-to-r dark:from-emerald-600 dark:to-emerald-700 dark:text-white dark:shadow-lg dark:shadow-emerald-600/25'
-                          : 'text-gray-800 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:shadow-md'
+                          ? "bg-emerald-50 text-emerald-600 shadow-sm border-l-4 border-emerald-600 dark:bg-gradient-to-r dark:from-emerald-600 dark:to-emerald-700 dark:text-white dark:shadow-lg dark:shadow-emerald-600/25"
+                          : "text-gray-800 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:shadow-md"
                       }`}
                     >
                       <motion.div
                         whileHover={{ rotate: 5 }}
                         className={`w-5 h-5 mr-3 flex-shrink-0 ${
-                          item.current ? 'text-emerald-600 dark:text-white' : 'text-gray-700 dark:text-gray-400 group-hover:text-emerald-600'
+                          item.current
+                            ? "text-emerald-600 dark:text-white"
+                            : "text-gray-700 dark:text-gray-400 group-hover:text-emerald-600"
                         }`}
                       >
                         <item.icon className="w-5 h-5" />
@@ -302,7 +323,9 @@ const SupplierLayout: React.FC<SupplierLayoutProps> = ({ children }) => {
                 <h2 className="text-lg font-bold text-emerald-600 dark:text-emerald-300">
                   Supplier Portal
                 </h2>
-                <p className="text-xs text-gray-600 dark:text-gray-400">Dashboard</p>
+                <p className="text-xs text-gray-600 dark:text-gray-400">
+                  Dashboard
+                </p>
               </div>
             </div>
           </div>
@@ -313,15 +336,17 @@ const SupplierLayout: React.FC<SupplierLayoutProps> = ({ children }) => {
               <div className="flex items-center space-x-3">
                 <div className="w-10 h-10 bg-gradient-to-br from-emerald-700 to-emerald-500 rounded-full flex items-center justify-center shadow-lg ring-1 ring-gray-100 dark:ring-transparent">
                   <span className="text-white font-semibold text-sm">
-                    {profile?.contactPerson?.charAt(0) || 'S'}
+                    {profile?.contactPerson?.charAt(0) || "S"}
                   </span>
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                    {profile?.businessName || profile?.contactPerson || 'Supplier'}
+                    {profile?.businessName ||
+                      profile?.contactPerson ||
+                      "Supplier"}
                   </p>
                   <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                    {profile?.type ? `${profile.type} Supplier` : 'Supplier'}
+                    {profile?.type ? `${profile.type} Supplier` : "Supplier"}
                   </p>
                 </div>
               </div>
@@ -339,16 +364,19 @@ const SupplierLayout: React.FC<SupplierLayoutProps> = ({ children }) => {
               >
                 <Link
                   href={item.href}
+                  prefetch={item.prefetch !== false}
                   className={`relative group flex items-center px-4 py-3 mb-2 pr-12 text-sm font-medium rounded-xl transition-all duration-200 transform hover:scale-105 ${
                     item.current
-                      ? 'bg-emerald-50 text-emerald-600 shadow-sm border-l-4 border-emerald-600 dark:bg-gradient-to-r dark:from-emerald-600 dark:to-emerald-700 dark:text-white dark:shadow-lg dark:shadow-emerald-600/25'
-                      : 'text-gray-800 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:shadow-md'
+                      ? "bg-emerald-50 text-emerald-600 shadow-sm border-l-4 border-emerald-600 dark:bg-gradient-to-r dark:from-emerald-600 dark:to-emerald-700 dark:text-white dark:shadow-lg dark:shadow-emerald-600/25"
+                      : "text-gray-800 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:shadow-md"
                   }`}
                 >
                   <motion.div
                     whileHover={{ rotate: 5 }}
                     className={`w-5 h-5 mr-3 flex-shrink-0 ${
-                      item.current ? 'text-emerald-600 dark:text-white' : 'text-gray-700 dark:text-gray-400 group-hover:text-emerald-600'
+                      item.current
+                        ? "text-emerald-600 dark:text-white"
+                        : "text-gray-700 dark:text-gray-400 group-hover:text-emerald-600"
                     }`}
                   >
                     <item.icon className="w-5 h-5" />
@@ -399,19 +427,17 @@ const SupplierLayout: React.FC<SupplierLayoutProps> = ({ children }) => {
             >
               <Bars3Icon className="w-6 h-6" />
             </button>
-            
+
             <h1 className="text-lg font-semibold text-emerald-600 dark:text-emerald-400">
               Supplier Portal
             </h1>
-            
+
             <div className="w-10"></div>
           </div>
         </div>
 
         {/* Page Content */}
-        <main className="min-h-screen">
-          {children}
-        </main>
+        <main className="min-h-screen">{children}</main>
       </div>
     </div>
   );
