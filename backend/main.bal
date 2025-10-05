@@ -29,6 +29,8 @@ import Cyclesync.notifications as _;
 import Cyclesync.scheduling as _;
 // The agent_assignment module will auto-register its services (commented out as in dev)
 // import Cyclesync.agent_assignment as _;
+// The google_calendar module will auto-register its services
+import Cyclesync.google_calendar as _;
 
 import ballerina/http;
 import ballerina/log;

@@ -1,0 +1,3 @@
+# This is a Docker-based build
+# Do not use Node.js buildpack or static site buildpack
+# Use the Dockerfile in this directory

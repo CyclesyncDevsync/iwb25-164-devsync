@@ -28,6 +28,7 @@ import {
   Material,
   MaterialCategory
 } from '../../types/supplier';
+import { createPickupAppointmentFromOrder, createCalendarAppointment } from '../../services/calendarService';
 
 export default function OrderManagement() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -35,6 +36,31 @@ export default function OrderManagement() {
   const [paymentFilter, setPaymentFilter] = useState<PaymentStatus | 'all'>('all');
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [showOrderDetails, setShowOrderDetails] = useState(false);
+  const [calendarLoading, setCalendarLoading] = useState<string | null>(null);
+
+  const addPickupToCalendar = async (order: Order) => {
+    setCalendarLoading(order.id);
+    try {
+      console.log('Creating calendar appointment for order:', order);
+      const calendarAppointment = createPickupAppointmentFromOrder(order);
+      console.log('Calendar appointment payload:', calendarAppointment);
+
+      const response = await createCalendarAppointment(calendarAppointment);
+      console.log('Calendar API response:', response);
+
+      if (response.status === 'success') {
+        alert(`✅ Pickup appointment added to your calendar!\nAppointment ID: ${response.appointmentId}`);
+      } else {
+        alert(`Failed to add to calendar: ${response.message || 'Unknown error'}`);
+      }
+    } catch (error: any) {
+      console.error('Error adding to calendar:', error);
+      const errorMessage = error.message || 'Unknown error occurred';
+      alert(`Error adding to calendar:\n${errorMessage}\n\nCheck browser console for details.`);
+    } finally {
+      setCalendarLoading(null);
+    }
+  };
 
   // supplier state available via store if needed (selector can be re-added when used)
   useAppSelector(state => state.supplier);
@@ -548,12 +574,25 @@ export default function OrderManagement() {
                     </td>
                     
                     <td className="pl-4 px-6 py-3 align-top break-words text-sm font-medium">
-                      <button
-                        onClick={() => handleViewOrder(order)}
-                        className="text-emerald-600 hover:text-emerald-900 dark:text-emerald-400 dark:hover:text-emerald-300 mr-3"
-                      >
-                        <EyeIcon className="h-4 w-4" />
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => handleViewOrder(order)}
+                          className="text-emerald-600 hover:text-emerald-900 dark:text-emerald-400 dark:hover:text-emerald-300"
+                          title="View Details"
+                        >
+                          <EyeIcon className="h-4 w-4" />
+                        </button>
+                        {(order.status === OrderStatus.CONFIRMED || order.status === OrderStatus.READY_FOR_PICKUP) && (
+                          <button
+                            onClick={() => addPickupToCalendar(order)}
+                            disabled={calendarLoading === order.id}
+                            className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 disabled:opacity-50"
+                            title="Add Pickup to Calendar"
+                          >
+                            <CalendarIcon className="h-4 w-4" />
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </motion.tr>
                 );

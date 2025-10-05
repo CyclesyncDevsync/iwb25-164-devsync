@@ -449,6 +449,22 @@ dependencies = [
 
 [[package]]
 org = "ballerinax"
+name = "googleapis.gcalendar"
+version = "4.0.1"
+dependencies = [
+	{org = "ballerina", name = "http"},
+	{org = "ballerina", name = "log"},
+	{org = "ballerina", name = "os"},
+	{org = "ballerina", name = "url"},
+	{org = "ballerinai", name = "observe"}
+]
+modules = [
+	{org = "ballerinax", packageName = "googleapis.gcalendar", moduleName = "googleapis.gcalendar"},
+	{org = "ballerinax", packageName = "googleapis.gcalendar", moduleName = "googleapis.gcalendar.mock"}
+]
+
+[[package]]
+org = "ballerinax"
 name = "newsapi"
 version = "1.5.1"
 dependencies = [
@@ -499,6 +515,7 @@ dependencies = [
 	{org = "ballerina", name = "websocket"},
 	{org = "ballerinai", name = "observe"},
 	{org = "ballerinai", name = "transaction"},
+	{org = "ballerinax", name = "googleapis.gcalendar"},
 	{org = "ballerinax", name = "newsapi"},
 	{org = "ballerinax", name = "postgresql"}
 ]

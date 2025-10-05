@@ -37,6 +37,11 @@ org = "ballerinax"
 name = "stripe"
 version = "2.0.0"
 
+[[dependency]]
+org = "ballerinax"
+name = "googleapis.gcalendar"
+version = "4.0.1"
+
 [[platform.java17.dependency]]
 groupId = "org.postgresql"
 artifactId = "postgresql"
