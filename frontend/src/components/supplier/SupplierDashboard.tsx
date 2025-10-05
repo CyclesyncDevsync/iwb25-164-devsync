@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import Link from 'next/link';
+import React, { useState, useEffect } from "react";
+import { motion } from "framer-motion";
+import Link from "next/link";
 import {
   PlusIcon,
   ChartBarIcon,
@@ -17,8 +17,8 @@ import {
   StarIcon,
   MapPinIcon,
   CalendarIcon,
-  WalletIcon
-} from '@heroicons/react/24/outline';
+  WalletIcon,
+} from "@heroicons/react/24/outline";
 import {
   LineChart,
   Line,
@@ -30,51 +30,61 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  ResponsiveContainer
-} from 'recharts';
-import { useAppDispatch, useAppSelector } from '../../hooks/redux';
-import { useAuth } from '../../hooks/useAuth';
-import WalletBalance from '../shared/WalletBalance';
+  ResponsiveContainer,
+} from "recharts";
+import { useAppDispatch, useAppSelector } from "../../hooks/redux";
+import { useAuth } from "../../hooks/useAuth";
+import WalletBalance from "../shared/WalletBalance";
 import {
   fetchSupplierProfile,
   fetchSupplierMaterials,
-  fetchSupplierAnalytics
-} from '../../store/slices/supplierSlice';
+  fetchSupplierAnalytics,
+} from "../../store/slices/supplierSlice";
 import {
   MaterialStatus,
   SupplierType,
-  QualityGrade
-} from '../../types/supplier';
+  QualityGrade,
+} from "../../types/supplier";
 
 export default function SupplierDashboard() {
   const dispatch = useAppDispatch();
   const { user } = useAuth();
-  const { profile, materials, analytics, loading } = useAppSelector(state => state.supplier);
+  const { profile, materials, analytics, loading } = useAppSelector(
+    (state) => state.supplier
+  );
   const [walletBalance, setWalletBalance] = useState<number | null>(null);
 
   useEffect(() => {
+    // Optimize data fetching - fetch profile only if not already loaded
     if (!profile) {
-      dispatch(fetchSupplierProfile('current'));
+      dispatch(fetchSupplierProfile("current"));
     }
-    dispatch(fetchSupplierMaterials({ page: 1, limit: 5 }));
-    dispatch(fetchSupplierAnalytics('month'));
-    fetchWalletBalance();
-  }, [dispatch, profile]);
+    // Fetch materials and analytics in parallel
+    Promise.all([
+      dispatch(fetchSupplierMaterials({ page: 1, limit: 5 })),
+      dispatch(fetchSupplierAnalytics("month")),
+      fetchWalletBalance(),
+    ]).catch((err) => console.error("Error loading dashboard data:", err));
+  }, [dispatch]); // Removed profile dependency to prevent refetching
 
   // Fetch wallet balance
   const fetchWalletBalance = async () => {
     try {
-      const response = await fetch('/api/wallet/balance', {
-        method: 'GET',
-        credentials: 'include',
+      const response = await fetch("/api/wallet/balance", {
+        method: "GET",
+        credentials: "include",
         headers: {
-          'Content-Type': 'application/json'
-        }
+          "Content-Type": "application/json",
+        },
       });
-      
+
       if (response.ok) {
         const data = await response.json();
-        if (data.status === 'success' && data.data && data.data.available_balance !== undefined) {
+        if (
+          data.status === "success" &&
+          data.data &&
+          data.data.available_balance !== undefined
+        ) {
           setWalletBalance(data.data.available_balance);
         } else {
           setWalletBalance(null);
@@ -83,7 +93,7 @@ export default function SupplierDashboard() {
         setWalletBalance(null);
       }
     } catch (error) {
-      console.log('Failed to fetch wallet balance:', error);
+      console.log("Failed to fetch wallet balance:", error);
       setWalletBalance(null);
     }
   };
@@ -98,31 +108,33 @@ export default function SupplierDashboard() {
   const recentActivity = [
     {
       id: 1,
-      type: 'material_added',
-      title: 'New material added',
-      description: 'Aluminum sheets listing created',
-      time: '2 hours ago',
+      type: "material_added",
+      title: "New material added",
+      description: "Aluminum sheets listing created",
+      time: "2 hours ago",
       icon: PlusIcon,
-      color: 'text-green-600 bg-green-100 dark:bg-green-900/20 dark:text-green-400'
+      color:
+        "text-green-600 bg-green-100 dark:bg-green-900/20 dark:text-green-400",
     },
     {
       id: 2,
-      type: 'bid_received',
-      title: 'New bid received',
-      description: 'Bid of LKR 25,000 on plastic bottles',
-      time: '4 hours ago',
+      type: "bid_received",
+      title: "New bid received",
+      description: "Bid of LKR 25,000 on plastic bottles",
+      time: "4 hours ago",
       icon: CurrencyDollarIcon,
-      color: 'text-blue-600 bg-blue-100 dark:bg-blue-900/20 dark:text-blue-400'
+      color: "text-blue-600 bg-blue-100 dark:bg-blue-900/20 dark:text-blue-400",
     },
     {
       id: 3,
-      type: 'material_sold',
-      title: 'Material sold',
-      description: 'Cardboard boxes sold for LKR 15,000',
-      time: '1 day ago',
+      type: "material_sold",
+      title: "Material sold",
+      description: "Cardboard boxes sold for LKR 15,000",
+      time: "1 day ago",
       icon: CheckCircleIcon,
-      color: 'text-purple-600 bg-purple-100 dark:bg-purple-900/20 dark:text-purple-400'
-    }
+      color:
+        "text-purple-600 bg-purple-100 dark:bg-purple-900/20 dark:text-purple-400",
+    },
   ];
 
   return (
@@ -134,22 +146,28 @@ export default function SupplierDashboard() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <QuickStatCard
           title="Wallet Balance"
-          value={walletBalance !== null ? `LKR ${walletBalance.toLocaleString()}` : 'Loading...'}
+          value={
+            walletBalance !== null
+              ? `LKR ${walletBalance.toLocaleString()}`
+              : "Loading..."
+          }
           change={0}
           changeLabel="Available balance"
           icon={WalletIcon}
           color="emerald"
         />
-        
+
         <QuickStatCard
           title="Active Materials"
-          value={materials.filter(m => m.status === MaterialStatus.APPROVED).length.toString()}
+          value={materials
+            .filter((m) => m.status === MaterialStatus.APPROVED)
+            .length.toString()}
           change={-2.3}
           changeLabel="vs last week"
           icon={ShoppingBagIcon}
           color="blue"
         />
-        
+
         <QuickStatCard
           title="Total Views"
           value="1,247"
@@ -158,10 +176,10 @@ export default function SupplierDashboard() {
           icon={EyeIcon}
           color="purple"
         />
-        
+
         <QuickStatCard
           title="Avg Rating"
-          value={profile?.rating?.toFixed(1) || '0.0'}
+          value={profile?.rating?.toFixed(1) || "0.0"}
           change={0.2}
           changeLabel="vs last month"
           icon={StarIcon}
@@ -175,7 +193,7 @@ export default function SupplierDashboard() {
         <div className="lg:col-span-2 space-y-6">
           {/* Earnings Chart */}
           <EarningsChart analytics={analytics} />
-          
+
           {/* Material Performance */}
           <MaterialPerformanceChart materials={materials} />
         </div>
@@ -184,13 +202,13 @@ export default function SupplierDashboard() {
         <div className="space-y-6">
           {/* Wallet Balance */}
           <WalletBalance />
-          
+
           {/* Quick Actions */}
           <QuickActions />
-          
+
           {/* Recent Activity */}
           <RecentActivity activities={recentActivity} />
-          
+
           {/* Upcoming Tasks */}
           <UpcomingTasks />
         </div>
@@ -233,7 +251,10 @@ function WelcomeBanner({ profile, user }: WelcomeBannerProps) {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-white">
-              Welcome back, {user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : 'Supplier'}!
+              Welcome back,{" "}
+              {user?.firstName
+                ? `${user.firstName} ${user.lastName}`
+                : "Supplier"}
             </h1>
             <p className="mt-3 text-emerald-100 text-lg">
               Manage your materials and track your earnings
@@ -241,25 +262,24 @@ function WelcomeBanner({ profile, user }: WelcomeBannerProps) {
             <div className="mt-6 flex items-center text-emerald-100">
               <MapPinIcon className="h-5 w-5 mr-2" />
               <span className="text-base">
-                {profile?.address?.city && profile?.address?.district 
+                {profile?.address?.city && profile?.address?.district
                   ? `${profile.address.city}, ${profile.address.district}`
-                  : 'Location not set'
-                }
+                  : "Location not set"}
               </span>
             </div>
           </div>
-          
+
           <div className="hidden sm:block">
             <div className="flex items-center space-x-4">
               <div className="text-right">
                 <p className="text-emerald-100 text-sm">Verification Status</p>
                 <div className="flex items-center mt-1">
-                  {user?.status === 'approved' ? (
+                  {user?.status === "approved" ? (
                     <>
                       <CheckCircleIcon className="h-5 w-5 text-white mr-1" />
                       <span className="text-white font-medium">Approved</span>
                     </>
-                  ) : user?.status === 'rejected' ? (
+                  ) : user?.status === "rejected" ? (
                     <>
                       <ExclamationTriangleIcon className="h-5 w-5 text-red-200 mr-1" />
                       <span className="text-red-200 font-medium">Rejected</span>
@@ -267,7 +287,9 @@ function WelcomeBanner({ profile, user }: WelcomeBannerProps) {
                   ) : (
                     <>
                       <ClockIcon className="h-5 w-5 text-yellow-200 mr-1" />
-                      <span className="text-yellow-200 font-medium">Pending</span>
+                      <span className="text-yellow-200 font-medium">
+                        Pending
+                      </span>
                     </>
                   )}
                 </div>
@@ -286,15 +308,22 @@ interface QuickStatCardProps {
   change: number;
   changeLabel: string;
   icon: React.ComponentType<{ className?: string }>;
-  color: 'emerald' | 'blue' | 'purple' | 'yellow';
+  color: "emerald" | "blue" | "purple" | "yellow";
 }
 
-function QuickStatCard({ title, value, change, changeLabel, icon: Icon, color }: QuickStatCardProps) {
+function QuickStatCard({
+  title,
+  value,
+  change,
+  changeLabel,
+  icon: Icon,
+  color,
+}: QuickStatCardProps) {
   const iconBgClasses = {
-    emerald: 'linear-gradient(135deg,#10B981,#34D399)',
-    blue: 'linear-gradient(135deg,#3B82F6,#60A5FA)',
-    purple: 'linear-gradient(135deg,#8B5CF6,#A78BFA)',
-    yellow: 'linear-gradient(135deg,#F59E0B,#FBBF24)'
+    emerald: "linear-gradient(135deg,#10B981,#34D399)",
+    blue: "linear-gradient(135deg,#3B82F6,#60A5FA)",
+    purple: "linear-gradient(135deg,#8B5CF6,#A78BFA)",
+    yellow: "linear-gradient(135deg,#F59E0B,#FBBF24)",
   };
 
   const isPositive = change > 0;
@@ -315,21 +344,32 @@ function QuickStatCard({ title, value, change, changeLabel, icon: Icon, color }:
           <Icon className="h-6 w-6 text-white" />
         </div>
         <div className="ml-4 flex-1">
-          <p className="text-sm font-medium text-gray-600 dark:text-gray-400">{title}</p>
-          <p className="text-2xl font-bold text-gray-900 dark:text-white">{value}</p>
+          <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+            {title}
+          </p>
+          <p className="text-2xl font-bold text-gray-900 dark:text-white">
+            {value}
+          </p>
         </div>
       </div>
       <div className="mt-4">
         <div className="flex items-center text-sm">
-            {isPositive ? (
-              <ArrowTrendingUpIcon className="h-4 w-4 text-green-500 mr-1" />
-            ) : (
-              <ArrowTrendingDownIcon className="h-4 w-4 text-red-500 mr-1" />
-            )}
-          <span className={`font-semibold ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
-            {isPositive ? '+' : ''}{change}%
+          {isPositive ? (
+            <ArrowTrendingUpIcon className="h-4 w-4 text-green-500 mr-1" />
+          ) : (
+            <ArrowTrendingDownIcon className="h-4 w-4 text-red-500 mr-1" />
+          )}
+          <span
+            className={`font-semibold ${
+              isPositive ? "text-green-600" : "text-red-600"
+            }`}
+          >
+            {isPositive ? "+" : ""}
+            {change}%
           </span>
-          <span className="text-gray-500 dark:text-gray-400 ml-1">{changeLabel}</span>
+          <span className="text-gray-500 dark:text-gray-400 ml-1">
+            {changeLabel}
+          </span>
         </div>
       </div>
     </motion.div>
@@ -339,33 +379,33 @@ function QuickStatCard({ title, value, change, changeLabel, icon: Icon, color }:
 function QuickActions() {
   const actions = [
     {
-      title: 'Add Material',
-      description: 'List a new material for sale',
-      href: '/supplier/materials/new',
+      title: "Add Material",
+      description: "List a new material for sale",
+      href: "/supplier/materials/new",
       icon: PlusIcon,
-      color: 'bg-emerald-600 hover:bg-emerald-700'
+      color: "bg-emerald-600 hover:bg-emerald-700",
     },
     {
-      title: 'My Wallet',
-      description: 'Manage balance & transactions',
-      href: '/wallet',
+      title: "My Wallet",
+      description: "Manage balance & transactions",
+      href: "/wallet",
       icon: WalletIcon,
-      color: 'bg-indigo-600 hover:bg-indigo-700'
+      color: "bg-indigo-600 hover:bg-indigo-700",
     },
     {
-      title: 'View Analytics',
-      description: 'Check your performance',
-      href: '/supplier/analytics',
+      title: "View Analytics",
+      description: "Check your performance",
+      href: "/supplier/analytics",
       icon: ChartBarIcon,
-      color: 'bg-blue-600 hover:bg-blue-700'
+      color: "bg-blue-600 hover:bg-blue-700",
     },
     {
-      title: 'Manage Materials',
-      description: 'Edit existing listings',
-      href: '/supplier/materials',
+      title: "Manage Materials",
+      description: "Edit existing listings",
+      href: "/supplier/materials",
       icon: ShoppingBagIcon,
-      color: 'bg-purple-600 hover:bg-purple-700'
-    }
+      color: "bg-purple-600 hover:bg-purple-700",
+    },
   ];
 
   return (
@@ -448,33 +488,37 @@ function UpcomingTasks() {
   const tasks = [
     {
       id: 1,
-      title: 'Review pending materials',
-      description: '3 materials awaiting approval',
-      dueDate: 'Today',
-      priority: 'high'
+      title: "Review pending materials",
+      description: "3 materials awaiting approval",
+      dueDate: "Today",
+      priority: "high",
     },
     {
       id: 2,
-      title: 'Update pricing',
-      description: 'Market prices have changed',
-      dueDate: 'Tomorrow',
-      priority: 'medium'
+      title: "Update pricing",
+      description: "Market prices have changed",
+      dueDate: "Tomorrow",
+      priority: "medium",
     },
     {
       id: 3,
-      title: 'Complete profile',
-      description: 'Add missing business documents',
-      dueDate: 'This week',
-      priority: 'low'
-    }
+      title: "Complete profile",
+      description: "Add missing business documents",
+      dueDate: "This week",
+      priority: "low",
+    },
   ];
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case 'high': return 'text-red-600 bg-red-100 dark:bg-red-900/20 dark:text-red-400';
-      case 'medium': return 'text-yellow-600 bg-yellow-100 dark:bg-yellow-900/20 dark:text-yellow-400';
-      case 'low': return 'text-green-600 bg-green-100 dark:bg-green-900/20 dark:text-green-400';
-      default: return 'text-gray-600 bg-gray-100 dark:bg-gray-900/20 dark:text-gray-400';
+      case "high":
+        return "text-red-600 bg-red-100 dark:bg-red-900/20 dark:text-red-400";
+      case "medium":
+        return "text-yellow-600 bg-yellow-100 dark:bg-yellow-900/20 dark:text-yellow-400";
+      case "low":
+        return "text-green-600 bg-green-100 dark:bg-green-900/20 dark:text-green-400";
+      default:
+        return "text-gray-600 bg-gray-100 dark:bg-gray-900/20 dark:text-gray-400";
     }
   };
 
@@ -486,12 +530,19 @@ function UpcomingTasks() {
         </h3>
         <div className="space-y-3">
           {tasks.map((task) => (
-            <div key={task.id} className="border border-gray-200 dark:border-gray-700 rounded-lg p-3">
+            <div
+              key={task.id}
+              className="border border-gray-200 dark:border-gray-700 rounded-lg p-3"
+            >
               <div className="flex items-center justify-between mb-2">
                 <p className="text-sm font-medium text-gray-900 dark:text-white">
                   {task.title}
                 </p>
-                <span className={`px-2 py-1 rounded-full text-xs font-medium ${getPriorityColor(task.priority)}`}>
+                <span
+                  className={`px-2 py-1 rounded-full text-xs font-medium ${getPriorityColor(
+                    task.priority
+                  )}`}
+                >
                   {task.priority}
                 </span>
               </div>
@@ -536,14 +587,14 @@ function EarningsChart({ analytics }: EarningsChartProps) {
         <ResponsiveContainer width="100%" height={320}>
           <AreaChart data={data}>
             <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-            <XAxis dataKey="date" tick={{ fontSize: 12, fill: '#6B7280' }} />
-            <YAxis tick={{ fontSize: 12, fill: '#6B7280' }} />
+            <XAxis dataKey="date" tick={{ fontSize: 12, fill: "#6B7280" }} />
+            <YAxis tick={{ fontSize: 12, fill: "#6B7280" }} />
             <Tooltip
               contentStyle={{
-                backgroundColor: '#FFFFFF',
-                border: '1px solid #E5E7EB',
-                borderRadius: '8px',
-                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                backgroundColor: "#FFFFFF",
+                border: "1px solid #E5E7EB",
+                borderRadius: "8px",
+                boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
               }}
             />
             <Area
@@ -556,8 +607,8 @@ function EarningsChart({ analytics }: EarningsChartProps) {
             />
             <defs>
               <linearGradient id="earningsGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#10B981" stopOpacity={0.8}/>
-                <stop offset="95%" stopColor="#10B981" stopOpacity={0.1}/>
+                <stop offset="5%" stopColor="#10B981" stopOpacity={0.8} />
+                <stop offset="95%" stopColor="#10B981" stopOpacity={0.1} />
               </linearGradient>
             </defs>
           </AreaChart>
@@ -571,14 +622,16 @@ interface MaterialPerformanceChartProps {
   materials: any[];
 }
 
-function MaterialPerformanceChart({ materials }: MaterialPerformanceChartProps) {
+function MaterialPerformanceChart({
+  materials,
+}: MaterialPerformanceChartProps) {
   // Mock performance data
   const performanceData = [
-    { category: 'Plastic', views: 120, sales: 8 },
-    { category: 'Metal', views: 85, sales: 12 },
-    { category: 'Paper', views: 65, sales: 5 },
-    { category: 'Glass', views: 45, sales: 3 },
-    { category: 'Electronics', views: 95, sales: 7 }
+    { category: "Plastic", views: 120, sales: 8 },
+    { category: "Metal", views: 85, sales: 12 },
+    { category: "Paper", views: 65, sales: 5 },
+    { category: "Glass", views: 45, sales: 3 },
+    { category: "Electronics", views: 95, sales: 7 },
   ];
 
   return (
@@ -600,18 +653,31 @@ function MaterialPerformanceChart({ materials }: MaterialPerformanceChartProps) 
         <ResponsiveContainer width="100%" height={320}>
           <BarChart data={performanceData} barCategoryGap="20%">
             <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-            <XAxis dataKey="category" tick={{ fontSize: 12, fill: '#6B7280' }} />
-            <YAxis tick={{ fontSize: 12, fill: '#6B7280' }} />
+            <XAxis
+              dataKey="category"
+              tick={{ fontSize: 12, fill: "#6B7280" }}
+            />
+            <YAxis tick={{ fontSize: 12, fill: "#6B7280" }} />
             <Tooltip
               contentStyle={{
-                backgroundColor: '#FFFFFF',
-                border: '1px solid #E5E7EB',
-                borderRadius: '8px',
-                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                backgroundColor: "#FFFFFF",
+                border: "1px solid #E5E7EB",
+                borderRadius: "8px",
+                boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
               }}
             />
-            <Bar dataKey="views" fill="#3B82F6" name="Views" radius={[4, 4, 0, 0]} />
-            <Bar dataKey="sales" fill="#10B981" name="Sales" radius={[4, 4, 0, 0]} />
+            <Bar
+              dataKey="views"
+              fill="#3B82F6"
+              name="Views"
+              radius={[4, 4, 0, 0]}
+            />
+            <Bar
+              dataKey="sales"
+              fill="#10B981"
+              name="Sales"
+              radius={[4, 4, 0, 0]}
+            />
           </BarChart>
         </ResponsiveContainer>
       </div>
@@ -671,7 +737,7 @@ function RecentMaterials({ materials }: RecentMaterialsProps) {
             {recentMaterials.map((material) => (
               <motion.tr
                 key={material.id}
-                whileHover={{ backgroundColor: 'rgba(16, 185, 129, 0.05)' }}
+                whileHover={{ backgroundColor: "rgba(16, 185, 129, 0.05)" }}
                 className="hover:bg-emerald-50/50 dark:hover:bg-emerald-900/10 transition-colors"
               >
                 <td className="px-8 py-5 whitespace-nowrap">
@@ -703,18 +769,20 @@ function RecentMaterials({ materials }: RecentMaterialsProps) {
                   {material.category}
                 </td>
                 <td className="px-8 py-5 whitespace-nowrap">
-                  <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                    material.status === MaterialStatus.APPROVED
-                      ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
-                      : material.status === MaterialStatus.PENDING_REVIEW
-                      ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400'
-                      : 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
-                  }`}>
-                    {material.status.replace('_', ' ')}
+                  <span
+                    className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                      material.status === MaterialStatus.APPROVED
+                        ? "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400"
+                        : material.status === MaterialStatus.PENDING_REVIEW
+                        ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400"
+                        : "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400"
+                    }`}
+                  >
+                    {material.status.replace("_", " ")}
                   </span>
                 </td>
                 <td className="px-8 py-5 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                  LKR {material.pricing?.expectedPrice?.toLocaleString() || '0'}
+                  LKR {material.pricing?.expectedPrice?.toLocaleString() || "0"}
                 </td>
                 <td className="px-8 py-5 whitespace-nowrap text-sm font-medium">
                   <Link
@@ -739,9 +807,9 @@ function TeamOverview() {
     totalMembers: 8,
     activeMembers: 7,
     recentActivity: [
-      { member: 'John Doe', action: 'Added 3 materials', time: '2h ago' },
-      { member: 'Jane Smith', action: 'Updated pricing', time: '4h ago' }
-    ]
+      { member: "John Doe", action: "Added 3 materials", time: "2h ago" },
+      { member: "Jane Smith", action: "Updated pricing", time: "4h ago" },
+    ],
   };
 
   return (
@@ -763,19 +831,23 @@ function TeamOverview() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <div className="flex items-center justify-between mb-4">
-              <span className="text-sm text-gray-500 dark:text-gray-400">Total Members</span>
+              <span className="text-sm text-gray-500 dark:text-gray-400">
+                Total Members
+              </span>
               <span className="text-2xl font-semibold text-gray-900 dark:text-white">
                 {teamStats.totalMembers}
               </span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-500 dark:text-gray-400">Active Today</span>
+              <span className="text-sm text-gray-500 dark:text-gray-400">
+                Active Today
+              </span>
               <span className="text-lg font-medium text-green-600">
                 {teamStats.activeMembers}
               </span>
             </div>
           </div>
-          
+
           <div>
             <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
               Recent Activity
@@ -786,7 +858,10 @@ function TeamOverview() {
                   <span className="font-medium text-gray-900 dark:text-white">
                     {activity.member}
                   </span>
-                  <span className="text-gray-500 dark:text-gray-400"> {activity.action}</span>
+                  <span className="text-gray-500 dark:text-gray-400">
+                    {" "}
+                    {activity.action}
+                  </span>
                   <span className="text-gray-400 dark:text-gray-500 text-xs ml-2">
                     {activity.time}
                   </span>
@@ -803,9 +878,9 @@ function TeamOverview() {
 function LocationOverview() {
   // Mock location data
   const locations = [
-    { name: 'Main Office', materials: 45, earnings: 125000 },
-    { name: 'Warehouse A', materials: 32, earnings: 89000 },
-    { name: 'Branch Office', materials: 18, earnings: 54000 }
+    { name: "Main Office", materials: 45, earnings: 125000 },
+    { name: "Warehouse A", materials: 32, earnings: 89000 },
+    { name: "Branch Office", materials: 18, earnings: 54000 },
   ];
 
   return (
@@ -856,11 +931,14 @@ function DashboardSkeleton() {
     <div className="space-y-6">
       {/* Welcome Banner Skeleton */}
       <div className="bg-gray-300 dark:bg-gray-700 h-32 rounded-lg animate-pulse"></div>
-      
+
       {/* Stats Skeleton */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {[...Array(4)].map((_, index) => (
-          <div key={index} className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+          <div
+            key={index}
+            className="bg-white dark:bg-gray-800 rounded-lg shadow p-6"
+          >
             <div className="animate-pulse">
               <div className="h-12 w-12 bg-gray-300 dark:bg-gray-600 rounded-lg mb-4"></div>
               <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-3/4 mb-2"></div>
@@ -869,7 +947,7 @@ function DashboardSkeleton() {
           </div>
         ))}
       </div>
-      
+
       {/* Content Skeleton */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
