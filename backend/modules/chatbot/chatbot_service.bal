@@ -30,6 +30,7 @@ service /chat on new ws:Listener(websocketPort) {
     private final ConversationManager conversationManager;
     private final IntentProcessor intentProcessor;
     private final ResponseGenerator responseGenerator;
+    private final KnowledgeBase knowledgeBase;
     private final map<ws:Caller> activeConnections;
     private final RedisConnector redis;
     
@@ -55,7 +56,8 @@ service /chat on new ws:Listener(websocketPort) {
         self.aiConnector = check new(self.config.geminiApiKey, self.config.geminiModel);
         self.conversationManager = check new(self.config.sessionTimeout);
         self.intentProcessor = check new(self.aiConnector);
-        self.responseGenerator = check new(self.aiConnector);
+        self.knowledgeBase = new();
+        self.responseGenerator = check new(self.aiConnector, self.knowledgeBase);
         self.activeConnections = {};
         
         // Initialize Redis for rate limiting
@@ -85,6 +87,7 @@ service /chat on new ws:Listener(websocketPort) {
             self.conversationManager,
             self.intentProcessor,
             self.responseGenerator,
+            self.knowledgeBase,
             self.activeConnections,
             self.redis,
             self.qualityClient,
@@ -102,17 +105,19 @@ service class ChatbotWebSocketService {
     private final ConversationManager conversationManager;
     private final IntentProcessor intentProcessor;
     private final ResponseGenerator responseGenerator;
+    private final KnowledgeBase knowledgeBase;
     private final map<ws:Caller> activeConnections;
     private final RedisConnector redis;
     private final http:Client qualityClient;
     private final http:Client demandClient;
     private final http:Client mainClient;
-    
+
     function init(
         GeminiConnector aiConnector,
         ConversationManager conversationManager,
         IntentProcessor intentProcessor,
         ResponseGenerator responseGenerator,
+        KnowledgeBase knowledgeBase,
         map<ws:Caller> activeConnections,
         RedisConnector redis,
         http:Client qualityClient,
@@ -123,6 +128,7 @@ service class ChatbotWebSocketService {
         self.conversationManager = conversationManager;
         self.intentProcessor = intentProcessor;
         self.responseGenerator = responseGenerator;
+        self.knowledgeBase = knowledgeBase;
         self.activeConnections = activeConnections;
         self.redis = redis;
         self.qualityClient = qualityClient;
@@ -158,13 +164,15 @@ service class ChatbotWebSocketService {
         
         // Handle timestamp conversion
         map<json> messageMap = <map<json>>message;
-        
+
         // Remove timestamp if it exists (we'll use server time)
-        _ = messageMap.remove("timestamp");
-        
+        if messageMap.hasKey("timestamp") {
+            _ = messageMap.remove("timestamp");
+        }
+
         // Parse message without timestamp
         ChatMessage chatMessage = check messageMap.cloneWithType(ChatMessage);
-        
+
         // Always use server timestamp
         chatMessage.timestamp = time:utcNow();
         

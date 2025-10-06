@@ -6,14 +6,17 @@ import ballerina/time;
 import ballerina/uuid;
 
 # Generates intelligent responses based on intent and data
-public isolated class ResponseGenerator {
+public class ResponseGenerator {
     private final GeminiConnector aiConnector;
+    private final KnowledgeBase knowledgeBase;
     private final map<map<string>> responseTemplates;
-    
+
     # Initialize response generator
     # + aiConnector - Gemini AI connector
-    public isolated function init(GeminiConnector aiConnector) returns error? {
+    # + knowledgeBase - Platform knowledge base
+    public function init(GeminiConnector aiConnector, KnowledgeBase knowledgeBase) returns error? {
         self.aiConnector = aiConnector;
+        self.knowledgeBase = knowledgeBase;
         
         // Initialize response templates for quick responses
         self.responseTemplates = {
@@ -45,7 +48,7 @@ public isolated class ResponseGenerator {
     # + businessData - Business data from APIs
     # + context - Conversation context
     # + return - Generated response or error
-    public isolated function generateResponse(Intent intent, json businessData, ConversationContext context) 
+    public function generateResponse(Intent intent, json businessData, ConversationContext context)
             returns ChatbotResponse|error {
         
         time:Utc startTime = time:utcNow();
@@ -141,15 +144,43 @@ public isolated class ResponseGenerator {
     # + businessData - Business data
     # + context - Conversation context
     # + return - Generated response content
-    isolated function generateAIResponse(Intent intent, json businessData, ConversationContext context) 
+    function generateAIResponse(Intent intent, json businessData, ConversationContext context)
             returns string|error {
-        
-        // Format business data for better AI understanding
-        // string formattedData = self.formatBusinessData(intent, businessData);
-        
-        // Try to use Gemini to generate contextual response
+
+        // For GENERAL_FAQ, first check knowledge base
+        if intent.category == GENERAL_FAQ {
+            string? kbAnswer = self.knowledgeBase.searchFAQ(intent.query);
+            if kbAnswer is string {
+                // Found direct answer in knowledge base
+                return kbAnswer;
+            }
+
+            // Check if question is platform-related
+            if !self.isPlatformRelatedQuery(intent.query) {
+                // Politely decline non-platform questions
+                return "I am CircularSync Assistant. I can only help with questions about the CircularSync platform, such as:\n\n• How the platform works\n• Waste types we accept\n• Quality assessment process\n• Pricing and fees\n• How to register and get started\n• Auctions and bidding\n• Payment and wallet system\n\nPlease ask me about our platform features and services!";
+            }
+
+            // If no direct match but platform-related, get platform overview for AI context
+            string platformContext = self.knowledgeBase.getPlatformOverview();
+
+            // Generate AI response with platform context
+            string|error aiResponse = self.aiConnector.generateResponse(intent, {"platformInfo": platformContext}, context);
+
+            if aiResponse is error {
+                if aiResponse.message().startsWith("RATE_LIMIT") {
+                    // Return general FAQ fallback
+                    return self.generateFallbackResponse(intent, businessData);
+                }
+                return aiResponse;
+            }
+
+            return self.postProcessResponse(aiResponse, intent, context);
+        }
+
+        // For other intents, use standard AI response flow
         string|error aiResponse = self.aiConnector.generateResponse(intent, businessData, context);
-        
+
         if aiResponse is error {
             // Check if it's a rate limit error
             if aiResponse.message().startsWith("RATE_LIMIT") {
@@ -158,11 +189,42 @@ public isolated class ResponseGenerator {
             // For other errors, throw them
             return aiResponse;
         }
-        
+
         // Post-process the response
         string response = self.postProcessResponse(aiResponse, intent, context);
-        
+
         return response;
+    }
+
+    # Check if query is platform-related
+    # + query - User query
+    # + return - True if platform-related
+    isolated function isPlatformRelatedQuery(string query) returns boolean {
+        string lowerQuery = query.toLowerAscii();
+
+        // Platform-related keywords
+        string[] platformKeywords = [
+            "circular", "platform", "waste", "material", "quality", "assess",
+            "demand", "predict", "bid", "auction", "price", "pricing", "fee",
+            "payment", "wallet", "supplier", "buyer", "agent", "register",
+            "signup", "list", "submit", "buy", "sell", "track", "order",
+            "schedule", "pickup", "delivery", "plastic", "paper", "metal",
+            "glass", "organic", "hazardous", "recycle", "circular economy",
+            "marketplace", "transaction", "commission", "verification",
+            "quality score", "google vision", "ai", "feature", "dashboard",
+            "notification", "chat", "support", "help", "contact", "role",
+            "admin", "field agent", "escrow", "shipping", "logistics"
+        ];
+
+        // Check if query contains any platform keywords
+        foreach string keyword in platformKeywords {
+            if lowerQuery.includes(keyword) {
+                return true;
+            }
+        }
+
+        // If no keywords match, it's not platform-related
+        return false;
     }
     
     # Generate quick reply suggestions

@@ -53,7 +53,7 @@ export default function ChatBot({ className = '' }: ChatBotProps) {
 
   const connectWebSocket = () => {
     try {
-      wsRef.current = new WebSocket('ws://localhost:8094/chat');
+      wsRef.current = new WebSocket('ws://localhost:8083/chat');
       
       wsRef.current.onopen = () => {
         console.log('✅ Connected to chatbot service');
@@ -89,6 +89,14 @@ export default function ChatBot({ className = '' }: ChatBotProps) {
         if (data.message) {
           addBotMessage(data.message);
         }
+        // Set initial quick replies
+        setSuggestions([
+          "What is CircularSync?",
+          "What waste types do you accept?",
+          "How does it work?",
+          "What are your fees?",
+          "How to register?"
+        ]);
         break;
         
       case 'bot_response':
@@ -205,9 +213,16 @@ export default function ChatBot({ className = '' }: ChatBotProps) {
           <div className="flex-1 overflow-y-auto p-6 space-y-4">
             {messages.length === 0 && (
               <div className="text-center text-gray-500 dark:text-gray-400 mt-8">
-                <Bot size={48} className="mx-auto mb-4 text-blue-300 dark:text-blue-400" />
-                <p className="font-medium">Start a conversation!</p>
-                <p className="text-sm mt-2">I can help with quality assessments, demand predictions, and more.</p>
+                <Bot size={48} className="mx-auto mb-4 text-emerald-400 dark:text-emerald-500" />
+                <p className="font-medium text-gray-700 dark:text-gray-300">Welcome to CircularSync!</p>
+                <p className="text-sm mt-2">Ask me about:</p>
+                <div className="mt-4 text-left max-w-xs mx-auto space-y-2 text-sm">
+                  <p>• Platform features & how it works</p>
+                  <p>• Waste types we accept</p>
+                  <p>• Pricing & fees</p>
+                  <p>• Registration & getting started</p>
+                  <p>• Quality assessment & auctions</p>
+                </div>
               </div>
             )}
             
