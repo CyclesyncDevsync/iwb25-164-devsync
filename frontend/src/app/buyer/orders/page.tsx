@@ -390,7 +390,7 @@ const OrdersPage = () => {
                       <p className="text-sm text-gray-500">Ordered on {new Date(order.orderDate).toLocaleDateString()}</p>
                     </div>
                     <div className="text-right">
-                      <p className="text-lg font-bold text-gray-900">₹{order.totalAmount.toLocaleString()}</p>
+                      <p className="text-lg font-bold text-gray-900">Rs.{order.totalAmount.toLocaleString()}</p>
                       <p className="text-sm text-gray-500">{order.quantity} {order.unit}</p>
                     </div>
                   </div>
@@ -577,7 +577,7 @@ const OrdersPage = () => {
                       </div>
                       <div>
                         <span className="text-gray-500">Total Amount:</span>
-                        <p className="font-medium">₹{selectedOrder.totalAmount.toLocaleString()}</p>
+                        <p className="font-medium">Rs.{selectedOrder.totalAmount.toLocaleString()}</p>
                       </div>
                     </div>
                   </div>
