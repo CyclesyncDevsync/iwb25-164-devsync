@@ -102,7 +102,7 @@ const BuyerDashboard = () => {
     },
     {
       title: 'Total Purchases',
-      value: '₹45,320',
+      value: 'Rs 45,320',
       icon: CreditCardIcon,
       color: 'text-blue-600',
       bgColor: 'bg-blue-100',
@@ -123,7 +123,7 @@ const BuyerDashboard = () => {
       id: 1,
       type: 'bid',
       title: 'Bid placed on Plastic Bottles (5kg)',
-      amount: '₹850',
+      amount: 'Rs 850',
       time: '2 minutes ago',
       status: 'leading'
     },
@@ -131,7 +131,7 @@ const BuyerDashboard = () => {
       id: 2,
       type: 'won',
       title: 'Won auction for Cardboard Sheets',
-      amount: '₹1,200',
+      amount: 'Rs 1,200',
       time: '1 hour ago',
       status: 'won'
     },
@@ -139,7 +139,7 @@ const BuyerDashboard = () => {
       id: 3,
       type: 'delivery',
       title: 'Metal Scraps delivered',
-      amount: '₹2,500',
+      amount: 'Rs 2,500',
       time: '3 hours ago',
       status: 'delivered'
     }
@@ -375,7 +375,7 @@ const BuyerDashboard = () => {
                   </div>
                   <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">High quality PET bottles, 500ml</p>
                   <div className="flex items-center justify-between">
-                    <span className="text-lg font-bold text-green-600 dark:text-green-300">₹12/kg</span>
+                    <span className="text-lg font-bold text-green-600 dark:text-green-300">Rs 12/kg</span>
                     <button className="px-3 py-1 bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-300 rounded-full text-xs font-medium hover:bg-green-200 dark:hover:bg-green-800/40">
                       View Details
                     </button>

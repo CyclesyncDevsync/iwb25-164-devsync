@@ -9,6 +9,8 @@ import {
   ClockIcon,
   CheckCircleIcon,
   XCircleIcon,
+  ArrowDownTrayIcon,
+  XMarkIcon,
 } from "@heroicons/react/24/outline";
 import StripeDepositModal from "@/components/wallet/StripeDepositModal";
 import { toast } from "react-hot-toast";
@@ -49,6 +51,8 @@ export default function WalletPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [showDepositModal, setShowDepositModal] = useState(false);
+  const [showWithdrawModal, setShowWithdrawModal] = useState(false);
+  const [withdrawAmount, setWithdrawAmount] = useState("");
   const [walletForModal, setWalletForModal] = useState<WalletModal | null>(
     null
   );
@@ -82,6 +86,21 @@ export default function WalletPage() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
+
+  // Listen for wallet balance updates from bid placement
+  useEffect(() => {
+    const handleWalletUpdate = () => {
+      console.log('Wallet balance update triggered - refreshing data');
+      fetchWalletData();
+    };
+
+    window.addEventListener('walletBalanceUpdate', handleWalletUpdate);
+
+    return () => {
+      window.removeEventListener('walletBalanceUpdate', handleWalletUpdate);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const fetchWalletData = async () => {
     try {
@@ -148,13 +167,15 @@ export default function WalletPage() {
       });
 
       const data = await response.json();
+      console.log("Payment verification response:", data);
 
       if (response.ok && data.status === "success") {
         // Show success message with amount if available
-        const message = data.data?.amount
-          ? `Payment successful! LKR ${(data.data.amount / 100).toFixed(
-              2
-            )} added to your wallet.`
+        // Try different possible paths for the amount
+        const amount = data.data?.amount ?? data.amount ?? data.data?.transaction?.amount;
+
+        const message = amount
+          ? `Payment successful! LKR ${Number(amount).toLocaleString()} added to your wallet.`
           : "Payment successful! Your wallet has been recharged.";
 
         toast.success(message, {
@@ -184,6 +205,46 @@ export default function WalletPage() {
     setShowDepositModal(false);
     fetchWalletData();
     toast.success("Payment initiated successfully!");
+  };
+
+  const handleWithdrawSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const amount = parseFloat(withdrawAmount);
+
+    if (!amount || amount <= 0) {
+      toast.error("Please enter a valid amount");
+      return;
+    }
+
+    if (!balance || amount > balance.available_balance) {
+      toast.error("Insufficient balance");
+      return;
+    }
+
+    try {
+      const response = await fetch("/api/wallet/withdraw", {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ amount }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.status === "success") {
+        toast.success(`Successfully withdrew LKR ${amount.toLocaleString()}`);
+        setShowWithdrawModal(false);
+        setWithdrawAmount("");
+        fetchWalletData();
+      } else {
+        toast.error(data.message || "Failed to process withdrawal");
+      }
+    } catch (error) {
+      console.error("Withdrawal error:", error);
+      toast.error("Failed to process withdrawal");
+    }
   };
 
   const formatDate = (dateString: string) => {
@@ -293,13 +354,20 @@ export default function WalletPage() {
         </div>
 
         {/* Actions */}
-        <div className="mb-8">
+        <div className="mb-8 flex gap-4">
           <button
             onClick={() => setShowDepositModal(true)}
             className="inline-flex items-center gap-2 px-6 py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 font-medium shadow-sm"
           >
             <PlusIcon className="h-5 w-5" />
             Recharge Wallet
+          </button>
+          <button
+            onClick={() => setShowWithdrawModal(true)}
+            className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium shadow-sm"
+          >
+            <ArrowDownTrayIcon className="h-5 w-5" />
+            Withdraw
           </button>
         </div>
 
@@ -321,8 +389,8 @@ export default function WalletPage() {
                 No transactions yet
               </div>
             ) : (
-              transactions.map((tx) => (
-                <div key={tx.id} className="px-6 py-4 hover:bg-gray-50">
+              transactions.map((tx, index) => (
+                <div key={tx.id ?? `transaction-${index}`} className="px-6 py-4 hover:bg-gray-50">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
                       {getTransactionIcon(tx.type, tx.status)}
@@ -376,6 +444,86 @@ export default function WalletPage() {
           onClose={() => setShowDepositModal(false)}
           onSuccess={handleDepositSuccess}
         />
+      )}
+
+      {/* Withdraw Modal */}
+      {showWithdrawModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b">
+              <h3 className="text-xl font-semibold text-gray-900">
+                Withdraw Funds
+              </h3>
+              <button
+                onClick={() => {
+                  setShowWithdrawModal(false);
+                  setWithdrawAmount("");
+                }}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <XMarkIcon className="h-6 w-6" />
+              </button>
+            </div>
+
+            {/* Body */}
+            <form onSubmit={handleWithdrawSubmit} className="p-6">
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Available Balance
+                </label>
+                <p className="text-2xl font-bold text-emerald-600">
+                  LKR {balance?.available_balance.toLocaleString() ?? 0}
+                </p>
+              </div>
+
+              <div className="mb-6">
+                <label
+                  htmlFor="withdrawAmount"
+                  className="block text-sm font-medium text-gray-700 mb-2"
+                >
+                  Withdraw Amount
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+                    LKR
+                  </span>
+                  <input
+                    id="withdrawAmount"
+                    type="number"
+                    value={withdrawAmount}
+                    onChange={(e) => setWithdrawAmount(e.target.value)}
+                    placeholder="0.00"
+                    step="0.01"
+                    min="0"
+                    max={balance?.available_balance ?? 0}
+                    className="w-full pl-16 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowWithdrawModal(false);
+                    setWithdrawAmount("");
+                  }}
+                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium"
+                >
+                  Withdraw
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
     </div>
   );

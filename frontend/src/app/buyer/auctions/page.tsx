@@ -16,13 +16,14 @@ import {
   UserGroupIcon
 } from '@heroicons/react/24/outline';
 import { CheckCircleIcon } from '@heroicons/react/24/solid';
-import { 
-  selectAuctions, 
+import {
+  selectAuctions,
   selectFeaturedAuctions,
-  fetchAuctions 
+  fetchAuctions
 } from '@/store/slices/auctionSlice';
 import type { AppDispatch } from '@/store';
 import type { Auction } from '@/types/auction';
+import { toast } from 'react-hot-toast';
 
 // Using Auction interface from types/auction.ts
 
@@ -134,13 +135,20 @@ const AuctionsPage = () => {
         // Trigger wallet balance refresh across the app
         window.dispatchEvent(new CustomEvent('walletBalanceUpdate'));
 
-        alert('Bid placed successfully! Funds have been frozen in your wallet.');
+        toast.success('Bid placed successfully! Funds have been frozen in your wallet.', {
+          duration: 4000,
+          icon: '✅',
+        });
       } else {
-        alert(`Failed to place bid: ${data.message || 'Unknown error'}`);
+        toast.error(`Failed to place bid: ${data.message || 'Unknown error'}`, {
+          duration: 4000,
+        });
       }
     } catch (error) {
       console.error('Error placing bid:', error);
-      alert('Failed to place bid. Please check your connection and try again.');
+      toast.error('Failed to place bid. Please check your connection and try again.', {
+        duration: 4000,
+      });
     }
   };
 

@@ -1,4 +1,5 @@
 
+import React from 'react';
 import { Button } from '../components/ui/Button';
 import Link from 'next/link';
 import NewsWidget from '../components/NewsWidget';
@@ -6,12 +7,9 @@ import NewsletterSignup from '../components/NewsletterSignup';
 import { 
   ShieldCheck, 
   TrendingUp, 
-  Brain, 
   BarChart3, 
   ArrowRight,
   CheckCircle,
-  Globe,
-  Zap,
   Target,
   Star,
   Award,
@@ -21,7 +19,6 @@ import {
   Clock,
   Shield,
   Truck,
-  Factory,
   Eye
 } from 'lucide-react';
 
@@ -53,7 +50,7 @@ export default function Home() {
               <div className="space-y-6">
                 <div className="inline-flex items-center px-6 py-3 bg-white/80 dark:bg-slate-800/80 text-green-800 dark:text-green-200 rounded-full text-sm font-semibold backdrop-blur-sm border border-green-200/50 dark:border-green-400/20 shadow-lg">
                   <Star className="w-4 h-4 mr-2 text-green-600 dark:text-green-400" />
-                  AI-Powered Platform • 50K+ Materials Matched • 94% Success Rate
+                  Advanced Platform • 50K+ Materials Matched • 94% Success Rate
                 </div>
                 <h1 className="text-5xl md:text-6xl lg:text-7xl font-extrabold leading-tight">
                   <span className="bg-gradient-to-r from-green-600 via-emerald-500 to-green-700 dark:from-green-400 dark:via-emerald-300 dark:to-green-500 bg-clip-text text-transparent">
@@ -65,7 +62,7 @@ export default function Home() {
                   </span>
                 </h1>
                 <p className="text-xl md:text-2xl text-slate-600 dark:text-slate-300 leading-relaxed max-w-2xl font-medium">
-                  Transform waste into value with AI-powered material matching, predictive market analytics, and intelligent recommendations for the circular economy.
+                  Transform waste into value with advanced material matching, market analytics, and recommendations for the circular economy.
                 </p>
               </div>
 
@@ -74,10 +71,10 @@ export default function Home() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="flex items-center space-x-4">
                     <div className="w-14 h-14 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl flex items-center justify-center shadow-lg">
-                      <Brain className="w-7 h-7 text-white" />
+                      <Target className="w-7 h-7 text-white" />
                     </div>
                     <div>
-                      <div className="text-lg font-bold text-slate-900 dark:text-white">AI Matching</div>
+                      <div className="text-lg font-bold text-slate-900 dark:text-white">Advanced Matching</div>
                       <div className="text-sm text-slate-600 dark:text-slate-400">94% accuracy rate</div>
                     </div>
                   </div>
@@ -136,10 +133,6 @@ export default function Home() {
                           <p className="text-slate-600 dark:text-slate-400">Real-time market analytics</p>
                         </div>
                       </div>
-                      <div className="flex items-center space-x-3">
-                        <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-                        <span className="text-sm font-medium text-slate-600 dark:text-slate-400">Live Data</span>
-                      </div>
                     </div>
 
                     {/* Market Overview Chart */}
@@ -151,26 +144,42 @@ export default function Home() {
                         </h4>
                         <span className="text-sm text-green-600 dark:text-green-400 font-semibold bg-green-100 dark:bg-green-900/30 px-3 py-1 rounded-full">+24.3%</span>
                       </div>
-                      <div className="h-32 flex items-end justify-between space-x-2">
-                        <div className="flex flex-col items-center space-y-2">
-                          <div className="w-8 bg-gradient-to-t from-green-500 to-green-400 rounded-t-lg shadow-lg h-20"></div>
-                          <span className="text-xs text-slate-600 dark:text-slate-400 font-medium">Plastic</span>
-                        </div>
-                        <div className="flex flex-col items-center space-y-2">
-                          <div className="w-8 bg-gradient-to-t from-blue-500 to-blue-400 rounded-t-lg shadow-lg h-24"></div>
-                          <span className="text-xs text-slate-600 dark:text-slate-400 font-medium">Metal</span>
-                        </div>
-                        <div className="flex flex-col items-center space-y-2">
-                          <div className="w-8 bg-gradient-to-t from-purple-500 to-purple-400 rounded-t-lg shadow-lg h-14"></div>
-                          <span className="text-xs text-slate-600 dark:text-slate-400 font-medium">Paper</span>
-                        </div>
-                        <div className="flex flex-col items-center space-y-2">
-                          <div className="w-8 bg-gradient-to-t from-orange-500 to-orange-400 rounded-t-lg shadow-lg h-20"></div>
-                          <span className="text-xs text-slate-600 dark:text-slate-400 font-medium">Glass</span>
-                        </div>
-                        <div className="flex flex-col items-center space-y-2">
-                          <div className="w-8 bg-gradient-to-t from-emerald-500 to-emerald-400 rounded-t-lg shadow-lg animate-pulse h-28"></div>
-                          <span className="text-xs text-emerald-600 dark:text-emerald-400 font-bold">Textiles</span>
+                      <div className="h-32 flex items-center justify-center">
+                        <div className="w-full h-full bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-lg border border-green-200/50 dark:border-green-700/30 p-4">
+                          <svg viewBox="0 0 300 120" className="w-full h-full">
+                            {/* Grid lines */}
+                            <defs>
+                              <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
+                                <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#e2e8f0" strokeWidth="0.5"/>
+                              </pattern>
+                            </defs>
+                            <rect width="100%" height="100%" fill="url(#grid)" />
+                            
+                            {/* Chart line */}
+                            <polyline
+                              fill="none"
+                              stroke="#10b981"
+                              strokeWidth="3"
+                              points="20,80 60,65 100,70 140,55 180,45 220,35 260,25"
+                            />
+                            
+                            {/* Data points */}
+                            <circle cx="20" cy="80" r="4" fill="#10b981" stroke="#ffffff" strokeWidth="2"/>
+                            <circle cx="60" cy="65" r="4" fill="#10b981" stroke="#ffffff" strokeWidth="2"/>
+                            <circle cx="100" cy="70" r="4" fill="#10b981" stroke="#ffffff" strokeWidth="2"/>
+                            <circle cx="140" cy="55" r="4" fill="#10b981" stroke="#ffffff" strokeWidth="2"/>
+                            <circle cx="180" cy="45" r="4" fill="#10b981" stroke="#ffffff" strokeWidth="2"/>
+                            <circle cx="220" cy="35" r="4" fill="#10b981" stroke="#ffffff" strokeWidth="2"/>
+                            <circle cx="260" cy="25" r="4" fill="#10b981" stroke="#ffffff" strokeWidth="2"/>
+                            
+                            {/* X-axis labels */}
+                            <text x="20" y="110" textAnchor="middle" className="text-xs fill-slate-600 dark:fill-slate-400">Jan</text>
+                            <text x="60" y="110" textAnchor="middle" className="text-xs fill-slate-600 dark:fill-slate-400">Feb</text>
+                            <text x="100" y="110" textAnchor="middle" className="text-xs fill-slate-600 dark:fill-slate-400">Mar</text>
+                            <text x="140" y="110" textAnchor="middle" className="text-xs fill-slate-600 dark:fill-slate-400">Apr</text>
+                            <text x="180" y="110" textAnchor="middle" className="text-xs fill-slate-600 dark:fill-slate-400">May</text>
+                            <text x="220" y="110" textAnchor="middle" className="text-xs fill-slate-600 dark:fill-slate-400">Jun</text>
+                          </svg>
                         </div>
                       </div>
                     </div>
@@ -191,11 +200,11 @@ export default function Home() {
                       </div>
                     </div>
 
-                    {/* AI Recommendations */}
+                    {/* Market Insights */}
                     <div className="bg-gradient-to-r from-slate-50 to-green-50/50 dark:from-slate-700 dark:to-green-900/20 rounded-xl p-4 border border-slate-200 dark:border-slate-600">
                       <div className="flex items-center space-x-3 mb-3">
-                        <Brain className="w-5 h-5 text-green-600" />
-                        <span className="text-sm font-semibold text-slate-900 dark:text-white">AI Recommendations</span>
+                        <TrendingUp className="w-5 h-5 text-green-600" />
+                        <span className="text-sm font-semibold text-slate-900 dark:text-white">Market Insights</span>
                         <span className="text-xs bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 px-2 py-1 rounded-full font-medium">Hot</span>
                       </div>
                       <div className="text-sm text-slate-700 dark:text-slate-300">
@@ -216,10 +225,6 @@ export default function Home() {
       <section id="features" className="py-16 bg-slate-50 dark:bg-slate-900">
         <div className="container mx-auto px-6">
           <div className="text-center space-y-4 mb-12">
-            <div className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-green-100 to-emerald-100 dark:from-green-900/30 dark:to-emerald-900/30 text-green-800 dark:text-green-200 rounded-full text-sm font-bold backdrop-blur-sm border border-green-200/50 dark:border-green-700/30">
-              <Brain className="w-4 h-4 mr-2" />
-              Powered by Advanced AI Technology
-            </div>
             <h2 className="text-5xl md:text-6xl font-bold text-slate-900 dark:text-white leading-tight">
               Smart Features for 
               <span className="bg-gradient-to-r from-green-600 via-emerald-500 to-green-700 dark:from-green-400 dark:via-emerald-300 dark:to-green-500 bg-clip-text text-transparent block">
@@ -227,19 +232,19 @@ export default function Home() {
               </span>
             </h2>
             <p className="text-xl text-slate-600 dark:text-slate-300 max-w-4xl mx-auto leading-relaxed">
-              Harness cutting-edge artificial intelligence to revolutionize your material trading experience with precision matching, predictive market insights, and automated optimization.
+              Harness cutting-edge technology to revolutionize your material trading experience with precision matching, predictive market insights, and automated optimization.
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
-            {/* AI-Powered Matching */}
+            {/* Advanced Matching */}
             <div className="bg-white dark:bg-slate-800 rounded-3xl p-8 shadow-2xl border border-green-200/30 dark:border-slate-700/50 hover:shadow-green-500/10 dark:hover:shadow-green-400/10 transition-all duration-300 group">
               <div className="flex items-center space-x-4 mb-8">
                 <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
-                  <Brain className="w-8 h-8 text-white" />
+                  <Target className="w-8 h-8 text-white" />
                 </div>
                 <div>
-                  <h3 className="text-2xl font-bold text-slate-900 dark:text-white">AI Matching</h3>
+                  <h3 className="text-2xl font-bold text-slate-900 dark:text-white">Advanced Matching</h3>
                   <p className="text-slate-600 dark:text-slate-400">Intelligent material pairing</p>
                 </div>
               </div>
@@ -329,7 +334,7 @@ export default function Home() {
                 </div>
                 <div>
                   <h3 className="text-2xl font-bold text-slate-900 dark:text-white">Quality Check</h3>
-                  <p className="text-slate-600 dark:text-slate-400">AI-powered assessment</p>
+                  <p className="text-slate-600 dark:text-slate-400">Automated assessment</p>
                 </div>
               </div>
               <div className="space-y-4">
@@ -412,157 +417,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* How It Works Section */}
-      <section id="how-it-works" className="py-16 bg-white dark:bg-slate-900">
-        <div className="container mx-auto px-6">
-          <div className="text-center space-y-4 mb-12">
-            <h2 className="text-5xl md:text-6xl font-bold text-slate-900 dark:text-white leading-tight">
-              Simple. Smart. 
-              <span className="bg-gradient-to-r from-green-600 via-emerald-500 to-green-700 dark:from-green-400 dark:via-emerald-300 dark:to-green-500 bg-clip-text text-transparent block">
-                Sustainable.
-              </span>
-            </h2>
-            <p className="text-xl text-slate-600 dark:text-slate-300 max-w-3xl mx-auto leading-relaxed">
-              Transform your material trading experience in three intelligent steps powered by advanced AI technology.
-            </p>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-12 max-w-6xl mx-auto">
-            {/* Step 1: Smart Upload & Analysis */}
-            <div className="text-center group">
-              <div className="relative">
-                <div className="w-24 h-24 bg-gradient-to-br from-green-500 to-emerald-600 rounded-3xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-all duration-300 shadow-2xl shadow-green-500/25">
-                  <Brain className="w-12 h-12 text-white" />
-                </div>
-                <div className="absolute -top-2 -right-2 w-8 h-8 bg-white dark:bg-slate-800 rounded-full flex items-center justify-center shadow-lg">
-                  <span className="text-sm font-bold text-green-600">1</span>
-                </div>
-              </div>
-              <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-3">Smart Upload & Analysis</h3>
-              <p className="text-slate-600 dark:text-slate-400 leading-relaxed text-lg">
-                Upload materials and let our AI instantly analyze quality, assess value, and generate optimal pricing strategies with 94% accuracy.
-              </p>
-            </div>
-
-            {/* Step 2: Intelligent Matching */}
-            <div className="text-center group">
-              <div className="relative">
-                <div className="w-24 h-24 bg-gradient-to-br from-blue-500 to-cyan-600 dark:from-blue-400 dark:to-cyan-500 rounded-3xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-all duration-300 shadow-2xl shadow-blue-500/25">
-                  <Target className="w-12 h-12 text-white" />
-                </div>
-                <div className="absolute -top-2 -right-2 w-8 h-8 bg-white dark:bg-slate-800 rounded-full flex items-center justify-center shadow-lg">
-                  <span className="text-sm font-bold text-blue-600">2</span>
-                </div>
-              </div>
-              <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-3">Intelligent Matching</h3>
-              <p className="text-slate-600 dark:text-slate-400 leading-relaxed text-lg">
-                Connect with verified buyers and suppliers through AI-powered matching based on real-time market data and predictive insights.
-              </p>
-            </div>
-
-            {/* Step 3: Secure Execution */}
-            <div className="text-center group">
-              <div className="relative">
-                <div className="w-24 h-24 bg-gradient-to-br from-purple-500 to-pink-600 rounded-3xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-all duration-300 shadow-2xl shadow-purple-500/25">
-                  <ShieldCheck className="w-12 h-12 text-white" />
-                </div>
-                <div className="absolute -top-2 -right-2 w-8 h-8 bg-white dark:bg-slate-800 rounded-full flex items-center justify-center shadow-lg">
-                  <span className="text-sm font-bold text-purple-600">3</span>
-                </div>
-              </div>
-              <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-3">Secure Execution</h3>
-              <p className="text-slate-600 dark:text-slate-400 leading-relaxed text-lg">
-                Complete transactions with confidence using encrypted escrow protection, automated contracts, and real-time tracking.
-              </p>
-            </div>
-          </div>
-
-          {/* Professional Trust Indicators */}
-          <div className="mt-12 bg-gradient-to-r from-slate-50 to-green-50/50 dark:from-slate-800 dark:to-slate-700 rounded-3xl p-6 border border-slate-200 dark:border-slate-700">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-              <div className="flex items-center space-x-4 group">
-                <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                  <CheckCircle className="w-6 h-6 text-green-600" />
-                </div>
-                <div>
-                  <div className="text-lg font-bold text-slate-900 dark:text-white">AI-Verified</div>
-                  <div className="text-sm text-slate-600 dark:text-slate-400">Quality Assured</div>
-                </div>
-              </div>
-              <div className="flex items-center space-x-4 group">
-                <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                  <ShieldCheck className="w-6 h-6 text-blue-600" />
-                </div>
-                <div>
-                  <div className="text-lg font-bold text-slate-900 dark:text-white">Bank-Level</div>
-                  <div className="text-sm text-slate-600 dark:text-slate-400">Security</div>
-                </div>
-              </div>
-              <div className="flex items-center space-x-4 group">
-                <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/30 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                  <Globe className="w-6 h-6 text-purple-600" />
-                </div>
-                <div>
-                  <div className="text-lg font-bold text-slate-900 dark:text-white">Global</div>
-                  <div className="text-sm text-slate-600 dark:text-slate-400">Network</div>
-                </div>
-              </div>
-              <div className="flex items-center space-x-4 group">
-                <div className="w-12 h-12 bg-orange-100 dark:bg-orange-900/30 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                  <Zap className="w-6 h-6 text-orange-600" />
-                </div>
-                <div>
-                  <div className="text-lg font-bold text-slate-900 dark:text-white">Real-time</div>
-                  <div className="text-sm text-slate-600 dark:text-slate-400">Analytics</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Impact Stats Section */}
-      <section className="py-16 bg-slate-50 dark:bg-slate-900">
-        <div className="container mx-auto px-6">
-          <div className="text-center mb-10">
-            <h2 className="text-4xl md:text-5xl font-bold text-slate-900 dark:text-white mb-4">
-              Trusted by Industry Leaders
-            </h2>
-            <p className="text-xl text-slate-600 dark:text-slate-300">Real impact, measurable results across the globe</p>
-          </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            <div className="text-center bg-white dark:bg-slate-800 rounded-3xl p-8 shadow-xl border border-green-200/30 dark:border-slate-700/50 hover:shadow-green-500/10 transition-all duration-300">
-              <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
-                <Factory className="w-8 h-8 text-white" />
-              </div>
-              <div className="text-4xl md:text-5xl font-bold text-green-600 mb-2">50.2K+</div>
-              <div className="text-slate-600 dark:text-slate-400 font-medium">Materials Matched</div>
-            </div>
-            <div className="text-center bg-white dark:bg-slate-800 rounded-3xl p-8 shadow-xl border border-blue-200/30 dark:border-slate-700/50 hover:shadow-blue-500/10 transition-all duration-300">
-              <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-cyan-600 dark:from-blue-400 dark:to-cyan-500 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
-                <Brain className="w-8 h-8 text-white" />
-              </div>
-              <div className="text-4xl md:text-5xl font-bold text-blue-600 mb-2">94.2%</div>
-              <div className="text-slate-600 dark:text-slate-400 font-medium">AI Accuracy</div>
-            </div>
-            <div className="text-center bg-white dark:bg-slate-800 rounded-3xl p-8 shadow-xl border border-purple-200/30 dark:border-slate-700/50 hover:shadow-purple-500/10 transition-all duration-300">
-              <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
-                <DollarSign className="w-8 h-8 text-white" />
-              </div>
-              <div className="text-4xl md:text-5xl font-bold text-purple-600 mb-2">$2.8M</div>
-              <div className="text-slate-600 dark:text-slate-400 font-medium">Monthly GMV</div>
-            </div>
-            <div className="text-center bg-white dark:bg-slate-800 rounded-3xl p-8 shadow-xl border border-orange-200/30 dark:border-slate-700/50 hover:shadow-orange-500/10 transition-all duration-300">
-              <div className="w-16 h-16 bg-gradient-to-br from-orange-500 to-red-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
-                <Recycle className="w-8 h-8 text-white" />
-              </div>
-              <div className="text-4xl md:text-5xl font-bold text-orange-600 mb-2">1.2M</div>
-              <div className="text-slate-600 dark:text-slate-400 font-medium">Tons Processed</div>
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* Industry News Section */}
       <section className="py-16 bg-white dark:bg-slate-900">
         <div className="container mx-auto px-6">
@@ -624,7 +478,7 @@ export default function Home() {
                 </span>
               </h2>
               <p className="text-2xl text-white/90 dark:text-slate-200 max-w-3xl mx-auto leading-relaxed">
-                Join CircularSync today and be part of the sustainable future. Start your intelligent trading journey in minutes with our AI-powered platform.
+                Join CircularSync today and be part of the sustainable future. Start your trading journey in minutes with our advanced platform.
               </p>
             </div>
 
