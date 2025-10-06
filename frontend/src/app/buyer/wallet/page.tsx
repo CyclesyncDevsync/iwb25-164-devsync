@@ -148,13 +148,15 @@ export default function WalletPage() {
       });
 
       const data = await response.json();
+      console.log("Payment verification response:", data);
 
       if (response.ok && data.status === "success") {
         // Show success message with amount if available
-        const message = data.data?.amount
-          ? `Payment successful! LKR ${(data.data.amount / 100).toFixed(
-              2
-            )} added to your wallet.`
+        // Try different possible paths for the amount
+        const amount = data.data?.amount ?? data.amount ?? data.data?.transaction?.amount;
+
+        const message = amount
+          ? `Payment successful! LKR ${Number(amount).toLocaleString()} added to your wallet.`
           : "Payment successful! Your wallet has been recharged.";
 
         toast.success(message, {
