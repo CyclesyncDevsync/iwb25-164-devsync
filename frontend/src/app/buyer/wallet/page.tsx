@@ -321,8 +321,8 @@ export default function WalletPage() {
                 No transactions yet
               </div>
             ) : (
-              transactions.map((tx) => (
-                <div key={tx.id} className="px-6 py-4 hover:bg-gray-50">
+              transactions.map((tx, index) => (
+                <div key={tx.id ?? `transaction-${index}`} className="px-6 py-4 hover:bg-gray-50">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
                       {getTransactionIcon(tx.type, tx.status)}
