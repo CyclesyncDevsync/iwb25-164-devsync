@@ -339,6 +339,11 @@ const AuctionsPage = () => {
             >
               {/* Image and Status */}
               <div className="relative h-48 bg-gray-200 rounded-t-lg overflow-hidden">
+                <img
+                  src="https://encrypted-tbn2.gstatic.com/images?q=tbn:ANd9GcTiqYY41ErWr5bATfClB44zsrjSKWxHZu6tYS5VQc2qLZDKO0c1"
+                  alt={auction.title}
+                  className="w-full h-full object-cover"
+                />
                 <div className="absolute top-3 left-3">
                   <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(getAuctionDisplayStatus(auction))}`}>
                     {getAuctionDisplayStatus(auction) === 'ending_soon' ? 'Ending Soon!' : 
