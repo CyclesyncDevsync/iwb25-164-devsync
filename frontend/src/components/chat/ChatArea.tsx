@@ -144,7 +144,7 @@ export function ChatArea({ conversation, messages, onSendMessage, onShowUserDeta
             >
               <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
                 isAdmin 
-                  ? 'bg-blue-600 text-white' 
+            ? 'bg-emerald-600 text-white' 
                   : 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white'
               }`}>
                 <p className="text-sm">{message.content}</p>
@@ -181,7 +181,7 @@ export function ChatArea({ conversation, messages, onSendMessage, onShowUserDeta
           <button
             onClick={handleSendMessage}
             disabled={!newMessage.trim()}
-            className="p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="p-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <PaperAirplaneIcon className="w-5 h-5" />
           </button>

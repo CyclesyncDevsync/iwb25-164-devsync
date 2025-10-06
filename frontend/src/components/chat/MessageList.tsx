@@ -170,7 +170,7 @@ export const MessageList: React.FC<MessageListProps> = ({
             initial={{ y: -50, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: -50, opacity: 0 }}
-            className="absolute top-0 left-0 right-0 bg-blue-600 text-white p-3 z-10 flex items-center justify-between"
+            className="absolute top-0 left-0 right-0 bg-emerald-600 text-white p-3 z-10 flex items-center justify-between"
           >
             <div className="flex items-center space-x-4">
               <span className="text-sm font-medium">
@@ -179,7 +179,7 @@ export const MessageList: React.FC<MessageListProps> = ({
             </div>
             <button
               onClick={clearSelection}
-              className="text-blue-100 hover:text-white text-sm font-medium"
+              className="text-emerald-100 hover:text-white text-sm font-medium"
             >
               Clear
             </button>
@@ -240,12 +240,12 @@ export const MessageList: React.FC<MessageListProps> = ({
       {/* Scroll to bottom button */}
       <AnimatePresence>
         {showScrollToBottom && (
-          <motion.button
+            <motion.button
             initial={{ scale: 0, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0, opacity: 0 }}
             onClick={scrollToBottom}
-            className="absolute bottom-4 right-4 bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-full shadow-lg transition-colors z-10"
+            className="absolute bottom-4 right-4 bg-emerald-600 hover:bg-emerald-700 text-white p-3 rounded-full shadow-lg transition-colors z-10"
           >
             <svg
               className="w-5 h-5"

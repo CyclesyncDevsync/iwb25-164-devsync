@@ -192,14 +192,14 @@ export default function ChatBot({ className = '' }: ChatBotProps) {
         <div className="flex items-center gap-2">
           <button
             onClick={() => setIsMinimized(!isMinimized)}
-            className="hover:bg-blue-700/50 dark:hover:bg-blue-600/50 p-2 rounded-lg transition-all duration-200 hover:scale-105"
+            className="hover:bg-emerald-700/50 dark:hover:bg-emerald-600/50 p-2 rounded-lg transition-all duration-200 hover:scale-105"
             aria-label={isMinimized ? 'Maximize' : 'Minimize'}
           >
             {isMinimized ? <Maximize2 size={18} /> : <Minimize2 size={18} />}
           </button>
           <button
             onClick={() => setIsOpen(false)}
-            className="hover:bg-blue-700/50 dark:hover:bg-blue-600/50 p-2 rounded-lg transition-all duration-200 hover:scale-105"
+            className="hover:bg-emerald-700/50 dark:hover:bg-emerald-600/50 p-2 rounded-lg transition-all duration-200 hover:scale-105"
             aria-label="Close chat"
           >
             <X size={18} />
@@ -296,7 +296,7 @@ export default function ChatBot({ className = '' }: ChatBotProps) {
                 onKeyPress={handleKeyPress}
                 placeholder="Type your message..."
                 disabled={!isConnected}
-                className="flex-1 px-4 py-3 border border-gray-200 dark:border-slate-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 disabled:bg-gray-100 dark:disabled:bg-slate-700 bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 shadow-sm transition-all duration-200"
+                className="flex-1 px-4 py-3 border border-gray-200 dark:border-slate-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:focus:ring-emerald-400 disabled:bg-gray-100 dark:disabled:bg-slate-700 bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 shadow-sm transition-all duration-200"
               />
               <button
                 onClick={() => sendMessage()}

@@ -182,7 +182,7 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder={t('chat.searchLocation') || 'Search for a location...'}
-                className="w-full pl-10 pr-4 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full pl-10 pr-4 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
               />
               <MagnifyingGlassIcon className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
               {isLoading && (
@@ -203,22 +203,22 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
             <button
               onClick={getCurrentLocation}
               disabled={isLoadingCurrentLocation}
-              className="w-full flex items-center space-x-3 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors disabled:opacity-50"
+              className="w-full flex items-center space-x-3 p-3 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg hover:bg-emerald-100 dark:hover:bg-emerald-900/30 transition-colors disabled:opacity-50"
             >
               {isLoadingCurrentLocation ? (
-                <ArrowPathIcon className="w-5 h-5 text-blue-600 dark:text-blue-400 animate-spin" />
+                <ArrowPathIcon className="w-5 h-5 text-emerald-600 dark:text-emerald-400 animate-spin" />
               ) : (
-                <MapPinIcon className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                <MapPinIcon className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
               )}
               <div className="flex-1 text-left">
-                <p className="text-sm font-medium text-blue-700 dark:text-blue-300">
+                <p className="text-sm font-medium text-emerald-700 dark:text-emerald-300">
                   {isLoadingCurrentLocation 
                     ? (t('chat.gettingLocation') || 'Getting location...')
                     : (t('chat.useCurrentLocation') || 'Use current location')
                   }
                 </p>
                 {currentLocation && (
-                  <p className="text-xs text-blue-600 dark:text-blue-400">
+                  <p className="text-xs text-emerald-600 dark:text-emerald-400">
                     {currentLocation.address || formatCoordinates(currentLocation.latitude, currentLocation.longitude)}
                   </p>
                 )}
@@ -238,11 +238,11 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
                     key={index}
                     onClick={() => setSelectedLocation(location)}
                     className={`w-full flex items-center space-x-3 p-2 rounded-lg text-left transition-colors ${
-                      selectedLocation === location
-                        ? 'bg-blue-100 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700'
-                        : 'hover:bg-gray-50 dark:hover:bg-gray-700'
-                    }`}
-                  >
+                            selectedLocation === location
+                              ? 'bg-emerald-100 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-700'
+                              : 'hover:bg-gray-50 dark:hover:bg-gray-700'
+                          }`}>
+                  
                     <MapPinIcon className="w-4 h-4 text-gray-400 flex-shrink-0" />
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
@@ -288,7 +288,7 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
               whileTap={{ scale: selectedLocation ? 0.95 : 1 }}
               onClick={handleSendLocation}
               disabled={!selectedLocation}
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white text-sm rounded-lg flex items-center space-x-2 transition-colors"
+              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-400 text-white text-sm rounded-lg flex items-center space-x-2 transition-colors"
             >
               <PaperAirplaneIcon className="w-4 h-4" />
               <span>{t('chat.sendLocation') || 'Send Location'}</span>
