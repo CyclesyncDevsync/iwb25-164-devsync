@@ -168,7 +168,7 @@ export const QuickResponsePanel: React.FC<QuickResponsePanelProps> = ({
                 onClick={() => setSelectedCategory(category)}
                 className={`px-3 py-1.5 text-xs font-medium rounded-t-lg transition-colors ${
                   selectedCategory === category
-                    ? 'text-blue-600 bg-blue-50 dark:text-blue-400 dark:bg-blue-900/20 border-b-2 border-blue-600 dark:border-blue-400'
+                    ? 'text-emerald-600 bg-emerald-50 dark:text-emerald-400 dark:bg-emerald-900/20 border-b-2 border-emerald-600 dark:border-emerald-400'
                     : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50 dark:text-gray-400 dark:hover:text-gray-300 dark:hover:bg-gray-700'
                 }`}
               >
@@ -211,14 +211,14 @@ export const QuickResponsePanel: React.FC<QuickResponsePanelProps> = ({
                 onChange={(e) => setCustomText(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && handleSendCustom()}
                 placeholder={t('chat.typeCustomResponse') || 'Type a custom response...'}
-                className="flex-1 px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="flex-1 px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
               />
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={handleSendCustom}
                 disabled={!customText.trim()}
-                className="px-3 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded-lg transition-colors"
+                className="px-3 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-400 text-white rounded-lg transition-colors"
               >
                 <PaperAirplaneIcon className="w-4 h-4" />
               </motion.button>

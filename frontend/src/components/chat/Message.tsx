@@ -126,10 +126,10 @@ export const Message: React.FC<MessageProps> = ({
       case 'read':
         return (
           <div className="flex">
-            <svg className="w-3 h-3 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
+            <svg className="w-3 h-3 text-emerald-500" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
             </svg>
-            <svg className="w-3 h-3 text-blue-500 -ml-1" fill="currentColor" viewBox="0 0 20 20">
+            <svg className="w-3 h-3 text-emerald-500 -ml-1" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
             </svg>
           </div>
@@ -165,7 +165,7 @@ export const Message: React.FC<MessageProps> = ({
         return (
           <div className="flex items-center space-x-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
             <div className="flex-shrink-0">
-              <DocumentIcon className="w-8 h-8 text-blue-500" />
+              <DocumentIcon className="w-8 h-8 text-emerald-500" />
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
@@ -181,7 +181,7 @@ export const Message: React.FC<MessageProps> = ({
             <a
               href={message.metadata?.fileUrl}
               download={message.metadata?.fileName}
-              className="flex-shrink-0 text-blue-600 hover:text-blue-700 text-sm font-medium"
+              className="flex-shrink-0 text-emerald-600 hover:text-emerald-700 text-sm font-medium"
             >
               Download
             </a>
@@ -193,7 +193,7 @@ export const Message: React.FC<MessageProps> = ({
           <div className="flex items-center space-x-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
             <button
               onClick={toggleVoicePlayback}
-              className="flex-shrink-0 p-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-colors"
+              className="flex-shrink-0 p-2 bg-emerald-600 text-white rounded-full hover:bg-emerald-700 transition-colors"
             >
               {isPlayingVoice ? (
                 <PauseIcon className="w-4 h-4" />
@@ -204,7 +204,7 @@ export const Message: React.FC<MessageProps> = ({
             <div className="flex-1">
               <div className="h-8 bg-gray-200 dark:bg-gray-600 rounded-full flex items-center px-2">
                 <div className="w-full h-1 bg-gray-300 dark:bg-gray-500 rounded-full">
-                  <div className="h-1 bg-blue-600 rounded-full" style={{ width: '0%' }} />
+                  <div className="h-1 bg-emerald-600 rounded-full" style={{ width: '0%' }} />
                 </div>
               </div>
             </div>
@@ -217,7 +217,7 @@ export const Message: React.FC<MessageProps> = ({
       case 'location':
         return (
           <div className="space-y-2">
-            <div className="flex items-center space-x-2 text-blue-600 dark:text-blue-400">
+            <div className="flex items-center space-x-2 text-emerald-600 dark:text-emerald-400">
               <MapPinIcon className="w-4 h-4" />
               <span className="text-sm font-medium">Location shared</span>
             </div>
@@ -279,9 +279,9 @@ export const Message: React.FC<MessageProps> = ({
           <div
             className={`relative px-4 py-2 rounded-2xl ${
               isOwnMessage
-                ? 'bg-blue-600 text-white rounded-br-md'
+                ? 'bg-emerald-600 text-white rounded-br-md'
                 : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white rounded-bl-md'
-            } ${isSelected ? 'ring-2 ring-blue-500' : ''} ${
+            } ${isSelected ? 'ring-2 ring-emerald-500' : ''} ${
               message.metadata?.flagged ? 'ring-2 ring-red-500' : ''
             }`}
             onClick={onSelect}

@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
+import type { AppDispatch } from '../../store';
 import { RootState } from '../../store';
 import { MessageList } from './MessageList';
 import { MessageInput } from './MessageInput';
@@ -14,8 +15,6 @@ import { QuickResponsePanel } from './QuickResponsePanel';
 import { TranslationPanel } from './TranslationPanel';
 import {
   addMessage,
-  updateTypingStatus,
-  markMessageAsRead,
   fetchMessages,
 } from '../../store/slices/chatSlice';
 import { chatWebSocketService } from '../../services/chatWebSocket';
@@ -24,9 +23,7 @@ import {
   PaperAirplaneIcon,
   MicrophoneIcon,
   PaperClipIcon,
-  FaceSmileIcon,
   MapPinIcon,
-  LanguageIcon,
   ChatBubbleBottomCenterTextIcon,
 } from '@heroicons/react/24/outline';
 
@@ -35,9 +32,9 @@ interface ChatWindowProps {
 }
 
 export const ChatWindow: React.FC<ChatWindowProps> = ({ conversationId }) => {
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>();
   
-  const { messages, conversations, typingStatuses, selectedLanguage, autoTranslate, quickResponses } = useSelector((state: RootState) => state.chat);
+  const { messages, conversations, typingStatuses, selectedLanguage } = useSelector((state: RootState) => state.chat);
   const { user } = useSelector((state: RootState) => state.auth);
   
   const [messageText, setMessageText] = useState('');
@@ -46,14 +43,14 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ conversationId }) => {
   const [showTranslation, setShowTranslation] = useState(false);
   const [showFileUpload, setShowFileUpload] = useState(false);
   const [showLocationPicker, setShowLocationPicker] = useState(false);
-  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  // Emoji picker not yet implemented in this component
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   
   const currentConversation = conversations.find(c => c.id === conversationId);
-  const conversationMessages = messages[conversationId] || [];
+  const conversationMessages = useMemo(() => messages[conversationId] || [], [messages, conversationId]);
   const conversationTyping = typingStatuses.filter(t => t.conversationId === conversationId);
 
   // Auto-scroll to bottom on new messages
@@ -64,7 +61,8 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ conversationId }) => {
   // Load messages when conversation changes
   useEffect(() => {
     if (conversationId) {
-      dispatch(fetchMessages({ conversationId }) as any);
+  // dispatching async thunk
+  dispatch(fetchMessages({ conversationId }));
     }
   }, [conversationId, dispatch]);
 
@@ -93,16 +91,34 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ conversationId }) => {
     };
   }, [messageText, conversationId]);
 
-  const handleSendMessage = async (content: string, type: 'text' | 'file' | 'voice' | 'location' = 'text', metadata?: any) => {
+  const mapUserRoleToChatRole = (role?: string): 'admin' | 'agent' | 'supplier' | 'buyer' => {
+    if (!role) return 'agent';
+    const r = role.toLowerCase();
+    if (r.includes('admin')) return 'admin';
+    if (r.includes('agent')) return 'agent';
+    if (r.includes('supplier')) return 'supplier';
+    if (r.includes('buyer')) return 'buyer';
+    return 'agent';
+  };
+
+  const handleSendMessage = async (
+    content: string,
+    type: 'text' | 'file' | 'voice' | 'location' = 'text',
+    metadata?: Record<string, unknown>
+  ) => {
     if (!content.trim() && type === 'text') return;
     if (!user?.id || !conversationId) return;
 
     try {
+      const senderIdStr = user ? String(user.id) : 'unknown';
+      const senderName = user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email || user.asgardeoId || senderIdStr : 'Unknown User';
+      const senderRole = mapUserRoleToChatRole(user?.role as unknown as string);
+
       const message = await chatWebSocketService.sendMessage({
         conversationId,
-        senderId: user.id,
-        senderName: user.name || 'Unknown User',
-        senderRole: user.role as any,
+        senderId: senderIdStr,
+        senderName,
+        senderRole,
         content,
         type,
         metadata,
@@ -139,7 +155,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ conversationId }) => {
   };
 
   const handleFileUpload = async (files: File[] | FileList) => {
-    const fileArray = Array.from(files as any) as File[];
+    const fileArray: File[] = Array.isArray(files) ? files : Array.from(files as FileList);
     for (const file of fileArray) {
       if (file.size > 10 * 1024 * 1024) { // 10MB limit
         // Show error toast
@@ -147,7 +163,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ conversationId }) => {
       }
 
       try {
-        const uploadResult = await chatWebSocketService.uploadFile(file, conversationId);
+  const uploadResult = await chatWebSocketService.uploadFile(file, conversationId);
 
         handleSendMessage(file.name, 'file', {
           fileName: uploadResult.fileName,
@@ -224,7 +240,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ conversationId }) => {
           <MessageList
             messages={conversationMessages}
             conversationId={conversationId}
-            currentUserId={user?.id || ''}
+            currentUserId={String(user?.id || '')}
           />
           
           {/* Typing Indicators */}
@@ -282,10 +298,10 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ conversationId }) => {
                   whileTap={{ scale: 0.9 }}
                   onClick={() => setShowQuickResponses(!showQuickResponses)}
                   className={`p-2 rounded-full transition-colors ${
-                    showQuickResponses
-                      ? 'text-blue-600 bg-blue-100 dark:text-blue-400 dark:bg-blue-900/20'
-                      : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-300 dark:hover:bg-gray-700'
-                  }`}
+                      showQuickResponses
+                        ? 'text-emerald-600 bg-emerald-100 dark:text-emerald-400 dark:bg-emerald-900/20'
+                        : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-300 dark:hover:bg-gray-700'
+                    }`}
                   title="Quick responses"
                 >
                   <ChatBubbleBottomCenterTextIcon className="w-5 h-5" />
@@ -311,7 +327,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ conversationId }) => {
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     onClick={() => handleSendMessage(messageText)}
-                    className="p-2 rounded-full bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+                    className="p-2 rounded-full bg-emerald-600 text-white hover:bg-emerald-700 transition-colors"
                     title="Send"
                   >
                     <PaperAirplaneIcon className="w-5 h-5" />
@@ -350,8 +366,9 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ conversationId }) => {
         {showFileUpload && (
           <FileUpload
             onSendFiles={(files, message) => {
-              // files can be File[] or FileList depending on upload UI
-              handleFileUpload(files as any);
+              // Normalize FileList to File[]
+              const fileArray: File[] = Array.isArray(files) ? files : Array.from(files as FileList);
+              handleFileUpload(fileArray);
               if (message) {
                 handleSendMessage(message, 'text');
               }

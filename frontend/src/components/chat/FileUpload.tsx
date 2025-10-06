@@ -179,9 +179,9 @@ export const FileUpload: React.FC<FileUploadProps> = ({
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
-              dragOver
-                ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/10'
-                : 'border-gray-300 dark:border-gray-600'
+                dragOver
+                  ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/10'
+                  : 'border-gray-300 dark:border-gray-600'
             }`}
           >
             <div className="space-y-2">
@@ -191,7 +191,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
               </p>
               <button
                 onClick={() => fileInputRef.current?.click()}
-                className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+                className="text-sm text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300"
                 disabled={uploading}
               >
                 {t('chat.chooseFiles') || 'Choose Files'}
@@ -282,7 +282,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
                 whileTap={{ scale: uploading ? 1 : 0.95 }}
                 onClick={handleSend}
                 disabled={uploading}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white text-sm rounded-lg flex items-center space-x-2 transition-colors"
+                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-400 text-white text-sm rounded-lg flex items-center space-x-2 transition-colors"
               >
                 {uploading ? (
                   <>
